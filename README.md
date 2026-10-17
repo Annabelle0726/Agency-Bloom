@@ -45,6 +45,8 @@ Import that directory into WeChat Developer Tools once. It contains its own gene
 
 Edit files under apps/miniprogram/src, save, and let the running compiler update WXML, WXSS, JS and assets. Developer Tools normally recompiles changed output automatically; if it does not refresh, click Compile once. Do not edit generated files or copy source files into the output directory.
 
+Global SCSS files are direct Vue style sources in App.vue. Keep this structure: the previous nested Sass @use setup could emit stale WXSS during incremental builds. With dev:mp running, npm run check:mp:watch temporarily adds an unused style probe, verifies its appearance in app.wxss, then restores the source and verifies removal. Component hot reload (compileHotReLoad) is disabled; normal watched compilation and simulator reload remain enabled. This avoids stale native component templates after structural changes.
+
 For automatic opening after the first successful watched compile:
 
 ```powershell
@@ -107,6 +109,10 @@ Use Developer Tools Console and WXML/Styles inspection before changing CSS:
 7. If source changes are absent, check that the watcher is still running and that the tool is reading dist/dev. Recompile once before investigating caches. Do not repeatedly clear all application data.
 
 See [native acceptance evidence](docs/WECHAT_VALIDATION.md). That record distinguishes simulator results, static artifact checks, auxiliary H5 checks, and unverified physical-device behavior.
+
+The 2026-10-17 repair was verified in the actual WeChat simulator on iPhone 12/13 (390 × 844) and iPhone 6/7/8 (375 × 667), including onboarding, local demo login, home and themes. Physical-device keyboard occlusion and real WeChat authentication still require manual acceptance. After a device switch or recompilation, reconnect automation to avoid stale component handles.
+
+The Quiet Night home uses native raster artwork with editable SVG sources, an absolutely positioned jade accessory, 6–8px interface corners, subtle entry/halo motion and a floating tabbar. Its presentation is isolated in night-home.scss and NightCompass.vue. See the separate redesign section in the acceptance record for viewport-specific evidence; old simulator screenshots do not validate a newer design.
 
 ## Checks
 

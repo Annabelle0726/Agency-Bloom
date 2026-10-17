@@ -1,9 +1,8 @@
-<style lang="scss">
-@use './h5-reset.scss';
-@use './styles.scss';
-@use './tokens.scss';
-@use './alpha.scss';
-</style>
+<style lang="scss" src="./h5-reset.scss"></style>
+<style lang="scss" src="./styles.scss"></style>
+<style lang="scss" src="./tokens.scss"></style>
+<style lang="scss" src="./alpha.scss"></style>
+<style lang="scss" src="./night-home.scss"></style>
 <script setup lang="ts">
 import { onLaunch } from '@dcloudio/uni-app'
 onLaunch(() => {})

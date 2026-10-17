@@ -15,6 +15,7 @@
     "build:mp": "npm --prefix apps/miniprogram run build:mp-weixin && node tools/check-wechat.mjs build --if-available",
     "check:mp": "node tools/check-wechat.mjs build",
     "check:mp:dev": "node tools/check-wechat.mjs dev",
+    "check:mp:watch": "node tools/verify-wechat-watch.mjs",
     "typecheck": "npm --prefix apps/miniprogram run typecheck",
     "db:link": "supabase link --project-ref ycombbpglsmbvjlrjtgc",
     "lint:api": "uv run --directory apps/api ruff check app tests"

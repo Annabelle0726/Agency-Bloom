@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="260" viewBox="0 0 320 260" fill="none">
+  <defs>
+    <linearGradient id="jade" x1="117" y1="55" x2="199" y2="198" gradientUnits="userSpaceOnUse"><stop stop-color="#fffef1"/><stop offset=".27" stop-color="#dce9d9"/><stop offset=".65" stop-color="#86aaa2"/><stop offset="1" stop-color="#cbdacc"/></linearGradient>
+    <linearGradient id="rim" x1="111" y1="93" x2="197" y2="170" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffef" stop-opacity=".8"/><stop offset="1" stop-color="#6b918a" stop-opacity=".2"/></linearGradient>
+    <linearGradient id="thread" x1="147" y1="89" x2="169" y2="174" gradientUnits="userSpaceOnUse"><stop stop-color="#e8ecce"/><stop offset="1" stop-color="#a5b9a9" stop-opacity=".4"/></linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+  <ellipse cx="160" cy="132" rx="58" ry="67" transform="rotate(22 160 132)" stroke="#b3d5c7" stroke-opacity=".17" stroke-width="15" filter="url(#soft)"/>
+  <g transform="rotate(22 160 132)">
+    <path fill-rule="evenodd" d="M160 63C193 63 218 93 218 132C218 171 193 201 160 201C127 201 102 171 102 132C102 93 127 63 160 63ZM160 78C184 78 202 102 202 132C202 162 184 186 160 186C136 186 118 162 118 132C118 102 136 78 160 78Z" fill="url(#jade)"/>
+    <ellipse cx="160" cy="132" rx="57.5" ry="68.5" stroke="url(#rim)" stroke-width="1.2"/>
+    <ellipse cx="160" cy="132" rx="42.5" ry="54.5" stroke="#d7ead9" stroke-opacity=".42" stroke-width=".9"/>
+    <path d="M142 72C119 87 110 116 111 136" stroke="#ffffef" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>
+    <path d="M160 93V174" stroke="url(#thread)" stroke-width=".9"/>
+    <path d="M160 93L155.5 109H164.5L160 93Z" fill="#e6e8cc"/>
+    <circle cx="160" cy="134" r="3.1" fill="#dce7d0"/>
+    <circle cx="160" cy="60" r="3.8" stroke="#bcc6a4" stroke-opacity=".6" stroke-width="1"/>
+  </g>
+</svg>

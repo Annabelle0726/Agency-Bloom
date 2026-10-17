@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1400" viewBox="0 0 750 1400" fill="none">
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="680" y2="1350" gradientUnits="userSpaceOnUse"><stop stop-color="#131e2e"/><stop offset=".47" stop-color="#14272f"/><stop offset="1" stop-color="#111c2b"/></linearGradient>
+    <radialGradient id="moon" cx="0" cy="0" r="1" gradientTransform="translate(411 484) rotate(95) scale(380 380)" gradientUnits="userSpaceOnUse"><stop stop-color="#6b9793" stop-opacity=".17"/><stop offset="1" stop-color="#3b606c" stop-opacity="0"/></radialGradient>
+    <linearGradient id="silk" x1="68" y1="195" x2="575" y2="1060" gradientUnits="userSpaceOnUse"><stop stop-color="#abbbb7" stop-opacity="0"/><stop offset=".45" stop-color="#a9c4bc" stop-opacity=".065"/><stop offset="1" stop-color="#6c939b" stop-opacity="0"/></linearGradient>
+    <filter id="mist"><feGaussianBlur stdDeviation="35"/></filter>
+  </defs>
+  <path fill="url(#night)" d="M0 0H750V1400H0Z"/>
+  <path fill="url(#moon)" d="M0 0H750V1400H0Z"/>
+  <path d="M-95 782C116 589 221 745 421 559C517 470 569 287 805 260" stroke="url(#silk)" stroke-width="117" filter="url(#mist)"/>
+  <path d="M-80 931C135 698 369 799 517 634C622 517 679 514 822 521" stroke="#99b9b1" stroke-opacity=".045" stroke-width="62" filter="url(#mist)"/>
+  <g stroke="#b6c9c0" stroke-width=".7" opacity=".055">
+    <path d="M-70 602C117 580 194 626 363 604C559 579 613 603 803 568"/>
+    <path d="M-40 622C117 601 211 648 390 619C564 591 674 629 816 601"/>
+    <path d="M-50 648C102 618 208 674 402 645C599 616 668 655 823 627"/>
+    <path d="M-35 679C155 641 230 708 410 675C606 639 674 679 820 666"/>
+    <path d="M-50 720C175 666 274 745 475 703C654 666 719 713 825 694"/>
+    <path d="M-50 762C174 705 282 785 492 742C659 708 700 742 822 735"/>
+    <path d="M-30 811C174 750 290 837 503 789C659 754 744 787 819 783"/>
+  </g>
+</svg>
