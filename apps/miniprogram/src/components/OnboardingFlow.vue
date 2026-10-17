@@ -6,6 +6,7 @@ import ActionButton from './ActionButton.vue'
 import SelectionCard from './SelectionCard.vue'
 import ProgressIndicator from './ProgressIndicator.vue'
 import SvgIcon from './SvgIcon.vue'
+import WelcomeOpening from './WelcomeOpening.vue'
 
 const props = defineProps<{ busy: boolean; error: string; devAuth: boolean; authenticated: boolean; ready: boolean; offline?: boolean }>()
 const emit = defineEmits<{ save: [form: Onboarding, dev: boolean]; privacy: []; retry: []; navigate: [] }>()
@@ -16,7 +17,10 @@ try {
   if (stored && !cached) uni.removeStorageSync(DRAFT_KEY)
 } catch { /* Storage can be unavailable. */ }
 const form = reactive({ ...newOnboarding(), ...cached?.form })
-const step = ref(cached?.step ?? -1)
+const storyKey = 'agency.opening.story.v1'
+let storySeen = props.authenticated
+try { storySeen = storySeen || !!uni.getStorageSync(storyKey) } catch { /* Optional presentation state. */ }
+const step = ref(cached?.step ?? (storySeen ? 0 : -1))
 const accepted = ref(false)
 const introduction = ref(false)
 const draftInfo = ref(false)
@@ -55,6 +59,9 @@ function persist() {
 watch([form, step], persist, { deep: true, flush: 'sync' })
 function go(value: number) {
   if (moving.value || props.busy || value === step.value) return
+  if (step.value === -1 && value === 0) {
+    try { uni.setStorageSync(storyKey, true) } catch { /* Never block exploration. */ }
+  }
   emit('navigate')
   direction.value = value < step.value ? 'backward' : 'forward'
   moving.value = true
@@ -99,14 +106,9 @@ defineExpose({ clearDraft })
 
 <template>
   <view class="onboarding-flow" :class="{ 'welcome-scene': step === -1, 'login-scene': step === 5, 'guest-scene': step === 6 }">
-    <image v-if="step === -1" class="scene-image welcome-image" src="/static/mountain-lake.jpg" mode="aspectFill" />
     <image v-if="step === 5 || step === 6" class="scene-image wall-image" src="/static/morning-light.jpg" mode="aspectFill" />
 
-    <view v-if="step === -1" key="welcome" class="welcome-content">
-      <view class="welcome-brand"><text>AGENCY OS</text><view class="brand-baseline"><view /><text>YOUR SPACE</text></view></view>
-      <view class="welcome-copy"><text class="welcome-title">{{ '世界不会总按你的\n期待运行' }}</text><text class="welcome-description">{{ '但你的可能性\n也不止眼前这些' }}</text></view>
-      <view class="welcome-bottom"><text class="welcome-footnote">给自己一点空间，也给下一步一点可能</text><ActionButton kind="secondary" :locked="moving" @click="go(0)">开始探索</ActionButton><button class="welcome-about" hover-class="pressed" @click="introduction = true">先了解 Agency OS</button></view>
-    </view>
+    <WelcomeOpening v-if="step === -1" key="welcome" @start="go(0)" @about="introduction = true" />
 
     <view v-else-if="step < 5" key="flow-shell" class="flow-page">
       <view class="flow-chrome">
@@ -174,7 +176,7 @@ defineExpose({ clearDraft })
 
     <view v-if="introduction || draftInfo" class="modal-backdrop" @click.self="introduction = false; draftInfo = false">
       <view class="intro-panel"><view class="modal-handle" /><view class="intro-panel-header"><text class="eyebrow">AGENCY OS</text><button class="icon-button" aria-label="关闭面板" @click="introduction = false; draftInfo = false" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><SvgIcon name="close" :size="21" /></button></view>
-        <template v-if="introduction"><text class="flow-title">{{ '你的生活，你的方向\n你的选择权' }}</text><text class="body-copy">{{ '从真实的处境出发，一起理清重要的事情\n找到愿意尝试的下一步' }}</text><text class="body-copy">{{ '你可以先匿名看看，再决定是否登录保存\nAI 对话需要你单独同意，建议由你确认后才会进入决策卡' }}</text><ActionButton :arrow="false" @click="introduction = false">我知道了</ActionButton></template>
+        <template v-if="introduction"><text class="flow-title">{{ '我还想\n按自己的意愿活一活' }}</text><text class="body-copy">Agency OS 从这个朴素的愿望出发</text><text class="body-copy">{{ '现实会划出边界\n但在尚有余地的地方\n我们仍可以辨认自己的意愿，争取选择' }}</text><text class="body-copy">{{ '这里可以陪你理清工作与方向中的困惑\n比较选择，尝试一点改变\n也给休息、犹豫和重新选择留下位置' }}</text><text class="body-copy">{{ '愿每一次向前\n都更靠近你愿意亲自度过的生活' }}</text><text class="body-copy">{{ '你可以先匿名看看，再决定是否登录保存\nAI 对话需要你单独同意，建议由你确认后才会进入决策卡' }}</text><ActionButton :arrow="false" @click="introduction = false">我知道了</ActionButton></template>
         <template v-else><text class="flow-title">{{ draftSaved ? '草稿已留在这台设备' : '先保留页面里的想法' }}</text><text class="body-copy">{{ draftSaved ? '已核对本机草稿，7 天内可以回来接着探索' : '本机草稿尚未保存，请先不要关闭页面' }}</text><text class="body-copy">{{ '登录保存前，不会上传你的回答\n如果正在使用共用设备，可以随时清除本机草稿' }}</text><ActionButton :arrow="false" @click="draftInfo = false">继续探索</ActionButton><button class="clear-draft" @click="clearDraft" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">清除本机草稿</button></template>
       </view>
     </view>

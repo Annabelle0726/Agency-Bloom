@@ -1,0 +1,25 @@
+{
+  "generator": "Built-in image_gen",
+  "assets": [
+    {
+      "name": "dawn",
+      "prompt": "Use case: photorealistic-natural. Asset: premium contemplative mobile app onboarding full-screen background, portrait 9:16. Quiet cinematic editorial photography, tactile natural light, restrained color, realistic not fantasy, subtle fine grain. Composition: upper 65% airy very pale low-detail negative space for dark Chinese text to be added separately; scene details concentrated in bottom third and right edge; lower edge can be darker. No people, words, lettering, watermark, logos or UI. Vast dawn sky in pale warm ivory and dusty peach above distant layered blue hills. A narrow band of gold light on horizon at lower third, mist drifting between mountains at bottom. Feeling: an open question about where life is heading. Elegant poetic, no dramatic saturated sunset."
+    },
+    {
+      "name": "water",
+      "prompt": "Use case: photorealistic-natural. Asset: premium contemplative mobile app onboarding full-screen background, portrait 9:16. Quiet cinematic editorial photography, tactile natural light, restrained color, realistic not fantasy, subtle fine grain. Composition: upper 65% airy very pale low-detail negative space for dark Chinese text to be added separately; scene details concentrated in bottom third and right edge; lower edge can be darker. No people, words, lettering, watermark, logos or UI. Still pale silver sage lake dissolving into soft morning mist; subtle reflection of distant trees, a few slender reeds at lower right, soft concentric ripples near bottom. Upper two thirds almost empty pale mist. Feeling: listen to your own wishes. Soft teal and pearl tones."
+    },
+    {
+      "name": "rest",
+      "prompt": "Use case: photorealistic-natural. Asset: premium contemplative mobile app onboarding full-screen background, portrait 9:16. Quiet cinematic editorial photography, tactile natural light, restrained color, realistic not fantasy, subtle fine grain. Composition: upper 65% airy very pale low-detail negative space for dark Chinese text to be added separately; scene details concentrated in bottom third and right edge; lower edge can be darker. No people, words, lettering, watermark, logos or UI. A quiet sunlit room, warm ivory plaster wall filling upper two thirds; sheer linen curtain along right edge, a simple empty wooden chair at bottom right, warm patch of sunlight on floor. Spacious, lived-in calm, no decorations. Feeling: permission to pause. Honey and cream tones."
+    },
+    {
+      "name": "path",
+      "prompt": "Use case: photorealistic-natural. Asset: premium contemplative mobile app onboarding full-screen background, portrait 9:16. Quiet cinematic editorial photography, tactile natural light, restrained color, realistic not fantasy, subtle fine grain. Composition: upper 65% airy very pale low-detail negative space for dark Chinese text to be added separately; scene details concentrated in bottom third and right edge; lower edge can be darker. No people, words, lettering, watermark, logos or UI. A gentle narrow walking path curving through a woodland clearing in the lower third, fading into pale soft morning fog; sparse delicate trees only on right edge, muted sage foliage at bottom; upper two thirds diffuse luminous mist. Feeling: small steps and room to change course."
+    },
+    {
+      "name": "meadow",
+      "prompt": "Use case: photorealistic-natural. Asset: premium contemplative mobile app onboarding full-screen background, portrait 9:16. Quiet cinematic editorial photography, tactile natural light, restrained color, realistic not fantasy, subtle fine grain. Composition: upper 65% airy very pale low-detail negative space for dark Chinese text to be added separately; scene details concentrated in bottom third and right edge; lower edge can be darker. No people, words, lettering, watermark, logos or UI. Open meadow with delicate grasses and small white wildflowers across bottom quarter, distant low rolling hills, huge soft ivory-blue morning sky occupying upper two thirds, warm sunrise grazing grass. Feeling: an ordinary day you would choose to live. Soft green and golden cream, natural understated beauty."
+    }
+  ]
+}

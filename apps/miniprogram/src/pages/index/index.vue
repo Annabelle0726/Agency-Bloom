@@ -4,6 +4,8 @@ import {onHide, onReady} from '@dcloudio/uni-app'
 import {makePreview, mergeSuggestion, experimentProposal} from '../../domain'
 import {newOnboarding, DRAFT_KEY, supportStyles, canonicalSupportStyle} from '../../onboarding'
 import OnboardingFlow from '../../components/OnboardingFlow.vue'
+import FirstArrival from '../../components/FirstArrival.vue'
+import { createArrivalGate } from '../../arrival'
 import ActionButton from '../../components/ActionButton.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import SvgIcon from '../../components/SvgIcon.vue'
@@ -66,7 +68,18 @@ async function removeAvatar() {
 const current = ref<Issue | null>(null)
 const config = ref({dev_auth: false, ai_mode: 'demo'})
 const ready = ref(false)
-const screen = ref<'onboard' | 'space'>('onboard')
+const screen = ref<'onboard' | 'arrival' | 'space'>('onboard')
+const arrivalGate = createArrivalGate({
+  read: key => uni.getStorageSync(key),
+  write: (key, value) => uni.setStorageSync(key, value),
+  remove: key => uni.removeStorageSync(key),
+})
+function enterSpace() {
+  if (user.value) arrivalGate.complete(user.value.id)
+  screen.value = 'space'
+  tab.value = 'now'
+  void nextTick(() => uni.pageScrollTo({ scrollTop: 0, duration: 0 }))
+}
 const keyboardHeight = ref(0)
 const composerHeight = ref(62)
 async function measureComposer() {
@@ -97,7 +110,7 @@ const offline = computed(() => !!operations.errors.init)
 const toast = ref('')
 const form = reactive<Onboarding>(newOnboarding())
 const preview = computed(() => makePreview(form))
-const dark = computed(() => !!user.value && user.value.theme === 'dark')
+const dark = computed(() => screen.value === 'space' && !!user.value && user.value.theme === 'dark')
 
 // #ifdef MP-WEIXIN
 function syncStatusBar() {
@@ -238,7 +251,7 @@ async function loadCurrent() {
   if (next?.id !== current.value?.id) conversation.reset()
   current.value = next
   if (current.value) {
-    screen.value = 'space'
+    screen.value = user.value ? arrivalGate.restore(user.value.id) : 'space'
     messages.value = await request<ChatMessage[]>('GET', `/issues/${current.value.id}/messages`)
   } else {
     screen.value = 'onboard'
@@ -265,10 +278,12 @@ async function saveInitial() {
   current.value = await request<Issue>('POST', '/issues', form)
   if (user.value && form.support_style) user.value.support_style = form.support_style
   conversation.reset()
-  screen.value = 'space';
+  screen.value = user.value ? arrivalGate.afterSave(user.value.id) : 'space'
   tab.value = 'now'
   uni.removeStorageSync(DRAFT_KEY)
-  notify('这件事，已经为你留下了')
+  if (screen.value === 'space') notify('这件事，已经为你留下了')
+  else toast.value = ''
+  void nextTick(() => uni.pageScrollTo({ scrollTop: 0, duration: 0 }))
 }
 
 async function authenticateForm(draftForm: Onboarding, dev = false) {
@@ -477,6 +492,7 @@ async function deleteAccount() {
   await guarded(async () => {
     const id = user.value?.id;
     await request('DELETE', '/me');
+    if (id) arrivalGate.forget(id)
     if (id) await localAvatars.clear(id);
     clearSession();
     notify('你的个人记录已删除')
@@ -491,7 +507,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         :class="{ dark, 'night-space': dark && screen === 'space', 'night-home': dark && screen === 'space' && tab === 'now', 'keyboard-open': keyboardHeight > 0 }"
         :style="{ '--keyboard-height': `${keyboardHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
     <view class="app-shell"
-          :class="{ 'with-tabs': screen === 'space', 'chat-page': tab === 'chat' && screen === 'space', 'onboarding-shell': screen === 'onboard' }">
+          :class="{ 'with-tabs': screen === 'space', 'chat-page': tab === 'chat' && screen === 'space', 'onboarding-shell': screen !== 'space' }">
       <image v-if="screen === 'space' && tab === 'now' && !dark" class="home-background" src="/static/morning-light.jpg"
              mode="aspectFill"/>
       <view v-if="screen === 'space' && tab === 'now' && dark" class="night-atmosphere" aria-hidden="true">
@@ -527,6 +543,8 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
       <OnboardingFlow v-if="screen === 'onboard'" :busy="busy" :error="authError" :dev-auth="config.dev_auth" :offline="offline"
                       :authenticated="!!user" :ready="ready" @save="authenticateForm" @privacy="modal = 'privacy'"
                       @retry="initialize" @navigate="operations.clear('auth')"/>
+
+      <FirstArrival v-else-if="screen === 'arrival'" @enter="enterSpace" />
 
       <template v-else-if="current">
         <view v-if="tab === 'now'" class="workspace">

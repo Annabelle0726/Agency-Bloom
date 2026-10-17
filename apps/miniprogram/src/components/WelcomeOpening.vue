@@ -1,0 +1,189 @@
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import ActionButton from './ActionButton.vue'
+const emit = defineEmits<{ start: []; about: [] }>()
+const current = ref(0)
+const reducedMotion = ref(false)
+const revealed = ref<number[]>([])
+const loaded = ref<number[]>([])
+const slides = [
+  {
+    scene: 'dawn', label: '01 / 向前的意义', accent: '#934d36',
+    title: ['我们不断向前', '想抵达怎样的生活'],
+    lines: ['学得更多，做得更好', '我们为未来付出很多努力', '也许，可以偶尔问问自己', '这些努力，想带我过上怎样的一天？'],
+    emphasis: '你想靠近的生活，也值得被认真想象',
+    note: '不必现在回答，先把这个问题留给自己',
+  },
+  {
+    scene: 'water', label: '02 / 听见自己的意愿', accent: '#246660',
+    title: ['那些想要的', '有多少出自我的意愿'],
+    lines: ['有些目标，让我们感到投入', '有些期待，却让人越来越疲惫', '如果暂时放下别人的评价', '有什么，仍然是你愿意选择的？'],
+    emphasis: '给自己的感受，也留一个位置',
+    note: '愿望会受世界影响，你仍可以重新辨认它',
+  },
+  {
+    scene: 'rest', label: '03 / 给休息一点余地', accent: '#85501f',
+    title: ['还没有成为理想的自己', '也可以先好好生活'],
+    lines: ['疲惫的时候，可以停一停', '喜欢的事，不必都变成收获', '一个无需表现的下午', '也是你真实度过的一部分'],
+    emphasis: '休息，不需要先用成绩换取',
+    note: '此刻的你，也值得被照顾',
+  },
+  {
+    scene: 'path', label: '04 / 从小小的选择开始', accent: '#466238',
+    title: ['现实会划出边界', '选择仍可以慢慢发生'],
+    lines: ['不必一下子改变整个人生', '可以比较一条路，尝试一小步', '也可以求助、犹豫、重新选择', '让新的体验，修正原来的方向'],
+    emphasis: '在尚有余地的地方，留一点自己的决定',
+    note: '愿意承担什么代价，也由你慢慢辨认',
+  },
+  {
+    scene: 'meadow', label: '05 / 从这个愿望出发', accent: '#5a602e',
+    title: ['我还想', '按自己的意愿活一活'],
+    lines: ['Agency OS 从这个朴素的愿望出发', '陪你理清工作与方向中的困惑', '看见现实条件，也听见自己的感受', '比较选择，尝试一点改变'],
+    emphasis: '更靠近你愿意亲自度过的生活',
+    note: '就从此刻，最想理清的一个问题开始',
+  },
+]
+const slide = computed(() => slides[current.value])
+let navigationAt = 0
+let gestureMoved = false
+let scrollingUntil = 0
+let touchOrigin: { clientX: number; clientY: number } | undefined
+function touchStart(event: { touches: { clientX: number; clientY: number }[] }) {
+  touchOrigin = event.touches[0]
+  gestureMoved = false
+}
+function touchMove(event: { touches: { clientX: number; clientY: number }[] }) {
+  const point = event.touches[0]
+  if (point && touchOrigin && Math.hypot(point.clientX - touchOrigin.clientX, point.clientY - touchOrigin.clientY) > 10) gestureMoved = true
+}
+function advance() {
+  if (Date.now() < scrollingUntil) return
+  if (gestureMoved) { gestureMoved = false; return }
+  next()
+}
+function reveal(index: number) {
+  if (!revealed.value.includes(index)) revealed.value = [...revealed.value, index]
+}
+function select(index: number) {
+  if (index === current.value || Date.now() - navigationAt < 400) return
+  navigationAt = Date.now()
+  reveal(current.value)
+  current.value = Math.max(0, Math.min(slides.length - 1, index))
+}
+function next() {
+  if (current.value < slides.length - 1) select(current.value + 1)
+  else if (Date.now() - navigationAt >= 400) { navigationAt = Date.now(); emit('start') }
+}
+function imageLoaded(index: number) {
+  if (!loaded.value.includes(index)) loaded.value = [...loaded.value, index]
+}
+// #ifdef H5
+let query: MediaQueryList | undefined
+const motionChanged = () => { reducedMotion.value = !!query?.matches }
+onMounted(() => {
+  query = window.matchMedia('(prefers-reduced-motion: reduce)')
+  motionChanged()
+  query.addEventListener('change', motionChanged)
+})
+onUnmounted(() => query?.removeEventListener('change', motionChanged))
+// #endif
+</script>
+
+<template>
+  <view class="opening-story" :class="{ 'motion-reduced': reducedMotion }" :style="{ '--story-accent': slides[current].accent }">
+    <view class="story-backdrop" aria-hidden="true">
+      <image v-for="(slide, index) in slides" :key="slide.scene"
+        class="story-scene" :class="{ 'scene-active': current === index && loaded.includes(index) }"
+        :src="'/static/opening-' + slide.scene + '.jpg'" mode="aspectFill" @load="imageLoaded(index)" />
+      <view class="story-wash" />
+    </view>
+    <view class="story-header">
+      <view class="story-brand"><text>AGENCY OS</text><text class="story-brand-note">YOUR LIFE, YOUR WAY</text></view>
+      <button class="story-skip" hover-class="pressed" @click="emit('start')">跳过开场</button>
+    </view>
+    <view class="story-stage" @click="advance">
+        <scroll-view :key="slide.scene" class="story-scroll" scroll-y :show-scrollbar="false"
+          @touchstart="touchStart" @touchmove="touchMove" @scroll="scrollingUntil = Date.now() + 200">
+          <view class="story-page"
+            :class="{ playing: true, settled: revealed.includes(current) }"
+            :style="{ '--story-accent': slide.accent }">
+            <text class="story-label">{{ slide.label }}</text>
+            <view class="story-title">
+              <text v-for="(line, lineIndex) in slide.title" :key="line"
+                class="story-title-line reveal-line" :class="{ 'story-emphasis': lineIndex === 1 }"
+                :style="{ animationDelay: (lineIndex * 140) + 'ms' }">{{ line }}</text>
+            </view>
+            <view class="story-body">
+              <text v-for="(line, lineIndex) in slide.lines" :key="line" class="story-body-line reveal-line"
+                :style="{ animationDelay: (360 + lineIndex * 160) + 'ms' }">{{ line }}</text>
+              <text class="story-closing story-emphasis reveal-line" :style="{ animationDelay: '1120ms' }">{{ slide.emphasis }}</text>
+            </view>
+          </view>
+        </scroll-view>
+    </view>
+    <view class="story-footer">
+      <view class="story-pagination">
+        <button v-for="(_, index) in slides" :key="index" class="story-dot-target"
+          :aria-label="'第 ' + (index + 1) + ' 页，共 ' + slides.length + ' 页'"
+          :aria-pressed="current === index" hover-class="pressed" @click="select(index)">
+          <view class="story-dot" :class="{ active: current === index }" />
+        </button>
+        <text class="story-count">{{ current + 1 }} / {{ slides.length }}</text>
+      </view>
+      <text class="story-note">{{ slides[current].note }}</text>
+      <ActionButton kind="secondary" @click="next">{{ current === slides.length - 1 ? '开始我的探索' : '继续读' }}</ActionButton>
+      <button class="story-about" hover-class="pressed" @click="emit('about')">先了解 Agency OS</button>
+    </view>
+  </view>
+</template>
+
+<style scoped>
+.opening-story { position:relative; isolation:isolate; height:var(--app-height, 100vh); min-height:0; display:flex; flex-direction:column; box-sizing:border-box; overflow:hidden; color:#28332f; background:#f4f0e8; }
+.story-backdrop { position:absolute; inset:0; pointer-events:none; z-index:0; }
+.story-scene { position:absolute; width:100%; height:100%; left:0; top:0; opacity:0; transition:opacity 650ms ease; }
+.story-scene.scene-active { opacity:1; }
+.story-wash { position:absolute; inset:0; background:linear-gradient(180deg,rgba(250,248,241,.24),rgba(250,248,241,.68) 45%,rgba(250,248,241,.57) 62%,rgba(28,39,35,.12) 76%,rgba(22,33,28,.62)); }
+.story-header, .story-stage, .story-footer { position:relative; z-index:1; }
+.story-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:calc(var(--capsule-bottom, 64px) + 14px) 28px 4px; }
+.story-brand { display:flex; flex-direction:column; gap:8px; font-size:14px; letter-spacing:3px; }
+.story-brand-note { font-size:8px; letter-spacing:1.8px; color:#556057; }
+.opening-story .story-skip { background:transparent; color:#465047; font-size:12px; line-height:1.6; min-height:44px; padding:12px 0 12px 12px; margin:0; }
+.opening-story button::after { border:0; }
+.story-stage { flex:1; height:0; min-height:0; width:100%; }
+.story-scroll { height:100%; }
+.story-page { min-height:100%; cursor:pointer; padding:32px 28px 28px; box-sizing:border-box; }
+.story-label { display:block; font-size:10px; letter-spacing:1.8px; color:#566157; margin-bottom:20px; }
+.story-title { font-family:var(--font-heading); font-size:26px; line-height:1.65; letter-spacing:0; font-weight:500; }
+.story-title-line, .story-body-line { display:block; }
+.story-body { font-size:14px; line-height:2.05; margin-top:24px; color:#3d4940; }
+.story-emphasis { color:var(--story-accent); font-weight:600; }
+.story-closing { display:block; margin-top:19px; font-size:14px; line-height:1.9; }
+.playing .reveal-line { animation:story-line-in 600ms cubic-bezier(.2,.65,.3,1) both; }
+.settled .reveal-line, .motion-reduced .reveal-line { animation:none; opacity:1; transform:none; }
+@keyframes story-line-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.story-footer { flex-shrink:0; padding:0 28px calc(9px + env(safe-area-inset-bottom)); }
+.story-pagination { display:flex; align-items:center; }
+.opening-story .story-dot-target { display:flex; align-items:center; justify-content:center; width:44px; min-width:44px; height:44px; padding:0; margin:0; background:transparent; }
+.story-dot { width:5px; height:5px; border-radius:9px; background:rgba(255,255,255,.6); transition:width 280ms ease,background 280ms ease; }
+.story-dot.active { width:20px; background:#fff; }
+.story-count { margin-left:auto; font-size:10px; color:#fff; text-shadow:0 1px 6px #26382d; }
+.story-note { display:block; color:#fff; text-shadow:0 1px 6px #26382d; font-size:11px; line-height:1.8; margin:0 0 14px; min-height:20px; }
+.story-footer :deep(.action-button) { width:100%; min-height:50px; background:#fffdf7; color:#304136; border:1px solid rgba(255,255,255,.8); box-shadow:0 6px 24px rgba(20,35,25,.12); }
+.opening-story .story-about { min-height:44px; margin:3px auto 0; padding:12px; background:transparent; color:#fff; font-size:11px; line-height:1.8; text-shadow:0 1px 5px #253b2c; }
+.motion-reduced .story-scene, .motion-reduced .story-dot { transition:none; }
+@media(prefers-reduced-motion:reduce) {
+  .playing .reveal-line { animation:none; }
+  .story-scene, .story-dot { transition:none; }
+}
+@media(max-width:360px) {
+  .story-header, .story-page, .story-footer { padding-left:24px; padding-right:24px; }
+  .story-title { font-size:23px; }
+  .story-body, .story-closing { font-size:13px; }
+}
+@media(max-height:720px) {
+  .story-page { padding-top:18px; padding-bottom:20px; }
+  .story-label { margin-bottom:12px; }
+  .story-body { margin-top:17px; line-height:1.9; }
+  .story-closing { margin-top:13px; }
+}
+</style>
