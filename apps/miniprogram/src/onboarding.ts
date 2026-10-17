@@ -9,6 +9,28 @@ export const concernOptions = [
   { id: 'other', title: '我想自己说说', detail: '可选，留下一点自己的想法', icon: 'chat' },
   { id: 'unsure', title: '还不知道，先看看', detail: '还没有方向，也可以开始', icon: 'compass' },
 ]
+// First question describes the user's situation; concernOptions remain exploration directions.
+export const startingConcernOptions = [
+  { id: 'direction', title: '不知道未来该往哪里走', detail: '工作、学习或生活的方向还不清楚', icon: 'compass' },
+  { id: 'change', title: '担心跟不上 AI 或行业变化', detail: '想知道自己的能力，还能用在哪里', icon: 'spark' },
+  { id: 'choices', title: '有选择要做，却害怕选错', detail: '每条路都有让我犹豫的地方', icon: 'paths' },
+  { id: 'start', title: '想改变，又怕失去收入或稳定', detail: '希望找到代价可承受的一小步', icon: 'step' },
+  { id: 'other', title: '有别的事，让我放不下', detail: '关系、期待、精力，或其他牵挂，不必马上说明', icon: 'chat' },
+  { id: 'possibility', title: '也想看看生活还有哪些可能', detail: '没有明显不安，也欢迎带着好奇来', icon: 'sun' },
+  { id: 'unsure', title: '暂时说不清，先看看', detail: '现在不想细说，也可以继续', icon: 'compass' },
+]
+const focusChoices: Record<string, string[]> = {
+  direction: ['收入更稳定一点', '工作之外有自己的时间', '做自己愿意投入的事', '少一点疲惫和消耗'],
+  change: ['解释问题、与人沟通', '整理信息、发现规律', '解决具体的技术问题', '协调事情、照顾他人的需要'],
+  choices: ['收入和稳定', '兴趣和投入感', '时间和精力', '发展空间与风险'],
+  start: ['稳定的收入', '身体与精力', '重要的关系', '属于自己的时间'],
+  possibility: ['过去做过的事', '一直感兴趣的领域', '一次新的体验'],
+  other: ['工作或学习', '关系与他人的期待', '生活与精力', '对未来的不确定'],
+  unsure: ['想先说说最近的感受', '想更了解自己', '想看看新的可能'],
+}
+export function focusChoicesFor(form: Onboarding): string[] {
+  return focusChoices[form.exploration_intent || ''] || []
+}
 export const lifeContexts = [
   { id: 'studying', title: '学习或备考' }, { id: 'searching', title: '求职' },
   { id: 'working', title: '在职工作' }, { id: 'transition', title: '职业转换' },
@@ -34,15 +56,24 @@ export function newOnboarding(): Onboarding {
   return { title: '', concerns: [], stage: 'unsure', background: '', constraints: [], life_contexts: [], support_style: '',
     exploration_intent: '', actual_question: '', focus_response: '' }
 }
+export function loginSummaryFor(form: Onboarding) {
+  const name = form.title.trim()
+  return {
+    name,
+    clue: [form.actual_question, form.focus_response, form.background].map(value => value?.trim() || '').find(value => value && value !== name) || '',
+    intent: concernOptions.find(item => item.id === form.exploration_intent)?.title || '',
+    support: form.support_style ? supportStyles.find(item => item.id === canonicalSupportStyle(form.support_style))?.title || '' : '',
+  }
+}
 export function toggleConcern(selected: string[], id: string) {
   if (selected.includes(id)) return selected.filter(value => value !== id)
   if (id === 'unsure') return ['unsure']
   return [...selected.filter(value => value !== 'unsure'), id]
 }
 const branches = {
-  direction: { question: '最近，是什么让你想重新看看自己的方向？', placeholder: '可以是一段经历、一个念头，也可以暂时留空' },
+  direction: { question: '如果方向更清楚了，你希望日常生活有什么不同？', placeholder: '比如怎样度过一天、留住什么，或少承担什么，也可以暂时留空' },
   change: { question: '有没有一件事，别人经常找你帮忙，而你自己觉得做起来还挺自然？', placeholder: '说一件具体的小事就好，不需要给自己贴标签' },
-  choices: { question: '你正在考虑哪些方向？现在最难取舍的是什么？', placeholder: '写下你正在比较的选择，也可以先说一个' },
+  choices: { question: '面对正在考虑的方向，你最难取舍的是什么？', placeholder: '写下你正在比较的选择，也可以先说一个' },
   start: { question: '这次改变里，你最不想失去的是什么？', placeholder: '比如收入、时间、地点，或已经拥有的生活' },
   possibility: { question: '你更愿意从过去做过的事情、感兴趣的领域，还是一次新的体验开始探索？', placeholder: '选一个起点，或者留下一点线索' },
   other: { question: '关于这个念头，你最想再说一点什么？', placeholder: '不必整理好，可以用自己的话说' },
@@ -52,7 +83,10 @@ export function branchFor(form: Onboarding) {
   return branches[form.exploration_intent as keyof typeof branches] || branches.other
 }
 export function selectMainline(form: Onboarding, intent: string) {
-  if (form.concerns.includes(intent)) form.exploration_intent = intent
+  if (!form.concerns.includes(intent) || form.exploration_intent === intent) return
+  // A suggested answer belongs to its question; preserve user-written details.
+  if (focusChoicesFor(form).includes(form.focus_response || '')) form.focus_response = ''
+  form.exploration_intent = intent
 }
 export function reflectionFor(form: Onboarding) {
   const hasClues = !!(form.actual_question?.trim() || form.focus_response?.trim() || form.background.trim())

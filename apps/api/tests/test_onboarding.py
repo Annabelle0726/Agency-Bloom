@@ -5,6 +5,20 @@ from test_journey import login
 from app.main import create_app
 
 
+def test_public_config_distinguishes_wechat_setup_from_network_failure(tmp_path):
+    for configured in (False, True):
+        app = create_app(
+            database_url=f"sqlite:///{tmp_path / str(configured)}.db",
+            wechat_app_id="test-app-id" if configured else "",
+            wechat_app_secret="test-secret" if configured else "",
+        )
+        with TestClient(app) as client:
+            result = client.get("/api/config").json()
+            assert result["wechat_auth"] is configured
+            assert "test-app-id" not in str(result)
+            assert "test-secret" not in str(result)
+
+
 def test_selected_context_and_support_style_are_saved_without_becoming_memory(tmp_path):
     app = create_app(database_url=f"sqlite:///{tmp_path / 'context.db'}")
     with TestClient(app) as client:

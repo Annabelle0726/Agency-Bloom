@@ -5,6 +5,7 @@
 <style lang="scss" src="./night-home.scss"></style>
 <style lang="scss" src="./companion-chat.scss"></style>
 <style lang="scss" src="./brand.scss"></style>
+<style lang="scss" src="./chat-entry.scss"></style>
 <script setup lang="ts">
 import { onLaunch } from '@dcloudio/uni-app'
 onLaunch(() => {})

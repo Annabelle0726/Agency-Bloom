@@ -1,16 +1,16 @@
 /* Agency OS companion: chat-specific layout only. The animation lives in CompanionAvatar.vue. */
-.chat-welcome > .companion {
-  display: block;
-  margin: -5px 0 12px -4px;
+.chat-welcome-intro > .companion-bot {
+  flex-shrink: 0;
+  margin: 0;
 }
-.message-row.assistant > .companion {
+.message-row.assistant > .companion-bot {
   margin-top: -4px;
 }
 .thinking {
   gap: 9px;
   min-height: 52px;
 }
-.thinking > .companion {
+.thinking > .companion-bot {
   margin-left: -2px;
   align-self: flex-start;
 }

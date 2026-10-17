@@ -29,6 +29,8 @@ npm run dev:api
 
 The default API is http://127.0.0.1:8000; its interactive docs are at /docs. Local development authentication and the AI provider are independent: SQLite/dev login can use real DeepSeek. A fresh checkout defaults to demo AI until explicitly configured. Real WeChat authentication requires the backend AppID/AppSecret configuration described in [setup](docs/SETUP.md).
 
+Keep two terminals open: run `npm run dev:api` in the first, and `npm run dev:wechat` in the second. `dev:mp`, `dev:wechat` and `build:mp` compile the frontend only; they do not start the API. `dev:wechat` now reports whether the local API is reachable before watching. Login rechecks a failed startup connection on entry, and returning to the Mini Program retries an offline check. A failed connection remains retryable without losing the local draft. Missing WeChat credentials are shown as pending setup, separately from a network failure; explicit development login remains available when enabled. The agreement is unchecked by default and appears before the login buttons.
+
 ## Real DeepSeek chat
 
 Set these values in the ignored backend file apps/api/.env, preserving the existing database URL and budget. Put the key only in that file, never in frontend VITE_ variables:

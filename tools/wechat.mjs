@@ -46,6 +46,14 @@ export async function runWeChatCli(cli, project) {
 }
 
 async function watchAndOpen() {
+  // This command only watches the Mini Program; it does not own the Python API
+  try {
+    const response = await fetch('http://127.0.0.1:8000/api/health', { signal: AbortSignal.timeout(1500) })
+    if (!response.ok) throw Error('API unavailable')
+    console.log('Local API reachable at http://127.0.0.1:8000')
+  } catch {
+    console.warn('Local API is not reachable. Run npm run dev:api in a separate terminal for login and saved data. Anonymous onboarding still works offline.')
+  }
   const child = spawn(process.execPath, [path.join(app, 'node_modules', '@dcloudio', 'vite-plugin-uni', 'bin', 'uni.js'), '-p', 'mp-weixin'], {
     cwd: app, stdio: ['inherit', 'pipe', 'pipe'], windowsHide: true,
   })

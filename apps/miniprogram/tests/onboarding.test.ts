@@ -1,11 +1,21 @@
 import { expect, it } from 'vitest'
-import { newOnboarding, toggleConcern, reflectionFor, restoreDraft, saveDraft, branchFor, selectMainline, canonicalSupportStyle, reflectionHeading } from '../src/onboarding'
+import { focusChoicesFor, startingConcernOptions, concernOptions, newOnboarding, toggleConcern, reflectionFor, restoreDraft, saveDraft, branchFor, selectMainline, canonicalSupportStyle, reflectionHeading, loginSummaryFor } from '../src/onboarding'
 
 it('keeps unsure exclusive while allowing the first five concerns together', () => {
   expect(toggleConcern(['direction', 'relationships'], 'unsure')).toEqual(['unsure'])
   expect(toggleConcern(['unsure'], 'other')).toEqual(['other'])
   expect(toggleConcern(['direction'], 'overload')).toEqual(['direction', 'overload'])
   expect(toggleConcern(['unsure'], 'unsure')).toEqual([])
+})
+
+it('renders a login summary from actual clues without treating an exploration name as a person', () => {
+  const form = { ...newOnboarding(), title: 'Anna', concerns: ['change'], exploration_intent: 'change', focus_response: '喜欢解释复杂问题', support_style: 'listen' }
+  expect(loginSummaryFor(form)).toEqual({ name: 'Anna', clue: '喜欢解释复杂问题', intent: '看看我的能力还能用在哪里', support: '先听我说' })
+})
+
+it('keeps login summary empty fields honest and does not repeat the exploration name', () => {
+  expect(loginSummaryFor(newOnboarding())).toEqual({ name: '', clue: '', intent: '', support: '' })
+  expect(loginSummaryFor({ ...newOnboarding(), title: '比较两个机会', actual_question: '比较两个机会', focus_response: '收入与通勤很重要' }).clue).toBe('收入与通勤很重要')
 })
 
 it('changes the question by the chosen mainline without losing other selected interests', () => {
@@ -15,7 +25,7 @@ it('changes the question by the chosen mainline without losing other selected in
   expect(form.title).toBe('')
   expect(form.concerns).toEqual(['change', 'choices'])
   selectMainline(form, 'choices')
-  expect(branchFor(form).question).toContain('正在考虑哪些方向')
+  expect(branchFor(form).question).toContain('正在考虑的方向')
   expect(form.actual_question).toBe('我的能力还能用在哪里')
   expect(branchFor({ ...form, exploration_intent: 'start' }).question).toContain('最不想失去')
   expect(branchFor({ ...form, exploration_intent: 'possibility' }).question).toContain('新的体验')
@@ -78,4 +88,37 @@ it('uses the selected support behavior without repeating the user title or selec
   expect(reflectionFor({ ...form, support_style: 'compare' })).toContain('代价与条件')
   expect(reflectionFor({ ...form, support_style: 'experiment' })).toContain('时间与资源')
   expect(reflectionFor(form)).not.toContain(form.title)
+})
+
+
+it('keeps a choice-only onboarding draft valid without inventing written details', () => {
+  const form = { ...newOnboarding(), concerns: ['direction'], exploration_intent: 'direction', support_style: 'listen' }
+  const restored = restoreDraft(saveDraft(form, 5, 1000), 2000)!
+  expect(restored.form).toEqual(form)
+  expect([restored.form.title, restored.form.background, restored.form.actual_question, restored.form.focus_response]).toEqual(['', '', '', ''])
+})
+
+it('persists the exact quick answer chosen by the user', () => {
+  const form = { ...newOnboarding(), concerns: ['start'], exploration_intent: 'start', support_style: 'experiment' }
+  form.focus_response = focusChoicesFor(form)[0]
+  expect(restoreDraft(saveDraft(form, 4, 1000), 2000)?.form.focus_response).toBe('稳定的收入')
+})
+
+it('does not carry a suggested answer into a different question or erase free writing', () => {
+  const form = { ...newOnboarding(), concerns: ['direction', 'change'], exploration_intent: 'direction', focus_response: '工作之外有自己的时间' }
+  selectMainline(form, 'change')
+  expect(form.focus_response).toBe('')
+  form.focus_response = '我喜欢陪家人，也想试试远程工作'
+  selectMainline(form, 'direction')
+  expect(form.focus_response).toBe('我喜欢陪家人，也想试试远程工作')
+  selectMainline(form, 'choices')
+  expect(form.exploration_intent).toBe('direction')
+})
+
+it('keeps curiosity and uncertainty available without requiring an anxiety label', () => {
+  expect(startingConcernOptions.map(item => item.id).sort()).toEqual(concernOptions.map(item => item.id).sort())
+  for (const intent of ['possibility', 'unsure']) {
+    const form = { ...newOnboarding(), concerns: [intent], exploration_intent: intent, support_style: 'listen' }
+    expect(restoreDraft(saveDraft(form, 5, 1000), 2000)?.form).toEqual(form)
+  }
 })

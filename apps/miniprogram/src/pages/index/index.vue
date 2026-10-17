@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
-import {onHide, onReady} from '@dcloudio/uni-app'
+import {onHide, onReady, onShow} from '@dcloudio/uni-app'
 import {makePreview, mergeSuggestion, experimentProposal} from '../../domain'
 import {newOnboarding, DRAFT_KEY, supportStyles, canonicalSupportStyle} from '../../onboarding'
+import type {SupportMode} from '../../onboarding'
+import {chatEntryFor, draftChangeFor} from '../../chat-entry'
 import OnboardingFlow from '../../components/OnboardingFlow.vue'
 import FirstArrival from '../../components/FirstArrival.vue'
 import { createArrivalGate } from '../../arrival'
@@ -66,7 +68,7 @@ async function removeAvatar() {
 }
 
 const current = ref<Issue | null>(null)
-const config = ref({dev_auth: false, ai_mode: 'demo'})
+const config = ref<{ dev_auth: boolean; wechat_auth?: boolean; ai_mode: string }>({dev_auth: false, ai_mode: 'demo'})
 const ready = ref(false)
 const screen = ref<'onboard' | 'arrival' | 'space'>('onboard')
 const arrivalGate = createArrivalGate({
@@ -160,6 +162,9 @@ const canSaveExperiment = computed(() => experimentFields.every(f => experimentE
   !!experimentBase && experimentProposal(experimentBase, experimentEditor).next_step.length <= 600)
 const selectedMode = computed(() => canonicalSupportStyle(user.value?.support_style))
 const welcomeContext = computed(() => current.value?.focus_response || current.value?.actual_question || current.value?.background || '')
+const chatEntry = computed(() => chatEntryFor(selectedMode.value, current.value || {}))
+const modePickerOpen = ref(false)
+const starterHint = ref('')
 
 function reactToInsight(action: 'interested' | 'dismissed' | 'experiment') {
   if (busy.value || sending.value || !insight.value || !current.value) return
@@ -240,7 +245,7 @@ async function guarded(action: () => Promise<void>, scope: OperationScope = 'dat
   return operations.run(scope, async () => {
     try { await action() }
     catch (err) {
-      if (scope === 'auth' && err instanceof ApiError && (['network', 'timeout'].includes(err.kind) || err.status >= 500)) throw Error('暂时无法连接服务，你可以继续浏览，连接恢复后再保存')
+      if (scope === 'auth' && err instanceof ApiError && ['network', 'timeout'].includes(err.kind)) throw Error('暂时无法连接服务，你可以继续浏览，连接恢复后再保存')
       throw err
     }
   })
@@ -258,9 +263,11 @@ async function loadCurrent() {
   }
 }
 
-async function initialize() {
+let initializing: Promise<void> | undefined
+async function checkConnection() {
   await guarded(async () => {
     config.value = await request('GET', '/config')
+    operations.clear('auth')
   }, 'init')
   ready.value = true
   if (token.value && !offline.value) await guarded(async () => {
@@ -269,7 +276,14 @@ async function initialize() {
   })
 }
 
+async function initialize() {
+  if (initializing) return initializing
+  initializing = checkConnection()
+  try { await initializing } finally { initializing = undefined }
+}
+
 onMounted(initialize)
+onShow(() => { if (ready.value && offline.value) void initialize() })
 onHide(() => {
   if (sending.value) cancelChat()
 })
@@ -300,6 +314,7 @@ async function authenticateForm(draftForm: Onboarding, dev = false) {
     let path = '/auth/dev'
     const body: { privacy_accepted: true; code?: string } = {privacy_accepted: true}
     if (!dev) {
+      if (config.value.wechat_auth === false) throw Error('微信登录尚未配置，可以先继续浏览')
       path = '/auth/wechat'
       const login = await new Promise<UniApp.LoginRes>((resolve, reject) => uni.login({
         provider: 'weixin',
@@ -327,6 +342,7 @@ async function authenticateForm(draftForm: Onboarding, dev = false) {
 async function selectTab(nextTab: typeof tab.value) {
   if (tab.value === nextTab) return
   error.value = '';
+  if (nextTab !== 'chat') modePickerOpen.value = false
   tab.value = nextTab
   await nextTick()
   uni.pageScrollTo({scrollTop: 0, duration: 0})
@@ -379,7 +395,7 @@ async function saveFeedback() {
     })
     feedbackText.value = '';
     modal.value = '';
-    notify('新的进展，已经记下')
+    notify('这次记录，已经留下')
   })
 }
 
@@ -446,6 +462,34 @@ async function setSupportStyle(support_style: string) {
     modal.value = '';
     notify('已保存你此刻希望获得的支持')
   })
+}
+
+async function setChatMode(mode: SupportMode) {
+  if (busy.value || sending.value) return
+  if (mode === selectedMode.value) { modePickerOpen.value = false; return }
+  await guarded(async () => {
+    user.value = await request<User>('PUT', '/me', {support_style: mode})
+    modePickerOpen.value = false
+    starterHint.value = ''
+  }, 'data')
+}
+
+async function useChatStarter(prompt: string) {
+  if (sending.value || busy.value) return
+  const change = draftChangeFor(draft.value, prompt)
+  if (change === 'confirm-replace') {
+    const approved = await new Promise<boolean>(resolve => uni.showModal({
+      title: '替换当前输入？',
+      content: '你已经输入的文字会被新建议替换。也可以先保留原来的草稿。',
+      confirmText: '替换',
+      cancelText: '保留草稿',
+      success: result => resolve(result.confirm),
+      fail: () => resolve(false),
+    }))
+    if (!approved) return
+  }
+  if (change !== 'unchanged') draft.value = prompt
+  starterHint.value = '已放入输入框，可以修改后再发送'
 }
 
 async function toggleAIConsent() {
@@ -540,7 +584,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         </button>
       </view>
 
-      <OnboardingFlow v-if="screen === 'onboard'" :busy="busy" :error="authError" :dev-auth="config.dev_auth" :offline="offline"
+      <OnboardingFlow v-if="screen === 'onboard'" :busy="busy" :error="authError" :dev-auth="config.dev_auth" :wechat-auth="config.wechat_auth" :offline="offline" :connecting="operations.busy.init"
                       :authenticated="!!user" :ready="ready" @save="authenticateForm" @privacy="modal = 'privacy'"
                       @retry="initialize" @navigate="operations.clear('auth')"/>
 
@@ -622,7 +666,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <text class="eyebrow">我愿意尝试的下一步</text>
             <text class="next-title">{{ card.next_step }}</text>
             <button class="text-button" @click="modal = 'feedback'" hover-class="pressed" :hover-start-time="0"
-                    :hover-stay-time="70">记下新的进展
+                    :hover-stay-time="70">记下后来的变化
               <SvgIcon name="arrow" :size="17"/>
             </button>
           </view>
@@ -680,25 +724,54 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
 
         <view v-else-if="tab === 'chat'" class="chat-content" :style="{ '--composer-height': `${composerHeight}px` }">
           <text class="eyebrow">LET'S THINK TOGETHER</text>
-          <text class="chat-title">一起，把它理清</text>
+          <text class="chat-title">{{ chatEntry.heading }}</text>
           <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="operations.clear('ai')"><SvgIcon name="close" :size="18" /></button></view>
           <text v-if="config.ai_mode === 'demo'" class="demo-chat-note">本地演示 · 以下回复为固定示例，不调用模型</text>
           <view class="context-pill">
             <view class="live-dot"/>
             <text>{{ current.title || '一次还未命名的探索' }}</text>
           </view>
-          <scroll-view scroll-x class="chat-mode-scroll" :show-scrollbar="false"><view class="chat-modes"><button v-for="mode in supportStyles" :key="mode.id" class="mode-chip" :data-mode="mode.id" :class="{ selected: selectedMode === mode.id }" :disabled="busy || sending" :aria-pressed="selectedMode === mode.id" @click="setSupportStyle(mode.id)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ mode.title }}</button></view></scroll-view>
+          <view class="chat-preference">
+            <text class="chat-preference-label">希望我怎样回应？</text>
+            <button class="chat-mode-trigger" :aria-expanded="modePickerOpen" :disabled="busy || sending"
+                    @click="modePickerOpen = !modePickerOpen" hover-class="pressed"
+                    :hover-start-time="0" :hover-stay-time="70">
+              <text>{{ supportStyles.find(item => item.id === selectedMode)?.title }}</text>
+              <text class="chat-mode-chevron">{{ modePickerOpen ? '⌃' : '⌄' }}</text>
+            </button>
+          </view>
+          <view v-if="modePickerOpen" class="chat-mode-panel">
+            <text class="chat-mode-panel-caption">只是回应偏好，随时可以更改</text>
+            <button v-for="mode in supportStyles" :key="mode.id" class="chat-mode-choice"
+                    :class="{ chosen: selectedMode === mode.id }" :data-mode="mode.id"
+                    :disabled="busy || sending" @click="setChatMode(mode.id as SupportMode)"
+                    hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+              <view class="chat-mode-copy">
+                <text class="chat-mode-name">{{ mode.title }}</text>
+                <text class="chat-mode-detail">{{ mode.detail }}</text>
+              </view>
+              <SvgIcon v-if="selectedMode === mode.id" name="check" :size="17" />
+            </button>
+          </view>
           <view v-if="!messages.length" class="chat-welcome">
-            <image class="welcome-avatar" src="/static/avatar-agency.png" mode="aspectFit" aria-label="Agency OS 头像"/>
-            <text class="body-copy">{{ welcomeContext ? '你刚才留下的线索已带到这里，不必重新填写' : '你不需要一次说清楚，想到什么，就从哪里说起' }}</text>
+            <view class="chat-welcome-intro">
+              <CompanionAvatar :size="32" state="idle" />
+              <text class="body-copy">{{ chatEntry.introduction }}</text>
+            </view>
             <text v-if="welcomeContext" class="welcome-context">{{ welcomeContext }}</text>
+            <view class="chat-starter-heading">
+              <text>也可以这样开始</text>
+              <text>点选后填入输入框</text>
+            </view>
             <view class="prompt-list">
-              <button v-for="prompt in [welcomeContext ? '从我刚才留下的线索开始探索' : '先从一次真实经历开始', '看看我的经历还能连接到什么', '我想试一点，但不想冒太大风险']"
-                      :key="prompt" class="prompt-button" @click="draft = prompt" hover-class="pressed"
-                      :hover-start-time="0" :hover-stay-time="70">{{ prompt }}
-                <SvgIcon name="arrow-diagonal" :size="17"/>
+              <button v-for="prompt in chatEntry.starters" :key="prompt" class="prompt-button"
+                      :disabled="sending || busy" @click="useChatStarter(prompt)"
+                      hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+                <text>{{ prompt }}</text>
+                <SvgIcon name="arrow-diagonal" :size="16" />
               </button>
             </view>
+            <text v-if="starterHint" class="chat-starter-hint">{{ starterHint }}</text>
           </view>
           <view v-for="(message, index) in messages" :id="'message-' + index" :key="index" class="message-row" :class="message.role">
             <CompanionAvatar v-if="message.role === 'assistant'" :size="38"
@@ -744,7 +817,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <text class="chat-disclosure">
             {{ user?.save_chat ? '已开启聊天保存，可在「我的」中关闭并清除' : '完整聊天默认不保存 · 确认的卡片会留下' }}
           </text>
-          <view class="composer"><textarea v-model="draft" class="chat-input" :adjust-position="false" @linechange="measureComposer"
+          <view class="composer"><textarea v-model="draft" class="chat-input" :adjust-position="false" @linechange="measureComposer" @input="starterHint = ''"
                                            :cursor-spacing="24" :disabled="sending" maxlength="2000" :auto-height="true"
                                            placeholder="想到什么，就从哪里说起……"/>
             <button class="send-button" :disabled="!sending && !draft.trim()"
@@ -902,7 +975,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <button class="text-button wide" :disabled="busy" @click="modal = ''">先不保存，继续探索</button>
             </template>
             <template v-else-if="modal === 'feedback'">
-              <text class="page-description">做到了、卡住了，或者改变主意了，都值得记下</text>
+              <text class="page-description">新的发现、疲惫、暂时停下或改变主意，都可以留在这里</text>
               <view class="chips">
                 <button
                     v-for="item in [{ id: 'progress', label: '有了进展' }, { id: 'stuck', label: '遇到阻碍' }, { id: 'change', label: '想法变了' }]"
@@ -912,7 +985,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                 </button>
               </view>
               <textarea v-model="feedbackText" class="text-area" maxlength="2000"
-                        placeholder="发生了什么？你有哪些新的发现？"/>
+                        :placeholder="feedbackKind === 'change' ? '现在，你更愿意怎样选择？也可以先记下还不确定的感受' : feedbackKind === 'stuck' ? '这次体验让你有什么感受？不用急着找到解决办法' : '实际发生了什么？记下一点就好，不必是一项成果'"/>
               <button class="primary" :disabled="busy || !feedbackText.trim()" :loading="busy" @click="saveFeedback"
                       hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">留下这次变化
                 <SvgIcon name="check" light :size="19"/>

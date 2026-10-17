@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Onboarding } from '../domain'
-import { concernOptions, lifeContexts, supportStyles, newOnboarding, toggleConcern, reflectionFor, reflectionHeading, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle } from '../onboarding'
+import { startingConcernOptions, focusChoicesFor, concernOptions, lifeContexts, supportStyles, newOnboarding, toggleConcern, reflectionFor, reflectionHeading, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle, loginSummaryFor } from '../onboarding'
 import ActionButton from './ActionButton.vue'
 import SelectionCard from './SelectionCard.vue'
 import ProgressIndicator from './ProgressIndicator.vue'
 import SvgIcon from './SvgIcon.vue'
 import WelcomeOpening from './WelcomeOpening.vue'
 
-const props = defineProps<{ busy: boolean; error: string; devAuth: boolean; authenticated: boolean; ready: boolean; offline?: boolean }>()
+const props = defineProps<{ busy: boolean; error: string; devAuth: boolean; authenticated: boolean; ready: boolean; offline?: boolean; connecting?: boolean; wechatAuth?: boolean }>()
 const emit = defineEmits<{ save: [form: Onboarding, dev: boolean]; privacy: []; retry: []; navigate: [] }>()
 let cached: ReturnType<typeof restoreDraft> = null
 try {
@@ -17,11 +17,16 @@ try {
   if (stored && !cached) uni.removeStorageSync(DRAFT_KEY)
 } catch { /* Storage can be unavailable. */ }
 const form = reactive({ ...newOnboarding(), ...cached?.form })
+if (!form.exploration_intent && form.concerns.length === 1) form.exploration_intent = form.concerns[0]
 const storyKey = 'agency.opening.story.v1'
 let storySeen = props.authenticated
 try { storySeen = storySeen || !!uni.getStorageSync(storyKey) } catch { /* Optional presentation state. */ }
 const step = ref(cached?.step ?? (storySeen ? 0 : -1))
 const accepted = ref(false)
+const otherOpen = ref(!!form.actual_question)
+const responseOpen = ref(!!form.title || (!!form.focus_response && !focusChoicesFor(form).includes(form.focus_response)))
+const detailsOpen = ref(!!form.background || form.constraints.length > 0)
+const focusChoices = computed(() => focusChoicesFor(form))
 const introduction = ref(false)
 const draftInfo = ref(false)
 const localError = ref('')
@@ -37,12 +42,15 @@ const reflectionTitle = computed(() => reflectionHeading(form))
 const contextLabels = computed(() => lifeContexts.filter(item => form.life_contexts?.includes(item.id)))
 const support = computed(() => form.support_style ? supportStyles.find(item => item.id === canonicalSupportStyle(form.support_style)) : undefined)
 const branch = computed(() => branchFor(form))
+const loginSummary = computed(() => loginSummaryFor(form))
+// Recheck stale startup failures on entry; local onboarding still never waits for it
+watch(step, value => { if (value === 5 && props.offline && !props.connecting) emit('retry') }, { immediate: true })
 const constraintsText = computed({ get: () => form.constraints.join('\n'), set: value => { form.constraints = value.split('\n').map(v => v.trim()).filter(Boolean).slice(0, 12) } })
 const canContinue = computed(() => step.value === 0 ? form.concerns.length > 0 : step.value === 1 ? !!form.exploration_intent : step.value === 3 ? !!form.support_style : true)
 const headings = [
-  { label: 'LET’S BEGIN', title: '最近，你想为自己\n寻找什么？', detail: '可以多选，也可以从一个还不成熟的念头开始' },
-  { label: 'A FIRST THREAD', title: '先选一条\n此刻想探索的主线', detail: '其他关注点会保留，可以回来修改' },
-  { label: 'ABOUT YOU', title: '此刻的生活\n主要围绕什么展开', detail: '选几个与你有关的词，也可以跳过' },
+  { label: 'LET’S BEGIN', title: '最近，有什么让你\n感到焦虑、害怕或不安？', detail: '可以多选，也可以只是带着好奇来看看，不用写长段文字' },
+  { label: 'A FIRST THREAD', title: '我们先从\n一件小事聊起', detail: '点选就好，暂时没有答案也可以继续' },
+  { label: 'ABOUT YOU', title: '此刻的生活\n主要围绕什么展开', detail: '点选与你有关的词，也可以直接跳过' },
   { label: 'YOUR STYLE', title: '此刻，你希望\n得到怎样的帮助', detail: '按自己的节奏来，以后也可以改变' },
   { label: 'A BEGINNING', title: '这是一次探索的起点\n而不是对你的定义', detail: '根据固定问题整理，还没有使用 AI' },
 ]
@@ -78,10 +86,21 @@ function rememberScroll(event: { detail: { scrollTop: number } }) {
   lastScrollTop = event.detail.scrollTop
 }
 function choose(id: string) {
+  const wasQuickAnswer = focusChoices.value.includes(form.focus_response || '')
   form.concerns = toggleConcern(form.concerns, id)
-  if (!form.concerns.includes(form.exploration_intent || '')) form.exploration_intent = form.concerns.length === 1 ? form.concerns[0] : ''
+  if (!form.concerns.includes(form.exploration_intent || '')) {
+    if (wasQuickAnswer) form.focus_response = ''
+    form.exploration_intent = form.concerns.length === 1 ? form.concerns[0] : ''
+  }
 }
-function focus(intent: string) { selectMainline(form, intent) }
+function focus(intent: string) {
+  selectMainline(form, intent)
+  responseOpen.value = !!form.title || (!!form.focus_response && !focusChoices.value.includes(form.focus_response))
+}
+function chooseFocus(answer: string) {
+  if (moving.value || props.busy) return
+  form.focus_response = form.focus_response === answer ? '' : answer
+}
 function context(id: string) {
   const values = form.life_contexts || []
   form.life_contexts = values.includes(id) ? values.filter(item => item !== id) : [...values, id]
@@ -97,6 +116,9 @@ function clearDraft() {
   moving.value = false
   Object.assign(form, newOnboarding())
   accepted.value = false
+  otherOpen.value = false
+  responseOpen.value = false
+  detailsOpen.value = false
   draftInfo.value = false
   step.value = -1
   try { uni.removeStorageSync(DRAFT_KEY) } catch { /* Reset still works in memory */ }
@@ -119,23 +141,52 @@ defineExpose({ clearDraft })
         <view :key="'content-' + step" class="flow-body" :class="'flow-' + direction + '-' + (step % 2)">
           <view class="flow-heading"><text class="eyebrow">{{ heading.label }}</text><text class="flow-title">{{ heading.title }}</text><text class="flow-description">{{ heading.detail }}</text></view>
           <view v-if="step === 0" class="selection-stack">
-            <template v-for="item in concernOptions" :key="item.id"><SelectionCard :title="item.title" :detail="item.detail" :icon="item.icon" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" /><textarea v-if="item.id === 'other' && form.concerns.includes('other')" v-model="form.actual_question" class="text-area flow-textarea" maxlength="400" placeholder="想到什么，就从哪里说起，也可以留空" :auto-height="true" /></template>
+            <SelectionCard v-for="item in startingConcernOptions" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" />
+            <view v-if="form.concerns.includes('other') || form.actual_question" class="optional-writing">
+              <button class="optional-toggle" :aria-expanded="otherOpen" @click="otherOpen = !otherOpen" hover-class="pressed">{{ otherOpen ? '收起补充' : '我想补充一句（选填）' }}</button>
+              <textarea v-if="otherOpen" v-model="form.actual_question" class="text-area flow-textarea" maxlength="400" placeholder="一句话就好，也可以不写" :auto-height="true" />
+            </view>
           </view>
           <view v-else-if="step === 1" class="selection-stack">
-            <SelectionCard v-for="item in selected" :key="item.id" :title="item.title" radio :selected="form.exploration_intent === item.id" @select="focus(item.id)" />
-            <view v-if="form.exploration_intent" class="exploration-branch"><text class="branch-question">{{ branch.question }}</text><text v-if="form.exploration_intent === 'unsure'" class="flow-description">我们暂时还不知道哪条路适合你，可以从经历、兴趣和现实条件里寻找线索</text><textarea v-model="form.focus_response" class="text-area flow-textarea branch-response" maxlength="800" :placeholder="branch.placeholder" :auto-height="true" /><text class="field-label">为这次探索起个名字，可选</text><input v-model="form.title" class="text-field exploration-title" maxlength="120" placeholder="还没想好，可以留空" /></view>
+            <template v-if="selected.length > 1">
+              <text class="field-label">先聊哪一个方向？</text>
+              <SelectionCard v-for="item in selected" :key="item.id" :title="item.title" radio :selected="form.exploration_intent === item.id" @select="focus(item.id)" />
+            </template>
+            <view v-if="form.exploration_intent" class="exploration-branch">
+              <text class="branch-question">{{ branch.question }}</text>
+              <text class="flow-description">选一个接近的，也可以不选</text>
+              <view class="quick-answers">
+                <button v-for="answer in focusChoices" :key="answer" class="quick-answer" :class="{ chosen: form.focus_response === answer }"
+                  :aria-pressed="form.focus_response === answer" @click="chooseFocus(answer)" hover-class="pressed" :hover-start-time="0">{{ answer }}</button>
+              </view>
+              <button class="optional-toggle" :aria-expanded="responseOpen" @click="responseOpen = !responseOpen" hover-class="pressed">{{ responseOpen ? '收起补充' : '我想用自己的话说（选填）' }}</button>
+              <view v-if="responseOpen">
+                <textarea v-model="form.focus_response" class="text-area flow-textarea branch-response" maxlength="800" :placeholder="branch.placeholder" :auto-height="true" />
+                <text class="field-label">为这次探索起个名字，选填</text>
+                <input v-model="form.title" class="text-field exploration-title" maxlength="120" placeholder="可以以后再起名字" />
+              </view>
+              <text class="optional-note">不选也不写，点「继续」就好</text>
+            </view>
           </view>
-          <view v-else-if="step === 2"><view class="life-contexts"><button v-for="item in lifeContexts" :key="item.id" class="context-chip" :class="{ chosen: form.life_contexts?.includes(item.id) }" :aria-pressed="form.life_contexts?.includes(item.id)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70" @click="context(item.id)">{{ item.title }}</button></view><text class="field-label">你愿意补充的真实经历，可选</text><textarea v-model="form.background" class="text-area flow-textarea" maxlength="400" placeholder="一件做过的事，就足够作为起点" :auto-height="true" /><text class="field-label">重要的现实条件，可选</text><textarea v-model="constraintsText" class="text-area flow-textarea" maxlength="1200" placeholder="时间、收入、精力或地点，每行一项" :auto-height="true" /></view>
+          <view v-else-if="step === 2">
+            <view class="life-contexts"><button v-for="item in lifeContexts" :key="item.id" class="context-chip" :class="{ chosen: form.life_contexts?.includes(item.id) }" :aria-pressed="form.life_contexts?.includes(item.id)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70" @click="context(item.id)">{{ item.title }}</button></view>
+            <button class="optional-toggle" :aria-expanded="detailsOpen" @click="detailsOpen = !detailsOpen" hover-class="pressed">{{ detailsOpen ? '收起补充' : '有一点经历或现实条件想补充（选填）' }}</button>
+            <view v-if="detailsOpen">
+              <text class="field-label">愿意补充的经历，选填</text><textarea v-model="form.background" class="text-area flow-textarea" maxlength="400" placeholder="一句话、一件小事就够了" :auto-height="true" />
+              <text class="field-label">想照顾到的现实条件，选填</text><textarea v-model="constraintsText" class="text-area flow-textarea" maxlength="1200" placeholder="比如时间、收入或精力，也可以以后聊" :auto-height="true" />
+            </view>
+          </view>
           <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
           <view v-else class="reflection-summary">
             <view class="reflection-card reflection-record"><view class="reflection-mark"><SvgIcon name="compass" :size="24" /><text>你留下的线索，由你解释</text></view>
+              <view v-if="selected.length" class="reflection-context"><text class="muted">这次想关注的方向</text><view class="chips"><text v-for="item in selected" :key="item.id" class="tag">{{ item.title }}</text></view></view>
               <view v-if="form.title" class="reflection-context"><text class="muted">你为这次探索起的名字</text><text class="reflection-copy">{{ form.title }}</text></view>
               <view v-if="form.actual_question" class="reflection-context"><text class="muted">你想探索的问题</text><text class="reflection-copy">{{ form.actual_question }}</text></view>
               <view v-if="form.focus_response && form.focus_response !== form.actual_question" class="reflection-context"><text class="muted">关于当前主线，你补充的</text><text class="reflection-copy">{{ form.focus_response }}</text></view>
               <view v-if="form.background && form.background !== form.focus_response && form.background !== form.actual_question" class="reflection-context"><text class="muted">你填写的经历</text><text class="reflection-copy">{{ form.background }}</text></view>
               <view v-if="form.constraints.length" class="reflection-context"><text class="muted">你想保留的现实条件</text><text v-for="line in form.constraints" :key="line" class="reflection-copy">{{ line }}</text></view>
               <view v-if="contextLabels.length" class="reflection-context"><text class="muted">此刻的生活背景</text><view class="chips"><text v-for="item in contextLabels" :key="item.id" class="tag">{{ item.title }}</text></view></view>
-              <text v-if="!form.title && !form.actual_question && !form.focus_response && !form.background && !form.constraints.length && !contextLabels.length" class="reflection-copy reflection-empty">你选择先看看，具体线索可以慢慢补充</text>
+              <text v-if="!form.title && !form.actual_question && !form.focus_response && !form.background && !form.constraints.length && !contextLabels.length" class="reflection-copy reflection-empty">你选下的方向已经留下，具体经历可以以后再聊</text>
               <view v-if="support" class="reflection-support"><SvgIcon :name="support.icon" :size="19" /><text>{{ support.title }}</text></view>
             </view>
             <view class="reflection-next"><text class="eyebrow">接下来，可以怎样探索</text><text class="reflection-title">{{ reflectionTitle }}</text><text class="reflection-copy">{{ reflection }}</text><text class="reflection-note">固定问题整理 · 还没有进行 AI 分析</text></view>
@@ -152,21 +203,28 @@ defineExpose({ clearDraft })
 
     <view v-else-if="step === 5" key="login" class="login-content">
       <button class="login-back" hover-class="pressed" :disabled="moving" @click="go(4)"><SvgIcon name="back" :size="19" /><text>返回整理</text></button>
-      <view class="login-heading"><text class="eyebrow">KEEP YOUR EXPLORATION</text><text class="flow-title">{{ '把这次探索留在这里\n下次回来继续' }}</text><text class="flow-description">不是注册才能获得答案，而是让你可以接着自己的线索往前走</text></view>
-      <view class="login-focus"><SvgIcon name="compass" :size="22" /><view class="login-focus-copy"><text class="muted">这次探索的起点</text><text>{{ form.title || '一次还未命名的探索' }}</text></view></view>
+      <view class="login-heading"><text class="eyebrow">KEEP YOUR EXPLORATION</text><text class="flow-title">{{ '把这次探索留在这里\n下次回来继续' }}</text><text class="flow-description">留住此刻的线索与好奇，下次不用重新说起</text></view>
+      <view class="login-focus">
+        <view class="login-focus-heading"><SvgIcon name="compass" :size="19" /><text>{{ loginSummary.name ? '你为探索起的名字' : '这次探索的起点' }}</text><text class="login-focus-index">01</text></view>
+        <text class="login-focus-title">{{ loginSummary.name || loginSummary.intent || '从一点好奇开始' }}</text>
+        <text v-if="loginSummary.clue" class="login-focus-clue">{{ loginSummary.clue }}</text>
+        <text v-else-if="loginSummary.name && loginSummary.intent" class="login-focus-intent">{{ loginSummary.intent }}</text>
+        <view class="login-focus-footer"><text v-if="loginSummary.support" class="login-support">{{ loginSummary.support }}</text><view v-if="draftSaved" class="login-draft-state"><view /><text>本机草稿已保留</text></view></view>
+      </view>
       <view v-if="error || localError" class="notice">{{ error || localError }}</view>
-      <view v-else-if="offline" class="notice">暂时无法连接服务，你可以继续浏览，连接恢复后再保存</view>
+      <view v-if="connecting || offline" class="login-connection" :class="{ 'is-reconnecting': connecting }"><view class="connection-dot" /><view class="connection-copy"><text>{{ connecting ? '正在重新连接服务' : '暂时无法连接服务' }}</text><text v-if="!connecting">可以继续浏览，连接恢复后再保存</text></view><button class="connection-retry" :disabled="connecting || busy" @click="$emit('retry')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ connecting ? '连接中' : '重试' }}</button></view>
       <view class="login-actions">
+        <view class="login-consent"><button class="consent-check-target" aria-label="同意用户协议与隐私政策" :aria-pressed="accepted" @click="accepted = !accepted" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><view class="consent-box" :class="{ checked: accepted }"><SvgIcon v-if="accepted" name="check" light :size="13" /></view></button><view class="consent-copy"><text>我已阅读并同意</text><button class="policy-link" @click="$emit('privacy')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">《用户协议》与《隐私政策》</button></view></view>
+        <text v-if="!accepted" class="consent-hint">阅读并勾选后，即可选择登录方式</text>
         <!-- #ifdef MP-WEIXIN -->
-        <ActionButton kind="wechat" :disabled="!accepted" :loading="busy" @click="submit(false)">微信快捷登录 / 注册</ActionButton>
+        <ActionButton kind="wechat" :disabled="!accepted || wechatAuth === false || connecting" :arrow="wechatAuth !== false" :loading="busy" @click="submit(false)">{{ wechatAuth === false ? '微信快捷登录 · 待接入' : '微信快捷登录 / 注册' }}</ActionButton>
+        <text v-if="wechatAuth === false && ready && !offline" class="wechat-setup-note">{{ devAuth ? '微信登录尚未配置，内测可使用下方开发登录' : '微信登录正在准备中，你可以先继续浏览' }}</text>
         <!-- #endif -->
-        <ActionButton v-if="devAuth" :disabled="!accepted" :loading="busy" @click="submit(true)">本地开发演示登录</ActionButton>
+        <ActionButton v-if="devAuth" :disabled="!accepted || connecting" :loading="busy" @click="submit(true)">本地开发演示登录</ActionButton>
         <text v-if="devAuth" class="demo-login-note">开发登录不连接微信，AI 对话仍需另行授权</text>
         <!-- #ifdef H5 -->
         <text v-if="!devAuth && ready" class="demo-login-note">请在微信小程序中完成登录</text>
         <!-- #endif -->
-        <button v-if="offline" class="text-button" :disabled="busy" @click="$emit('retry')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">重新连接服务</button>
-        <view class="login-consent"><button class="consent-check-target" aria-label="同意用户协议与隐私政策" :aria-pressed="accepted" @click="accepted = !accepted" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><view class="consent-box" :class="{ checked: accepted }"><SvgIcon v-if="accepted" name="check" light :size="13" /></view></button><view class="consent-copy"><text>我已阅读并同意</text><button class="policy-link" @click="$emit('privacy')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">《用户协议》与《隐私政策》</button></view></view>
         <ActionButton kind="ghost" :arrow="false" :locked="moving" @click="go(6)">暂不注册，继续看看</ActionButton>
       </view>
       <text class="login-bottom-note">你的想法，值得被认真对待</text>
@@ -182,3 +240,12 @@ defineExpose({ clearDraft })
     </view>
   </view>
 </template>
+
+<style scoped>
+.quick-answers { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 10px; }
+.quick-answer { width:100%; min-height:48px; margin:0; padding:12px 16px; border:1px solid #dce2d8; border-radius:14px; text-align:left; font-size:14px; line-height:1.7; background:#fffdfa; color:#37483d; transition:background 130ms ease,border-color 130ms ease; }
+.quick-answer.chosen { background:#e7eee1; border-color:#6f8863; color:#314c35; }
+.quick-answer::after,.optional-toggle::after { border:0; }
+.optional-toggle { display:block; margin:14px 0 0; padding:12px 0; min-height:44px; text-align:left; color:#52674e; background:transparent; font-size:13px; line-height:1.8; }
+.optional-note { display:block; color:#667180; font-size:12px; line-height:1.8; margin-top:10px; }
+</style>

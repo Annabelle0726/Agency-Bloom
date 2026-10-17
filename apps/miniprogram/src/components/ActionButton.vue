@@ -17,9 +17,10 @@ defineEmits<{ click: [] }>()
 .action-primary { background:var(--button-fill); color:#fff; box-shadow:0 5px 15px #27364c0d; }
 .action-secondary { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
 .action-ghost { background: transparent; color: var(--muted); font-size: 13px; }
-.action-wechat { background: #2b7754; color: #fff; border-radius: 14px; }
+.action-wechat { background: #34634b; color: #fff; border-radius: 8px; border:1px solid #34634b; }
 .action-button[disabled] { background:var(--disabled-fill); color:var(--muted); opacity:1; box-shadow:none; }
 .action-button[disabled] .action-arrow { opacity:.45; }
+.action-wechat[disabled] { background:#e8eee5; border-color:#d7e0d3; color:#60725e; }
 .action-primary.is-locked[disabled] { background:var(--button-fill); color:#fff; }
 .action-secondary.is-locked[disabled] { background:var(--paper); color:var(--ink); }
 .is-locked[disabled] .action-arrow { opacity:1; }

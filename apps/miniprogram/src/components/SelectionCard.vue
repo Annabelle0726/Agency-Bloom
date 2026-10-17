@@ -6,8 +6,13 @@ defineEmits<{ select: [] }>()
 <template>
   <button class="selection-card" :class="{ chosen: selected, detailed: detail }" :aria-pressed="selected" hover-class="selection-pressed" :hover-start-time="0" :hover-stay-time="70" @click="$emit('select')">
     <view v-if="radio" class="selection-radio" :class="{ checked: selected }"><view /></view>
-    <SvgIcon v-else-if="icon" class="selection-icon" :name="icon" :size="21" />
-    <view class="selection-copy"><text class="selection-title">{{ title }}</text><text v-if="detail" class="selection-detail">{{ detail }}</text></view>
+    <view class="selection-copy">
+      <view class="selection-heading">
+        <SvgIcon v-if="!radio && icon" class="selection-icon" :name="icon" :size="21" />
+        <text class="selection-title">{{ title }}</text>
+      </view>
+      <text v-if="detail" class="selection-detail" :class="{ 'with-icon': !radio && icon }">{{ detail }}</text>
+    </view>
     <view v-if="!radio" class="selection-check" :class="{ visible: selected }"><SvgIcon name="check" :size="16" /></view>
   </button>
 </template>
@@ -17,6 +22,9 @@ defineEmits<{ select: [] }>()
 .selection-card.chosen { background:var(--selection); border-color:var(--selection-border); box-shadow:inset 0 0 0 .5px var(--selection-border); }
 .selection-icon { width:21px; height:21px; flex-shrink:0; opacity:.85; }
 .selection-copy { flex:1; min-width:0; }
+.selection-heading { display:flex; align-items:center; gap:13px; }
+.selection-heading .selection-title { flex:1; min-width:0; }
+.selection-detail.with-icon { margin-left:34px; }
 .selection-title { display:block; font-size:14px; line-height:1.65; letter-spacing:.15px; }
 .selection-detail { display:block; font-size:12px; line-height:1.7; margin-top:3px; color:var(--muted); }
 .selection-check { display:flex; align-items:center; justify-content:center; width:18px; height:18px; flex-shrink:0; opacity:0; transform:scale(.7); transition:opacity 120ms,transform 160ms var(--ease-out); }

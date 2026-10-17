@@ -198,6 +198,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
     def public_config():
         return {
             "dev_auth": settings.allow_dev_auth and settings.environment == "development",
+            "wechat_auth": bool(settings.wechat_app_id and settings.wechat_app_secret),
             "ai_mode": settings.ai_mode,
             "privacy_version": "2026-10-16",
         }
