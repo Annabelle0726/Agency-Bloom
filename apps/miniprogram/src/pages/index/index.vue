@@ -502,7 +502,12 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                 :hover-stay-time="70" @click="showHistory">
           <SvgIcon name="menu" :size="21"/>
         </button>
-        <text class="space-wordmark">AGENCY OS</text>
+        <view class="brand-lockup" aria-label="Agency OS">
+          <image class="brand-lockup-symbol"
+                 :src="dark ? '/static/brand-sprout-night.png' : '/static/brand-sprout.png'"
+                 mode="aspectFit" />
+          <text class="space-wordmark">AGENCY OS</text>
+        </view>
         <button class="icon-button" aria-label="打开我的设置" hover-class="pressed" :hover-start-time="0"
                 :hover-stay-time="70" @click="selectTab('settings')">
           <SvgIcon name="user" :size="21"/>

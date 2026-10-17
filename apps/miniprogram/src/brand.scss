@@ -1,0 +1,36 @@
+/* Small brand signature in the existing three-part header. The logo is not a button. */
+.topbar > .brand-lockup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.brand-lockup-symbol {
+  display: block;
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+.brand-lockup .space-wordmark {
+  display: block;
+  margin: 0;
+  font-size: 9px;
+  letter-spacing: 2.1px;
+  line-height: 1.2;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.night-home .brand-lockup .space-wordmark {
+  color: #b3c5bb;
+  font-size: 9px;
+  letter-spacing: 2.1px;
+}
+@media (max-width: 350px) {
+  .topbar > .brand-lockup { gap: 4px; }
+  .brand-lockup-symbol { width: 17px; height: 17px; }
+  .brand-lockup .space-wordmark { font-size: 8px; letter-spacing: 1.6px; }
+}
