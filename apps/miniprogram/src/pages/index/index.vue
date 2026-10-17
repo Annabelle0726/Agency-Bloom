@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
 import {onHide, onReady} from '@dcloudio/uni-app'
-import {makePreview, mergeSuggestion} from '../../domain'
-import {newOnboarding, DRAFT_KEY, supportStyles} from '../../onboarding'
+import {makePreview, mergeSuggestion, experimentProposal} from '../../domain'
+import {newOnboarding, DRAFT_KEY, supportStyles, canonicalSupportStyle} from '../../onboarding'
 import OnboardingFlow from '../../components/OnboardingFlow.vue'
 import ActionButton from '../../components/ActionButton.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import SvgIcon from '../../components/SvgIcon.vue'
+import CompanionAvatar from '../../components/CompanionAvatar.vue'
 import {iconSources} from '../../icons'
 import NightCompass from '../../components/NightCompass.vue'
-import type {Card, ChatMessage, Issue, Onboarding, User} from '../../domain'
-import {createApi} from '../../http'
+import type {Card, ChatMessage, Issue, Onboarding, User, Experiment} from '../../domain'
+import {ApiError, createApi} from '../../http'
+import {createOperationState} from '../../operations'
+import type {OperationScope} from '../../operations'
 import {createChatSession} from '../../chat'
 import {createAvatarStore} from '../../avatar'
 
@@ -65,6 +68,13 @@ const config = ref({dev_auth: false, ai_mode: 'demo'})
 const ready = ref(false)
 const screen = ref<'onboard' | 'space'>('onboard')
 const keyboardHeight = ref(0)
+const composerHeight = ref(62)
+async function measureComposer() {
+  await nextTick()
+  uni.createSelectorQuery().select('.composer').boundingClientRect(rect => {
+    if (rect && !Array.isArray(rect) && typeof rect.height === 'number' && rect.height > 0) composerHeight.value = rect.height
+  }).exec()
+}
 const statusHeight = ref(0)
 const capsuleBottom = ref(0)
 // #ifdef MP-WEIXIN
@@ -77,9 +87,13 @@ uni.onKeyboardHeightChange(keyboardChanged)
 onUnmounted(() => uni.offKeyboardHeightChange(keyboardChanged))
 // #endif
 const tab = ref<'now' | 'chat' | 'settings'>('now')
-const modal = ref<'' | 'privacy' | 'edit' | 'feedback' | 'ai' | 'history' | 'appearance' | 'support'>('')
-const busy = ref(false)
-const error = ref('')
+const modal = ref<'' | 'privacy' | 'edit' | 'feedback' | 'ai' | 'history' | 'appearance' | 'support' | 'experiment'>('')
+const operations = createOperationState()
+const busy = computed(() => operations.busy.auth || operations.busy.data)
+const error = computed({ get: () => operations.errors.data, set: value => { operations.errors.data = value } })
+const authError = computed(() => operations.errors.auth)
+const chatError = computed(() => operations.errors.ai)
+const offline = computed(() => !!operations.errors.init)
 const toast = ref('')
 const form = reactive<Onboarding>(newOnboarding())
 const preview = computed(() => makePreview(form))
@@ -102,11 +116,59 @@ const conversation = createChatSession({
   cancelRemote: id => request('POST', `/requests/${id}/cancel`),
   requestId,
   onError: message => {
-    error.value = message
+    operations.errors.ai = message
   },
   onCancelled: message => notify(message),
 })
-const {messages, draft, pendingText, sending, suggestion} = conversation
+const {messages, draft, pendingText, sending, suggestion, insight, insightReaction} = conversation
+// Animate only genuinely new assistant replies. Restored history remains still.
+const speakingIndex = ref<number | null>(null)
+let speakingTimer: ReturnType<typeof setTimeout> | undefined
+watch(() => messages.value.length, (length, previous) => {
+  if (length <= previous || tab.value !== 'chat' || messages.value[length - 1]?.role !== 'assistant') return
+  if (speakingTimer) clearTimeout(speakingTimer)
+  speakingIndex.value = length - 1
+  speakingTimer = setTimeout(() => { speakingIndex.value = null }, 780)
+})
+onUnmounted(() => { if (speakingTimer) clearTimeout(speakingTimer) })
+watch(() => messages.value.length, async (length, previous) => {
+  if (tab.value !== 'chat' || length <= previous) return
+  await nextTick()
+  uni.pageScrollTo({ selector: `#message-${length - 1}`, duration: 160 })
+})
+const experimentEditor = reactive<Experiment>({ action: '', tests: '', effort: '', stop_rule: '' })
+const experimentFields = [
+  { key: 'action', label: '我愿意试的事情', max: 200 }, { key: 'tests', label: '想验证什么', max: 200 },
+  { key: 'effort', label: '时间、精力与资源上限', max: 120 }, { key: 'stop_rule', label: '什么时候可以停下来', max: 120 },
+] as const
+let experimentBase: Card | null = null
+let experimentVersion = 0
+const canSaveExperiment = computed(() => experimentFields.every(f => experimentEditor[f.key].trim()) &&
+  !!experimentBase && experimentProposal(experimentBase, experimentEditor).next_step.length <= 600)
+const selectedMode = computed(() => canonicalSupportStyle(user.value?.support_style))
+const welcomeContext = computed(() => current.value?.focus_response || current.value?.actual_question || current.value?.background || '')
+
+function reactToInsight(action: 'interested' | 'dismissed' | 'experiment') {
+  if (busy.value || sending.value || !insight.value || !current.value) return
+  const experiment = conversation.reactToInsight(action)
+  if (action === 'dismissed') { notify('已略过这个角度，不会写入卡片'); return }
+  if (action === 'experiment' && experiment) {
+    Object.assign(experimentEditor, experiment)
+    experimentBase = JSON.parse(JSON.stringify(current.value.card))
+    experimentVersion = current.value.version
+    error.value = ''; modal.value = 'experiment'
+  } else notify(insightReaction.value === action ? '问题已带入输入框，你可以修改后再发送' : '输入框里已有较多内容，请先发送或调整后再继续')
+}
+async function saveExperiment() {
+  if (!canSaveExperiment.value || !experimentBase || !current.value || !insight.value) return
+  await guarded(async () => {
+    current.value = await request<Issue>('PUT', `/issues/${current.value!.id}/card`, {
+      version: experimentVersion, card: experimentProposal(experimentBase!, experimentEditor),
+    })
+    insight.value = null; experimentBase = null; modal.value = ''
+    notify('已留下你确认的小实验，可以随时修改或结束')
+  })
+}
 const feedbackText = ref('')
 const feedbackKind = ref('progress')
 const archives = ref<Issue[]>([])
@@ -160,17 +222,15 @@ async function request<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: strin
   return api.request<T>(method, path, data).promise
 }
 
-async function guarded(action: () => Promise<void>) {
-  if (busy.value) return
-  busy.value = true;
-  error.value = ''
-  try {
-    await action()
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : '暂时没有完成，请稍后重试'
-  } finally {
-    busy.value = false
-  }
+async function guarded(action: () => Promise<void>, scope: OperationScope = 'data') {
+  if (scope !== 'init' && busy.value) return false
+  return operations.run(scope, async () => {
+    try { await action() }
+    catch (err) {
+      if (scope === 'auth' && err instanceof ApiError && (['network', 'timeout'].includes(err.kind) || err.status >= 500)) throw Error('暂时无法连接服务，你可以继续浏览，连接恢复后再保存')
+      throw err
+    }
+  })
 }
 
 async function loadCurrent() {
@@ -188,11 +248,11 @@ async function loadCurrent() {
 async function initialize() {
   await guarded(async () => {
     config.value = await request('GET', '/config')
-    if (token.value) {
-      user.value = await request<User>('GET', '/me');
-      await loadCurrent()
-    }
-    ready.value = true
+  }, 'init')
+  ready.value = true
+  if (token.value && !offline.value) await guarded(async () => {
+    user.value = await request<User>('GET', '/me')
+    await loadCurrent()
   })
 }
 
@@ -214,10 +274,14 @@ async function saveInitial() {
 async function authenticateForm(draftForm: Onboarding, dev = false) {
   Object.assign(form, draftForm)
   if (user.value) {
-    await guarded(saveInitial);
+    await guarded(saveInitial, 'auth');
     return
   }
   await guarded(async () => {
+    if (offline.value || !ready.value) {
+      config.value = await request('GET', '/config')
+      operations.clear('init'); ready.value = true
+    }
     let path = '/auth/dev'
     const body: { privacy_accepted: true; code?: string } = {privacy_accepted: true}
     if (!dev) {
@@ -238,11 +302,11 @@ async function authenticateForm(draftForm: Onboarding, dev = false) {
       await loadCurrent();
       uni.removeStorageSync(DRAFT_KEY);
       notify('欢迎回来，接着上次的进展')
-    } else if (form.title.trim()) await saveInitial()
+    } else if (form.exploration_intent || form.concerns.length || form.title.trim()) await saveInitial()
     else {
       screen.value = 'onboard'
     }
-  })
+  }, 'auth')
 }
 
 async function selectTab(nextTab: typeof tab.value) {
@@ -268,7 +332,7 @@ function openEditor(proposal = false) {
 }
 
 async function saveEditor() {
-  if (!current.value || !editor.title.trim()) return
+  if (!current.value) return
   await guarded(async () => {
     const updated = {title: editor.title.trim(), next_step: editor.next_step.trim()} as Card
     for (const field of editFields) updated[field.key] = editor[field.key].split('\n').map(v => v.trim()).filter(Boolean)
@@ -317,7 +381,7 @@ async function sendChat() {
     modal.value = 'ai';
     return
   }
-  error.value = ''
+  operations.clear('ai')
   await conversation.send(current.value.id)
 }
 
@@ -378,6 +442,7 @@ async function toggleAIConsent() {
   await guarded(async () => {
     user.value = await request('PUT', '/me', {ai_consent: false})
     suggestion.value = null
+    insight.value = null
     notify('已关闭 AI 对话；卡片和反馈仍可使用')
   })
 }
@@ -454,9 +519,9 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         </button>
       </view>
 
-      <OnboardingFlow v-if="screen === 'onboard'" :busy="busy" :error="error" :dev-auth="config.dev_auth"
+      <OnboardingFlow v-if="screen === 'onboard'" :busy="busy" :error="authError" :dev-auth="config.dev_auth" :offline="offline"
                       :authenticated="!!user" :ready="ready" @save="authenticateForm" @privacy="modal = 'privacy'"
-                      @retry="initialize"/>
+                      @retry="initialize" @navigate="operations.clear('auth')"/>
 
       <template v-else-if="current">
         <view v-if="tab === 'now'" class="workspace">
@@ -480,7 +545,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <SvgIcon v-if="!dark" name="compass" :size="21"/>
             <view class="home-focus-copy">
               <text class="eyebrow">此刻，先照顾这一件事</text>
-              <text>{{ current.title }}</text>
+              <text>{{ current.title || '一次还未命名的探索' }}</text>
             </view>
           </view>
           <view class="home-actions">
@@ -550,7 +615,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <text class="eyebrow">正在跟进</text>
               <view class="live-dot"/>
             </view>
-            <text class="card-title">{{ card.title }}</text>
+            <text class="card-title">{{ card.title || '这次探索，还可以继续' }}</text>
             <view class="card-rule"/>
             <view v-for="field in editFields" :key="field.key" class="card-section">
               <text class="card-label" :class="field.key">{{ field.label }}</text>
@@ -590,29 +655,34 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </button>
         </view>
 
-        <view v-else-if="tab === 'chat'" class="chat-content">
+        <view v-else-if="tab === 'chat'" class="chat-content" :style="{ '--composer-height': `${composerHeight}px` }">
           <text class="eyebrow">LET'S THINK TOGETHER</text>
           <text class="chat-title">一起，把它理清</text>
+          <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="operations.clear('ai')"><SvgIcon name="close" :size="18" /></button></view>
           <text v-if="config.ai_mode === 'demo'" class="demo-chat-note">本地演示 · 以下回复为固定示例，不调用模型</text>
           <view class="context-pill">
             <view class="live-dot"/>
-            <text>{{ current.title }}</text>
+            <text>{{ current.title || '一次还未命名的探索' }}</text>
           </view>
+          <scroll-view scroll-x class="chat-mode-scroll" :show-scrollbar="false"><view class="chat-modes"><button v-for="mode in supportStyles" :key="mode.id" class="mode-chip" :data-mode="mode.id" :class="{ selected: selectedMode === mode.id }" :disabled="busy || sending" :aria-pressed="selectedMode === mode.id" @click="setSupportStyle(mode.id)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ mode.title }}</button></view></scroll-view>
           <view v-if="!messages.length" class="chat-welcome">
             <image class="welcome-avatar" src="/static/avatar-agency.png" mode="aspectFit" aria-label="Agency OS 头像"/>
-            <text class="body-copy">{{ '你不需要一次说清楚\n想到什么，就从哪里说起' }}</text>
+            <text class="body-copy">{{ welcomeContext ? '你刚才留下的线索已带到这里，不必重新填写' : '你不需要一次说清楚，想到什么，就从哪里说起' }}</text>
+            <text v-if="welcomeContext" class="welcome-context">{{ welcomeContext }}</text>
             <view class="prompt-list">
-              <button v-for="prompt in ['我还不知道有哪些方向', '帮我比较现在的几个选择', '我知道想做什么，但卡住了']"
+              <button v-for="prompt in [welcomeContext ? '从我刚才留下的线索开始探索' : '先从一次真实经历开始', '看看我的经历还能连接到什么', '我想试一点，但不想冒太大风险']"
                       :key="prompt" class="prompt-button" @click="draft = prompt" hover-class="pressed"
                       :hover-start-time="0" :hover-stay-time="70">{{ prompt }}
                 <SvgIcon name="arrow-diagonal" :size="17"/>
               </button>
             </view>
           </view>
-          <view v-for="(message, index) in messages" :key="index" class="message-row" :class="message.role">
-            <image class="chat-avatar"
-                   :src="message.role === 'assistant' ? '/static/avatar-agency.png' : (userAvatar || '/static/avatar-user.png')"
-                   mode="aspectFill" :aria-label="message.role === 'assistant' ? 'Agency OS 头像' : '你的头像'"/>
+          <view v-for="(message, index) in messages" :id="'message-' + index" :key="index" class="message-row" :class="message.role">
+            <CompanionAvatar v-if="message.role === 'assistant'" :size="38"
+                             :state="speakingIndex === index ? 'speaking' : (index === messages.length - 1 ? 'idle' : 'rest')" />
+            <image v-else class="chat-avatar"
+                   :src="userAvatar || '/static/avatar-user.png'"
+                   mode="aspectFill" aria-label="你的头像"/>
             <view class="message-content">
               <text v-if="message.role === 'assistant'" class="message-name">AGENCY OS</text>
               <text class="message-bubble">{{ message.content }}</text>
@@ -626,10 +696,11 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             </view>
           </view>
           <view v-if="sending" class="thinking">
-            <view class="typing-dot"/>
-            <view class="typing-dot"/>
-            <view class="typing-dot"/>
-            <text>正在整理，随时可以停止</text>
+            <CompanionAvatar :size="38" state="thinking" :interactive="false"/>
+            <view class="thinking-copy">
+              <text class="message-name">AGENCY OS</text>
+              <text>正在回应，随时可以停止</text>
+            </view>
           </view>
           <view v-if="suggestion" class="proposal-card">
             <text class="eyebrow">一个待你确认的想法</text>
@@ -639,10 +710,18 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <SvgIcon name="arrow-diagonal" :size="17"/>
             </button>
           </view>
+          <view v-if="insight" class="insight-card">
+            <view class="insight-heading"><SvgIcon name="spark" :size="20" /><text>还有一种可能</text></view>
+            <text class="insight-observation">{{ insight.observation }}</text>
+            <text class="insight-possibility">{{ insight.possibility }}</text>
+            <text class="insight-uncertainty">{{ insight.uncertainty }}</text>
+            <view class="insight-actions"><button data-insight="interested" :disabled="sending || busy || insightReaction === 'interested'" @click="reactToInsight('interested')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ insightReaction === 'interested' ? '已带入下一次探索' : '这个角度有意思' }}</button><button data-insight="dismissed" :disabled="sending || busy" @click="reactToInsight('dismissed')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">不太像我</button><button data-insight="experiment" :disabled="sending || busy" @click="reactToInsight('experiment')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">让我试一下 <SvgIcon name="arrow-diagonal" :size="15" /></button></view>
+            <text v-if="insightReaction" class="insight-footnote">这只是待探索的角度，尚未写入你的卡片</text>
+          </view>
           <text class="chat-disclosure">
             {{ user?.save_chat ? '已开启聊天保存，可在「我的」中关闭并清除' : '完整聊天默认不保存 · 确认的卡片会留下' }}
           </text>
-          <view class="composer"><textarea v-model="draft" class="chat-input" :adjust-position="false"
+          <view class="composer"><textarea v-model="draft" class="chat-input" :adjust-position="false" @linechange="measureComposer"
                                            :cursor-spacing="24" :disabled="sending" maxlength="2000" :auto-height="true"
                                            placeholder="想到什么，就从哪里说起……"/>
             <button class="send-button" :disabled="!sending && !draft.trim()"
@@ -712,7 +791,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <view>
                 <text class="setting-title">此刻希望获得的帮助</text>
                 <text class="setting-description">
-                  {{ supportStyles.find(item => item.id === user?.support_style)?.title || '帮我理清问题' }}
+                  {{ supportStyles.find(item => item.id === selectedMode)?.title }}
                 </text>
               </view>
               <SvgIcon name="chevron" :size="17"/>
@@ -764,7 +843,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <view class="modal-handle"/>
           <view class="modal-heading">
             <text class="section-title">{{
-                modal === 'edit' ? '这张卡片，由你确认' : modal === 'feedback' ? '最近，有什么变化？' : modal === 'ai' ? '开始之前，先告诉你' : modal === 'history' ? '走过的路' : modal === 'appearance' ? '选择舒服的光线' : modal === 'support' ? '此刻，希望怎样被支持' : '用户协议与隐私政策'
+                modal === 'edit' ? '这张卡片，由你确认' : modal === 'experiment' ? '先试一点，由你决定' : modal === 'feedback' ? '最近，有什么变化？' : modal === 'ai' ? '开始之前，先告诉你' : modal === 'history' ? '走过的路' : modal === 'appearance' ? '选择舒服的光线' : modal === 'support' ? '此刻，希望怎样被支持' : '用户协议与隐私政策'
               }}
             </text>
             <button class="icon-button" :disabled="busy" aria-label="关闭面板" @click="modal = ''" hover-class="pressed"
@@ -787,10 +866,17 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <button v-if="error" class="text-button" @click="reloadVersion" hover-class="pressed"
                       :hover-start-time="0" :hover-stay-time="70">读取最新卡片版本，保留当前编辑
               </button>
-              <button class="primary" :disabled="busy || !editor.title.trim()" :loading="busy" @click="saveEditor"
+              <button class="primary" :disabled="busy" :loading="busy" @click="saveEditor"
                       hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">确认这些内容并保存
                 <SvgIcon name="check" light :size="19"/>
               </button>
+            </template>
+            <template v-else-if="modal === 'experiment'">
+              <text class="body-copy">这是一份可以修改的小实验草稿，确认后才会替换卡片中的下一步，其他已确认信息保持不变</text>
+              <view v-for="field in experimentFields" :key="field.key"><text class="field-label">{{ field.label }}</text><textarea v-model="experimentEditor[field.key]" class="text-area compact experiment-input" :data-experiment="field.key" :maxlength="field.max" :auto-height="true" /></view>
+              <text v-if="!canSaveExperiment" class="muted small">请填写四项内容，合计不超过 600 字；也可以先关闭，继续想想</text>
+              <button class="primary confirm-experiment" :disabled="busy || !canSaveExperiment" :loading="busy" @click="saveExperiment" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">确认，把这个小实验留在卡片里 <SvgIcon name="check" light :size="19" /></button>
+              <button class="text-button wide" :disabled="busy" @click="modal = ''">先不保存，继续探索</button>
             </template>
             <template v-else-if="modal === 'feedback'">
               <text class="page-description">做到了、卡住了，或者改变主意了，都值得记下</text>
@@ -833,7 +919,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                     entry.ended_at ? '已结束' : '正在跟进'
                   }}
                 </text>
-                <text class="card-title">{{ entry.title }}</text>
+                <text class="card-title">{{ entry.title || '一次还未命名的探索' }}</text>
                 <text class="body-copy">{{ entry.card.next_step || '还在探索方向' }}</text>
                 <text v-for="line in entry.card.confirmed" :key="line" class="card-line">{{ line }}</text>
               </view>
@@ -870,7 +956,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             </template>
             <template v-else-if="modal === 'support'">
               <button v-for="item in supportStyles" :key="item.id" class="support-setting"
-                      :class="{ selected: user?.support_style === item.id }" :disabled="busy"
+                      :class="{ selected: canonicalSupportStyle(user?.support_style) === item.id }" :disabled="busy || sending"
                       @click="setSupportStyle(item.id)" hover-class="pressed" :hover-start-time="0"
                       :hover-stay-time="70">
                 <text>{{ item.title }}</text>

@@ -1,12 +1,13 @@
 import type { Onboarding } from './domain'
 
 export const concernOptions = [
-  { id: 'direction', title: '看不到未来的方向', icon: 'compass' },
-  { id: 'change', title: '担心被 AI 和时代淘汰', icon: 'spark' },
-  { id: 'relationships', title: '人际关系让我疲惫', icon: 'people' },
-  { id: 'overload', title: '事情太多，不知道从哪里开始', icon: 'layers' },
-  { id: 'other', title: '还有别的事，我想自己说说', icon: 'chat' },
-  { id: 'unsure', title: '暂时说不清，先看看', icon: 'sun' },
+  { id: 'direction', title: '找到更适合我的方向', detail: '还不知道往哪里走，或者想重新选择', icon: 'compass' },
+  { id: 'change', title: '看看我的能力还能用在哪里', detail: '面对 AI 和行业变化，发现已有经历的新用处', icon: 'spark' },
+  { id: 'choices', title: '认真比较几个选择', detail: '不只看哪个更好，也看看哪个适合现在的我', icon: 'paths' },
+  { id: 'start', title: '改变现状，但不贸然冒险', detail: '先找到一个代价可控的尝试', icon: 'step' },
+  { id: 'possibility', title: '发现一点没想过的可能', detail: '带着好奇，看看还有哪些值得探索的方向', icon: 'sun' },
+  { id: 'other', title: '我想自己说说', detail: '可选，留下一点自己的想法', icon: 'chat' },
+  { id: 'unsure', title: '还不知道，先看看', detail: '还没有方向，也可以开始', icon: 'compass' },
 ]
 export const lifeContexts = [
   { id: 'studying', title: '学习或备考' }, { id: 'searching', title: '求职' },
@@ -16,41 +17,81 @@ export const lifeContexts = [
   { id: 'rest', title: '休整与重新出发' }, { id: 'retired', title: '退休生活' },
   { id: 'other', title: '其他' },
 ]
+export type SupportMode = 'listen' | 'discover' | 'compare' | 'experiment'
+export function canonicalSupportStyle(value?: string): SupportMode {
+  if (value === 'clarify') return 'discover'
+  if (value === 'act') return 'experiment'
+  return ['listen', 'discover', 'compare', 'experiment'].includes(value || '') ? value as SupportMode : 'discover'
+}
 export const supportStyles = [
-  { id: 'listen', title: '先听我说', detail: '给自己一个可以安心倾诉的空间', icon: 'ear' },
-  { id: 'clarify', title: '帮我理清问题', detail: '和我一起整理问题，理清思路', icon: 'compass' },
-  { id: 'compare', title: '和我比较几个选择', detail: '帮我分析不同选项的利弊', icon: 'paths' },
-  { id: 'act', title: '一起找到下一步', detail: '从今天开始，做一点点改变', icon: 'step' },
+  { id: 'listen', title: '先听我说', detail: '不用急着建议，先认真听听我的想法', icon: 'ear' },
+  { id: 'discover', title: '带我发现新的可能', detail: '从我的经历里，看看有没有没想过的方向', icon: 'spark' },
+  { id: 'compare', title: '陪我比较几个选择', detail: '把选择背后的代价、条件和未知说清楚', icon: 'paths' },
+  { id: 'experiment', title: '给我一个值得试的小实验', detail: '不用一下改变人生，先试一点点', icon: 'step' },
 ]
 export const DRAFT_KEY = 'agency.onboarding.v2'
 export function newOnboarding(): Onboarding {
-  return { title: '', concerns: [], stage: 'unsure', background: '', constraints: [], life_contexts: [], support_style: '' }
+  return { title: '', concerns: [], stage: 'unsure', background: '', constraints: [], life_contexts: [], support_style: '',
+    exploration_intent: '', actual_question: '', focus_response: '' }
 }
 export function toggleConcern(selected: string[], id: string) {
   if (selected.includes(id)) return selected.filter(value => value !== id)
   if (id === 'unsure') return ['unsure']
   return [...selected.filter(value => value !== 'unsure'), id]
 }
+const branches = {
+  direction: { question: '最近，是什么让你想重新看看自己的方向？', placeholder: '可以是一段经历、一个念头，也可以暂时留空' },
+  change: { question: '有没有一件事，别人经常找你帮忙，而你自己觉得做起来还挺自然？', placeholder: '说一件具体的小事就好，不需要给自己贴标签' },
+  choices: { question: '你正在考虑哪些方向？现在最难取舍的是什么？', placeholder: '写下你正在比较的选择，也可以先说一个' },
+  start: { question: '这次改变里，你最不想失去的是什么？', placeholder: '比如收入、时间、地点，或已经拥有的生活' },
+  possibility: { question: '你更愿意从过去做过的事情、感兴趣的领域，还是一次新的体验开始探索？', placeholder: '选一个起点，或者留下一点线索' },
+  other: { question: '关于这个念头，你最想再说一点什么？', placeholder: '不必整理好，可以用自己的话说' },
+  unsure: { question: '还没有方向，也可以开始探索', placeholder: '最近让你有一点好奇、投入或想改变的事，可选' },
+}
+export function branchFor(form: Onboarding) {
+  return branches[form.exploration_intent as keyof typeof branches] || branches.other
+}
+export function selectMainline(form: Onboarding, intent: string) {
+  if (form.concerns.includes(intent)) form.exploration_intent = intent
+}
 export function reflectionFor(form: Onboarding) {
-  const style = supportStyles.find(item => item.id === form.support_style)
-  return `你提到了「${form.title || '还没有说清楚的事情'}」${style ? `\n此刻你希望「${style.title}」` : ''}\n\n我们可以先从这一件事开始，慢慢看清它`
+  const hasClues = !!(form.actual_question?.trim() || form.focus_response?.trim() || form.background.trim())
+  const mode = canonicalSupportStyle(form.support_style)
+  if (mode === 'listen') return '从你此刻最想展开的部分说起\n不需要马上得到建议，也不急着决定'
+  if (mode === 'compare') return '如果已有选项，可以比较它们的代价与条件\n还没有时，先留下值得了解的方向，不急着选出答案'
+  if (mode === 'experiment') return '先以你愿意投入的时间与资源为边界，再提出一个可验证、可停止的小尝试\n不要求你作出大的改变'
+  return hasClues ? '围绕你提供的内容，看看是否有新的连接\n每个新角度都需要说明依据，再由你判断是否值得继续' :
+    '可以先从一次真实经历开始，找到具体线索\n再看看它们能否连接到新的可能，不急着下结论'
+}
+export function reflectionHeading(form: Onboarding) {
+  if (form.title.trim()) return '下一步，由你选择'
+  if (form.actual_question?.trim()) return '先从你的问题开始'
+  if (form.focus_response?.trim() || form.background.trim()) return '先沿着这些线索探索'
+  return form.exploration_intent === 'unsure' ? '还没有方向，也可以开始探索' : '这次探索，不急着下结论'
 }
 export function saveDraft(form: Onboarding, step: number, now = Date.now()) {
-  return { version: 2, form: JSON.parse(JSON.stringify(form)), step, savedAt: now }
+  return { version: 3, form: JSON.parse(JSON.stringify(form)), step, savedAt: now }
 }
 export function restoreDraft(value: unknown, now = Date.now()): { form: Onboarding; step: number } | null {
   if (!value || typeof value !== 'object') return null
   const item = value as ReturnType<typeof saveDraft>
-  if (item.version !== 2 || !Number.isInteger(item.step) || item.step < -1 || item.step > 6 ||
+  if (![2, 3].includes(item.version) || !Number.isInteger(item.step) || item.step < -1 || item.step > 6 ||
       typeof item.savedAt !== 'number' || item.savedAt > now || now - item.savedAt > 7 * 86400000) return null
-  const form = item.form
-  if (!form || typeof form.title !== 'string' || form.title.length > 120 ||
-      typeof form.background !== 'string' || form.background.length > 400 ||
-      !Array.isArray(form.concerns) || form.concerns.some((id: unknown) => !concernOptions.some(o => o.id === id)) ||
-      (form.concerns.includes('unsure') && form.concerns.length > 1) ||
-      !Array.isArray(form.life_contexts) || form.life_contexts.some((id: unknown) => !lifeContexts.some(o => o.id === id)) ||
-      !['', ...supportStyles.map(o => o.id)].includes(form.support_style)) return null
-  return { form: { ...newOnboarding(), title: form.title, background: form.background,
-    concerns: [...new Set<string>(form.concerns)], life_contexts: [...new Set<string>(form.life_contexts)],
-    support_style: form.support_style }, step: item.step }
+  const raw = item.form
+  const allowed = [...concernOptions.map(o => o.id), 'relationships', 'overload']
+  const text = (v: unknown, n: number) => typeof v === 'string' && v.length <= n
+  if (!raw || !text(raw.title, 120) || !text(raw.background, 400) ||
+      !Array.isArray(raw.concerns) || raw.concerns.length > 6 || raw.concerns.some((id: unknown) => typeof id !== 'string' || !allowed.includes(id)) ||
+      (raw.concerns.includes('unsure') && raw.concerns.length > 1) ||
+      !Array.isArray(raw.life_contexts) || raw.life_contexts.some((id: unknown) => !lifeContexts.some(o => o.id === id)) ||
+      !['', 'clarify', 'act', ...supportStyles.map(o => o.id)].includes(raw.support_style)) return null
+  const form: Onboarding = { ...newOnboarding(), ...raw }
+  if (!['studying', 'searching', 'working', 'transition', 'unsure'].includes(form.stage) ||
+      !Array.isArray(form.constraints) || form.constraints.length > 12 || form.constraints.some(v => !text(v, 400)) ||
+      !text(form.actual_question, 400) || !text(form.focus_response, 800) || !text(form.exploration_intent, 30)) return null
+  if (form.exploration_intent && !form.concerns.includes(form.exploration_intent)) return null
+  if (item.version === 2 && ['我也不知道，帮我一起理清', '我也不知道，帮我一起理清。'].includes(form.title)) form.title = ''
+  form.concerns = [...new Set<string>(form.concerns)]
+  form.life_contexts = [...new Set<string>(form.life_contexts)]
+  return { form, step: item.step }
 }

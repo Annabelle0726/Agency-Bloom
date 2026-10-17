@@ -1,6 +1,7 @@
 export interface Onboarding {
   title: string; concerns: string[]; stage: string; background: string; constraints: string[]
   life_contexts?: string[]; support_style?: string
+  exploration_intent?: string; actual_question?: string; focus_response?: string
 }
 export interface Card {
   title: string; options: string[]; constraints: string[]; confirmed: string[];
@@ -13,11 +14,18 @@ export interface Issue {
   id: string; title: string; concerns: string[]; stage: string; background: string;
   card: Card; version: number; created_at: string; updated_at: string; ended_at: string | null;
   feedback: { id: string; kind: string; text: string; created_at: string }[]
+  exploration_intent?: string; actual_question?: string; focus_response?: string
 }
 export interface User { id: string; theme: 'light' | 'dark'; save_chat: boolean; ai_consent: boolean; support_style: string }
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }
+export interface Experiment { action: string; tests: string; effort: string; stop_rule: string }
+export interface Insight {
+  title: '还有一种可能'; observation: string; possibility: string; uncertainty: string
+  evidence: string[]; experiment: Experiment | null
+}
 export interface ChatResponse {
   reply: string; suggestion: Suggestion | null; mode: 'demo' | 'deepseek'
+  insight?: Insight | null
   usage?: { prompt_tokens: number; completion_tokens: number; cost_cny: string; currency: string } | null
 }
 
@@ -44,4 +52,9 @@ export function mergeSuggestion(card: Card, suggestion: Suggestion): Card {
   return { ...card, options: suggestion.options.length ? [...suggestion.options] : [...card.options],
     constraints: [...card.constraints], confirmed: [...card.confirmed],
     hypotheses: [...suggestion.hypotheses], unknowns: [...suggestion.unknowns], next_step: suggestion.next_step }
+}
+export function experimentProposal(card: Card, experiment: Experiment): Card {
+  return { ...card, options: [...card.options], constraints: [...card.constraints], confirmed: [...card.confirmed],
+    hypotheses: [...card.hypotheses], unknowns: [...card.unknowns],
+    next_step: `${experiment.action}\n验证：${experiment.tests}\n投入：${experiment.effort}\n停止条件：${experiment.stop_rule}` }
 }

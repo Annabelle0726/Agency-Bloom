@@ -53,8 +53,7 @@
 .night-space .tabbar button .tab-glyph { opacity:.6; }
 .night-space .tabbar button.active .tab-glyph { opacity:.95; }
 .night-space .tabbar button.active .tab-icon-frame { background:#b7d7c610; }
-.night-space .composer { bottom:calc(88px + env(safe-area-inset-bottom)); }
-.night-space.keyboard-open .composer { bottom:calc(var(--keyboard-height) + 8px); }
+.night-space .chat-page { --composer-base-offset:88px; }
 @keyframes night-reveal { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 @media(min-height:780px) {
   .night-home .workspace { padding-top:16px; }

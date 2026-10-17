@@ -30,7 +30,24 @@ SYSTEM_PROMPT = """你是 Agency OS，帮助成年人理解现实处境、探索
 {"reply":"自然中文回复","suggestion":{"options":["待探索选项"],"hypotheses":["明确标注的推测"],
 "unknowns":["待核实信息"],"next_step":"一个可选的低成本尝试"}}
 suggestion 不包含 confirmed、constraints 或用户事实；列表最多6条，每条最多200字，next_step 最多200字。
-所有草稿必须由用户审阅确认后才能保存，不代表已经修改了卡片。"""
+所有草稿必须由用户审阅确认后才能保存，不代表已经修改了卡片。
+产品理念：世界不会总按你的期待运行，但你的可能性也不止眼前这些。温柔但不软弱，好奇但不轻浮，有启发但不编造。
+根据 interaction_mode 调整回应；它只是当前偏好，可以随时改变，不是用户类型或人格。
+listen：认真承接表达，不强制建议、行动或卡片；insight=null。日常问候和情绪交流同样 insight=null。
+discover：依据真实经历与兴趣寻找新连接，解释为什么想到这个角度；信息不足先问一个具体问题，不凭空推断天赋。
+compare：比较用户提出的选择、代价和条件，不替用户决定，收入、时间、地点等约束必须尊重。
+experiment：提出可承受、可停止的小尝试，明确验证什么、时间/精力/资源投入和停止条件，不建议贸然辞职、付费报名或不可逆操作。
+首轮已经提供的 exploration 回答与 confirmed_card 是线索，不要再让用户重复问卷。空标题表示尚未确定，不能伪造目标。
+同一个 JSON 回复允许可选 insight，缺省为 null；无需每轮有惊喜，更不能随机推荐职业或复述选项当成洞见。
+仅有两条以上不同的具体用户原话线索且确实有新连接时，才输出：
+"insight":{"title":"还有一种可能","observation":"引用真实线索的观察","possibility":"一个待探索的新角度",
+"uncertainty":"为什么仍需验证","evidence":["用户原话中的逐字片段一","用户原话中的逐字片段二"],
+"experiment":{"action":"一个低成本尝试","tests":"它验证的问题","effort":"时间精力与资源上限","stop_rule":"可随时停止的条件"}}
+evidence 必须逐字来自用户消息、用户填入的经历/回答、确认事实/约束或反馈，每条4到120字，至少两条不同线索。
+不能引用 AI 以前说的话、卡片 hypotheses、系统选项标签或用户没说过的能力作为证据。
+若暂时无法提出合适实验，experiment=null。用户拒绝这个角度时尊重拒绝，不强行说服，不把它写入长期事实。
+insight_feedback 是当前会话的明确拒绝反馈，不再推荐相同角度，不把拒绝推断为永久偏好或能力结论。
+reply 始终独立成立，suggestion 与 insight 可以同时为 null；不要为了填满字段增加篇幅。"""
 
 
 @dataclass(frozen=True)
@@ -48,12 +65,14 @@ def messages_for(
     life_contexts=None,
     concerns=None,
     current_issue=None,
+    exploration=None,
 ):
+    mode = {"clarify": "discover", "act": "experiment"}.get(support_style, support_style)
     styles = {
         "listen": "先倾听与简短回应，不急于建议",
-        "clarify": "帮助梳理问题，一次澄清一个重点",
+        "discover": "依据真实线索发现新的连接，解释依据，不足时先询问",
         "compare": "比较选项、现实约束和待核实信息",
-        "act": "一起选定一个具体、低成本的小尝试",
+        "experiment": "提出可验证、代价可控且可停止的小实验",
     }
     context = {
         "confirmed_card": card,
@@ -61,7 +80,10 @@ def messages_for(
         "recent_feedback": feedback[:5],
         "user_selected_context": life_contexts or [],
         "selected_concerns": concerns or [],
-        "preferred_support": styles[support_style],
+        "preferred_support": styles.get(mode, styles["discover"]),
+        "interaction_mode": mode,
+        "exploration": exploration or {},
+        "insight_feedback": [f.model_dump() for f in body.insight_feedback],
     }
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -72,6 +94,40 @@ def messages_for(
         *[m.model_dump() for m in body.history[-8:]],
         {"role": "user", "content": body.message},
     ]
+
+
+def ground_insight(result, messages):
+    """Fail closed on unsupported insight anchors; never invent replacement content."""
+    if result.insight is None:
+        return result
+    try:
+        context = json.loads(messages[1]["content"].split("：", 1)[1])
+        card, exploration = context.get("confirmed_card", {}), context.get("exploration", {})
+        sources = [
+            *card.get("confirmed", []),
+            *card.get("constraints", []),
+            exploration.get("question", ""),
+            exploration.get("response", ""),
+        ]
+        sources += [f.get("text", "") for f in context.get("recent_feedback", [])]
+        sources += [m["content"] for m in messages[2:] if m["role"] == "user"]
+        anchors = result.insight.evidence
+        distinct = len(set(anchors)) >= 2 and not any(
+            a in b for i, a in enumerate(anchors) for j, b in enumerate(anchors) if i != j
+        )
+        rejected = {
+            f.get("possibility")
+            for f in context.get("insight_feedback", [])
+            if f.get("reaction") == "dismissed"
+        }
+        valid = result.insight.possibility not in rejected and (
+            context.get("interaction_mode") != "listen"
+            and distinct
+            and all(any(a in s for s in sources) for a in anchors)
+        )
+    except (KeyError, TypeError, ValueError, IndexError):
+        valid = False
+    return result if valid else result.model_copy(update={"insight": None})
 
 
 def reservation_micro(settings, messages):
@@ -121,6 +177,7 @@ async def generate(settings, messages, transport=None):
         response.raise_for_status()
         payload = response.json()
         result = AIOutput.model_validate_json(payload["choices"][0]["message"]["content"])
+        result = ground_insight(result, messages)
         if payload["choices"][0].get("finish_reason", "stop") != "stop":
             raise ValueError("Incomplete provider output")
         receipt = price_usage(settings, payload["usage"], payload.get("created"))

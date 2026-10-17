@@ -86,3 +86,63 @@ it('keeps text typed after a request started when the response completes', async
   await pending
   expect(h.chat.draft.value).toBe('下一个想法')
 })
+
+const insight = { title: '还有一种可能' as const, observation: '开发经历与解释复杂问题的经历', possibility: '探索技术与业务的连接', uncertainty: '仍需要了解实际工作', evidence: ['开发经历', '解释复杂问题'],
+  experiment: { action: '向朋友解释一个技术概念', tests: '是否享受解释的过程', effort: '二十分钟，不花钱', stop_rule: '不愿继续就停止' } }
+
+it('keeps optional insights in memory and clears them on session reset', async () => {
+  const h = harness(); h.chat.draft.value = '看看我的经历'
+  const pending = h.chat.send('issue'); h.resolve({ reply: '一个待探索角度', suggestion: null, insight, mode: 'deepseek' }); await pending
+  expect(h.chat.insight.value).toEqual(insight)
+  h.chat.reset(); expect(h.chat.insight.value).toBeNull()
+})
+
+it('interest prepares a follow-up without sending or overwriting existing input', () => {
+  const h = harness(); h.chat.insight.value = insight; h.chat.draft.value = '我还有一点补充'
+  h.chat.reactToInsight('interested'); h.chat.reactToInsight('interested')
+  expect(h.chat.draft.value).toContain('我还有一点补充')
+  expect(h.chat.draft.value).toContain('探索技术与业务的连接')
+  expect(h.chat.draft.value.match(/探索技术与业务的连接/g)).toHaveLength(1)
+  expect(h.post).not.toHaveBeenCalled()
+})
+
+it('rejection dismisses an insight without saving or requesting another response', () => {
+  const h = harness(); h.chat.insight.value = insight
+  h.chat.reactToInsight('dismissed')
+  expect(h.chat.insight.value).toBeNull()
+  expect(h.chat.draft.value).toBe('')
+  expect(h.post).not.toHaveBeenCalled()
+})
+
+it('trying an experiment prepares review data without auto-saving or calling the model', () => {
+  const h = harness(); h.chat.insight.value = insight
+  expect(h.chat.reactToInsight('experiment')).toEqual(insight.experiment)
+  expect(h.chat.suggestion.value).toBeNull()
+  expect(h.post).not.toHaveBeenCalled()
+})
+
+it('prepares an editable request when the insight has no experiment', () => {
+  const h = harness(); h.chat.insight.value = { ...insight, experiment: null }
+  h.chat.reactToInsight('experiment')
+  expect(h.chat.draft.value).toContain('低成本')
+  expect(h.post).not.toHaveBeenCalled()
+})
+
+it('sends a rejected angle as bounded session feedback, then forgets it on reset', async () => {
+  const h = harness(); h.chat.insight.value = insight; h.chat.reactToInsight('dismissed')
+  h.chat.draft.value = '换个角度看看'
+  const pending = h.chat.send('issue')
+  expect(h.post.mock.calls[0][1].insight_feedback).toEqual([{ possibility: '探索技术与业务的连接', reaction: 'dismissed' }])
+  h.resolve({ reply: '好，我们换个起点', suggestion: null, mode: 'deepseek' }); await pending
+  h.chat.reset(); h.chat.draft.value = '重新开始'
+  const next = h.chat.send('another-issue')
+  expect(h.post.mock.calls[1][1].insight_feedback).toEqual([])
+  h.resolve({ reply: '好', suggestion: null, mode: 'deepseek' }); await next
+})
+
+it('does not truncate a full user draft or falsely mark a follow-up as prepared', () => {
+  const h = harness(); h.chat.insight.value = insight; h.chat.draft.value = '原'.repeat(2000)
+  h.chat.reactToInsight('interested')
+  expect(h.chat.draft.value).toBe('原'.repeat(2000))
+  expect(h.chat.insightReaction.value).toBe('')
+})

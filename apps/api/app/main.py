@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import logging
 import secrets
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta, timezone
@@ -77,6 +78,9 @@ def issue_view(db, item):
         "title": item.title,
         "concerns": item.concerns,
         "life_contexts": item.life_contexts,
+        "exploration_intent": (item.exploration or {}).get("intent", ""),
+        "actual_question": (item.exploration or {}).get("question", ""),
+        "focus_response": (item.exploration or {}).get("response", ""),
         "stage": item.stage,
         "background": item.background,
         "card": item.card,
@@ -320,6 +324,11 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             title=body.title,
             concerns=body.concerns,
             life_contexts=body.life_contexts,
+            exploration={
+                "intent": body.exploration_intent,
+                "question": body.actual_question,
+                "response": body.focus_response,
+            },
             stage=body.stage,
             background=body.background,
             card=initial.model_dump(),
@@ -470,6 +479,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             item.life_contexts,
             item.concerns,
             current_issue={"title": item.title, "stage": item.stage},
+            exploration=item.exploration,
         )
         reserved = ai.reservation_micro(settings, prompt)
         insert = sqlite_insert if sqlite else pg_insert
@@ -536,6 +546,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                     done.add(Message(issue_id=issue_id, role="assistant", content=result.reply))
             return result.model_dump() | {"mode": settings.ai_mode, "usage": generation.usage}
         except asyncio.CancelledError:
+            logging.getLogger("agency.ai").info("generation_cancelled")
             task.cancel()
             with suppress(asyncio.CancelledError, Exception):
                 await task
@@ -544,7 +555,21 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                 if record:
                     record.status = "cancelled"
             raise HTTPException(409, "已停止本次回复，你输入的内容仍可继续编辑") from None
-        except Exception:
+        except Exception as exc:
+            kind = (
+                "timeout"
+                if isinstance(exc, httpx.TimeoutException)
+                else "network"
+                if isinstance(exc, httpx.RequestError)
+                else "http"
+                if isinstance(exc, httpx.HTTPStatusError)
+                else "protocol"
+            )
+            status = exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else 0
+            # Do not log exception bodies, prompts, identifiers, URLs or credentials
+            logging.getLogger("agency.ai").warning(
+                "generation_failed kind=%s status=%s", kind, status
+            )
             with sessions.begin() as failed:
                 record = failed.get(AIRequest, key)
                 if record:

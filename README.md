@@ -142,6 +142,14 @@ The Quiet Night home uses native raster artwork with editable SVG sources, an ab
 
 ## Checks
 
+The exploration update separates initialization, authentication, signed-in data and AI errors. Anonymous onboarding is local and remains usable without an API connection. It uses deterministic, typed branches for direction, transferable experience, comparison, cautious change and new possibilities; the user selects one mainline while other interests remain editable background. An issue title may stay empty. Local drafts retain the user's question, selected intent, branch answer and optional title separately; seven-day v2 drafts migrate compatibly to v3.
+
+Current interaction preferences are Listen, Discover, Compare and Experiment. Legacy clarify maps to discover and act maps to experiment without rewriting old accounts. Preferences can be changed in chat or My. Optional insight output requires verbatim evidence from at least two distinct user-provided clues. The backend removes an ungrounded insight while retaining the ordinary reply. The gate verifies quotation provenance, not occupational suitability or the reasoning itself.
+
+Insight actions are explicit: interest prepares an editable follow-up, rejection dismisses the angle and carries bounded feedback only in the current session, and trying an experiment opens a review sheet. The experiment specifies action, what it tests, effort and a stop condition; only explicit confirmation updates the existing card's next step. These actions never automatically call a second model. Insight drafts and reactions are not restored as long-term facts.
+
+This update made **no new paid model requests**. See [exploration acceptance](docs/EXPLORATION_VALIDATION.md) for Mock results, native simulator evidence and remaining manual checks. The additive exploration migration has not been applied to remote Supabase. Do not reset an existing database or budget ledger.
+
 ```powershell
 npm run typecheck
 npm run test:ui

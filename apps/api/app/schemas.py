@@ -5,7 +5,19 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 
 Line = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=400)]
 Lines = Annotated[list[Line], Field(max_length=12)]
-SupportStyle = Literal["listen", "clarify", "compare", "act"]
+SupportStyle = Literal["listen", "discover", "compare", "experiment", "clarify", "act"]
+ExplorationIntent = Literal[
+    "",
+    "direction",
+    "change",
+    "choices",
+    "start",
+    "possibility",
+    "other",
+    "unsure",
+    "relationships",
+    "overload",
+]
 LifeContext = Literal[
     "studying",
     "searching",
@@ -41,7 +53,7 @@ class Preferences(StrictModel):
 
 
 class Card(StrictModel):
-    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    title: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)]
     options: Lines = []
     constraints: Lines = []
     confirmed: Lines = []
@@ -51,7 +63,10 @@ class Card(StrictModel):
 
 
 class IssueInput(StrictModel):
-    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    title: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] = ""
+    exploration_intent: ExplorationIntent = ""
+    actual_question: Annotated[str, StringConstraints(max_length=400)] = ""
+    focus_response: Annotated[str, StringConstraints(max_length=800)] = ""
     concerns: list[
         Literal[
             "direction",
@@ -62,10 +77,11 @@ class IssueInput(StrictModel):
             "unsure",
             "choices",
             "start",
+            "possibility",
         ]
     ] = Field(default=[], max_length=6)
     life_contexts: list[LifeContext] = Field(default=[], max_length=11)
-    support_style: SupportStyle = "clarify"
+    support_style: SupportStyle = "discover"
     stage: Literal["studying", "searching", "working", "transition", "unsure"] = "unsure"
     background: Annotated[str, StringConstraints(max_length=400)] = ""
     constraints: Lines = []
@@ -74,6 +90,10 @@ class IssueInput(StrictModel):
     def exclusive_uncertainty(self):
         if "unsure" in self.concerns and len(self.concerns) > 1:
             raise ValueError("unsure must be selected on its own")
+        if self.exploration_intent and self.exploration_intent not in self.concerns:
+            raise ValueError("mainline must be a selected concern")
+        if self.title in ["我也不知道，帮我一起理清", "我也不知道，帮我一起理清。"]:
+            self.title = ""
         return self
 
 
@@ -92,10 +112,16 @@ class ChatMessage(StrictModel):
     content: Annotated[str, StringConstraints(min_length=1, max_length=4000)]
 
 
+class InsightFeedback(StrictModel):
+    possibility: Annotated[str, StringConstraints(min_length=1, max_length=300)]
+    reaction: Literal["dismissed"]
+
+
 class ChatInput(StrictModel):
     request_id: UUID
     message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
     history: list[ChatMessage] = Field(default=[], max_length=8)
+    insight_feedback: list[InsightFeedback] = Field(default=[], max_length=3)
 
 
 class Suggestion(StrictModel):
@@ -105,6 +131,36 @@ class Suggestion(StrictModel):
     next_step: Annotated[str, StringConstraints(max_length=600)] = ""
 
 
+class Experiment(StrictModel):
+    action: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    tests: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    effort: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    stop_rule: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)
+    ]
+
+
+class Insight(StrictModel):
+    title: Literal["还有一种可能"] = "还有一种可能"
+    observation: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)
+    ]
+    possibility: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)
+    ]
+    uncertainty: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)
+    ]
+    evidence: Annotated[
+        list[
+            Annotated[str, StringConstraints(strip_whitespace=True, min_length=4, max_length=120)]
+        ],
+        Field(min_length=2, max_length=4),
+    ]
+    experiment: Experiment | None = None
+
+
 class AIOutput(StrictModel):
     reply: Annotated[str, StringConstraints(min_length=1, max_length=4000)]
     suggestion: Suggestion | None = None
+    insight: Insight | None = None

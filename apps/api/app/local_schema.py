@@ -6,7 +6,10 @@ from sqlalchemy import inspect
 def upgrade_local(engine):
     additions = {
         "users": {"support_style": "VARCHAR(20) NOT NULL DEFAULT 'clarify'"},
-        "issues": {"life_contexts": "JSON NOT NULL DEFAULT '[]'"},
+        "issues": {
+            "life_contexts": "JSON NOT NULL DEFAULT '[]'",
+            "exploration": "JSON NOT NULL DEFAULT '{}'",
+        },
         "ai_requests": {"usage": "JSON"},
     }
     with engine.begin() as connection:

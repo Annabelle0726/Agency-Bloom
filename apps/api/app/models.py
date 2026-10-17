@@ -52,6 +52,7 @@ class Issue(Base):
     title: Mapped[str] = mapped_column(String(120))
     concerns: Mapped[list] = mapped_column(JSON, default=list)
     life_contexts: Mapped[list] = mapped_column(JSON, default=list)
+    exploration: Mapped[dict] = mapped_column(JSON, default=dict)
     stage: Mapped[str] = mapped_column(String(32), default="unsure")
     background: Mapped[str] = mapped_column(Text, default="")
     card: Mapped[dict] = mapped_column(JSON)

@@ -3,6 +3,7 @@
 <style lang="scss" src="./tokens.scss"></style>
 <style lang="scss" src="./alpha.scss"></style>
 <style lang="scss" src="./night-home.scss"></style>
+<style lang="scss" src="./companion-chat.scss"></style>
 <script setup lang="ts">
 import { onLaunch } from '@dcloudio/uni-app'
 onLaunch(() => {})
