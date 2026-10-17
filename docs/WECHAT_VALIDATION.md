@@ -84,6 +84,7 @@ Compiler evidence is generated under output/wechat/{dev,build}/artifacts.json an
 - Window screenshot capture failed with FrameArrived timed out and window capture timed out. Accessibility exposed only generic panes.
 - The traditional cli.bat open command reported IDE service port disabled. It was not enabled by any script.
 - The installed wechatide integration initiated Codex client authorization and returned Waiting for user authorization. A pending authorization is not a successful connection.
+- A later status poll returned AUTH_TASK_ERROR / Failed to connect to WechatIDE. The integration was not retried as a new authorization or treated as an available simulator connection.
 - No simulator Console log was obtained. Do not interpret this as zero Console errors.
 
 ## Required simulator acceptance

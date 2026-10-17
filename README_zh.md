@@ -18,7 +18,7 @@ npm ci
 npm --prefix apps/miniprogram ci
 uv sync --directory apps/api --frozen
 # 仅在文件不存在时创建，不覆盖已有凭证
-Copy-Item apps/api/.env.example apps/api/.env
+if (-not (Test-Path apps/api/.env)) { Copy-Item apps/api/.env.example apps/api/.env }
 ```
 
 单独启动后端：

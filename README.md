@@ -18,7 +18,7 @@ npm ci
 npm --prefix apps/miniprogram ci
 uv sync --directory apps/api --frozen
 # Only create this file if it does not exist; preserve existing credentials
-Copy-Item apps/api/.env.example apps/api/.env
+if (-not (Test-Path apps/api/.env)) { Copy-Item apps/api/.env.example apps/api/.env }
 ```
 
 Run the local API in a separate terminal:
