@@ -16,6 +16,10 @@ export interface Issue {
 }
 export interface User { id: string; theme: 'light' | 'dark'; save_chat: boolean; ai_consent: boolean; support_style: string }
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }
+export interface ChatResponse {
+  reply: string; suggestion: Suggestion | null; mode: 'demo' | 'deepseek'
+  usage?: { prompt_tokens: number; completion_tokens: number; cost_cny: string; currency: string } | null
+}
 
 export const concerns = [
   { id: 'direction', title: '还没找到想走的方向', description: '想探索，也想更了解自己', icon: 'compass' },

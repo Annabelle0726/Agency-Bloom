@@ -27,7 +27,33 @@ if (-not (Test-Path apps/api/.env)) { Copy-Item apps/api/.env.example apps/api/.
 npm run dev:api
 ```
 
-默认后端为 http://127.0.0.1:8000，接口文档位于 /docs。本地演示登录使用 SQLite，AI 返回固定示例，不调用模型。真实微信登录需要配置后端 AppID/AppSecret，详见[接入说明](docs/SETUP.md)
+默认后端为 http://127.0.0.1:8000，接口文档位于 /docs。本地开发登录与 AI 模式相互独立，SQLite 和开发登录也能使用真实 DeepSeek；新拉取仓库的安全默认值仍是 demo，需要主动配置。真实微信登录需要配置后端 AppID/AppSecret，详见[接入说明](docs/SETUP.md)
+
+## 真实 DeepSeek 对话
+
+在被 Git 忽略的 apps/api/.env 中配置，保留已有数据库地址和预算。密钥仅放后端环境文件，不能放入前端 VITE_ 变量：
+
+```ini
+AGENCY_AI_MODE=deepseek
+AGENCY_DEEPSEEK_MODEL=deepseek-flash
+AGENCY_DEEPSEEK_BASE_URL=https://api.deepseek.com
+AGENCY_DEEPSEEK_API_KEY=YOUR_KEY
+AGENCY_MAX_OUTPUT_TOKENS=768
+```
+
+修改环境后重启 dev:api，访问 http://127.0.0.1:8000/api/config，确认 ai_mode=deepseek。后端明确关闭思考和流式输出，采用 JSON 协议；调用失败不会回退为演示回复。输出 tokens 是上限，不要求写满，日常交流保持简短，职业比较可适当展开
+
+本机已经切换到真实模型，2026-10-17 唯一一次付费验证成功，使用 680 输入、60 输出 tokens，按官方人民币费率估算 ¥0.000920，详见[证据与限制](docs/DEEPSEEK_VALIDATION.md)。可执行仅查询凭证、模型与人民币账户状态的检查：
+
+```powershell
+uv run --directory apps/api python ../../tools/verify-deepseek.py
+```
+
+工具的 --live-once 选项会在发起一次真实生成前写入持久标记。本工作区已经执行过，不要删除标记或再次进行付费验证；自动化测试全部使用 MockTransport
+
+普通交流允许 suggestion=null；有价值的职业建议才出现草稿，用户审阅确认后才更新卡片。上下文只包含当前卡片/问题、支持偏好、最多五条最近反馈与八条最近消息，完整聊天默认不永久保存。额度按高峰未缓存价格预留，成功后依据回执结算；费用不确定的失败保留预留，历史已用量不重置
+
+对话加入原创的小芽形象与用户默认头像。「我的」中可主动选择微信头像或恢复默认；所选头像按账号保存在当前设备，不发送给模型。保留 SVG 源文件，小程序使用随包 PNG 保证显示稳定。真实微信头像选择面板和真机软键盘仍需手动验收
 
 ## 微信小程序日常开发
 
@@ -135,7 +161,7 @@ npm run lint:api
 - 可选完整聊天保存、停止回复、反馈、历史记录、账号删除与用量限制
 - 默认 Morning Mist，登录后在「我的 → 外观设置」切换 Quiet Night
 
-Supabase PostgreSQL 迁移与 DeepSeek/微信适配器已准备；远程数据库、真实模型和真实微信登录需要分别接入验收
+真实 DeepSeek 生成与微信原生聊天显示已验证。Supabase PostgreSQL 迁移已准备，包含新增的用量回执列；远程迁移与真实微信登录仍需分别接入验收
 
 ## 代码结构
 

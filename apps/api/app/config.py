@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from typing import Literal
 
@@ -21,6 +22,11 @@ class Settings(BaseSettings):
     ai_monthly_budget_cny: Decimal = Field(default=Decimal("20"), ge=0, le=100)
     input_price_per_million: Decimal = Field(default=Decimal("2"), ge=0)
     output_price_per_million: Decimal = Field(default=Decimal("8"), ge=0)
+    cached_input_price_per_million: Decimal = Field(default=Decimal("0.04"), ge=0)
+    offpeak_price_multiplier: Decimal = Field(default=Decimal("0.5"), gt=0, le=1)
+    # Explicit Chinese public holidays can be added without guessing a calendar.
+    # An unknown weekday holiday is conservatively charged at the peak ceiling.
+    deepseek_offpeak_dates: list[date] = []
     max_output_tokens: int = Field(default=1200, ge=256, le=4096)
     daily_chat_limit: int = Field(default=30, ge=1, le=200)
     ai_timeout_seconds: float = Field(default=45, gt=0, le=120)

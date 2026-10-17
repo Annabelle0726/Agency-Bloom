@@ -107,4 +107,4 @@ class Suggestion(StrictModel):
 
 class AIOutput(StrictModel):
     reply: Annotated[str, StringConstraints(min_length=1, max_length=4000)]
-    suggestion: Suggestion
+    suggestion: Suggestion | None = None

@@ -131,11 +131,18 @@ text { overflow-wrap: anywhere; }
 .prompt-list { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .prompt-button { border: 1px solid var(--line); border-radius: 9px; padding: 12px; font-size: 11px; display: flex; align-items: center; gap: 15px; }
 .prompt-button > text { color: var(--accent); }
-.message-row { margin: 25px 0; display: flex; flex-direction: column; align-items: flex-start; }
+.message-row { margin: 25px 0; display: flex; flex-direction: row; align-items: flex-start; gap: 10px; }
+.chat-avatar { display: block; width: 34px; height: 34px; min-width: 34px; flex-shrink: 0; border-radius: 50%; }
+.welcome-avatar { display: block; width: 52px; height: 52px; }
+.message-content { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; flex: 1; }
 .message-name { font-size: 9px; letter-spacing: 1px; color: var(--accent); margin-bottom: 9px; }
 .message-bubble { white-space: pre-line; font-size: 13px; line-height: 1.95; }
-.message-row.user { align-items: flex-end; }
-.user .message-bubble { padding: 13px 16px; border-radius: 12px 12px 2px 12px; background: var(--accent-light); max-width: 90%; }
+.message-row.user { flex-direction: row-reverse; }
+.user .message-content { align-items: flex-end; }
+.user .message-bubble { padding: 11px 14px; border-radius: 8px 2px 8px 8px; background: var(--accent-light); max-width: 100%; box-sizing: border-box; }
+.avatar-profile { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
+.profile-avatar { display: block; width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; }
+.avatar-choose.secondary { min-height: 42px; font-size: 13px; }
 .thinking { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 10px; padding-bottom: 20px; }
 .thinking text { margin-left: 5px; }
 .typing-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; animation: breathe 1.2s infinite ease-in-out; }

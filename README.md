@@ -27,7 +27,33 @@ Run the local API in a separate terminal:
 npm run dev:api
 ```
 
-The default API is http://127.0.0.1:8000; its interactive docs are at /docs. Local demo authentication uses SQLite and fixed example replies, without model calls. Real WeChat authentication requires the backend AppID/AppSecret configuration described in [setup](docs/SETUP.md).
+The default API is http://127.0.0.1:8000; its interactive docs are at /docs. Local development authentication and the AI provider are independent: SQLite/dev login can use real DeepSeek. A fresh checkout defaults to demo AI until explicitly configured. Real WeChat authentication requires the backend AppID/AppSecret configuration described in [setup](docs/SETUP.md).
+
+## Real DeepSeek chat
+
+Set these values in the ignored backend file apps/api/.env, preserving the existing database URL and budget. Put the key only in that file, never in frontend VITE_ variables:
+
+```ini
+AGENCY_AI_MODE=deepseek
+AGENCY_DEEPSEEK_MODEL=deepseek-flash
+AGENCY_DEEPSEEK_BASE_URL=https://api.deepseek.com
+AGENCY_DEEPSEEK_API_KEY=YOUR_KEY
+AGENCY_MAX_OUTPUT_TOKENS=768
+```
+
+Restart dev:api after changing environment settings. GET http://127.0.0.1:8000/api/config must report ai_mode=deepseek. The backend explicitly disables thinking and streaming, uses JSON output, and never falls back to demo replies after provider errors. Output tokens are a ceiling, not a target: casual conversation stays brief; career comparisons can be longer.
+
+The current local installation was switched to real DeepSeek and one paid request succeeded on 2026-10-17. It used 680 input and 60 output tokens, with an estimated CNY 0.000920 cost. See [the detailed evidence and limitations](docs/DEEPSEEK_VALIDATION.md). A GET-only credential/model/CNY balance check is available:
+
+```powershell
+uv run --directory apps/api python ../../tools/verify-deepseek.py
+```
+
+The operator's --live-once option writes a durable attempt guard before one paid generation. That attempt has already been used in this workspace; do not remove its guard or rerun a paid check. Automated tests use MockTransport, not provider credits.
+
+Natural conversation can return suggestion=null. A useful career proposal appears as a draft and reaches the decision card only after user review and confirmation. Context includes the current card/issue, support preference, up to five recent feedback records and eight recent messages; full chat storage remains opt-in. Budget reservations use peak/cache-miss prices and settle successful calls using token receipts; uncertain failures retain their reservation. Historical usage is preserved.
+
+Chat displays an original gentle sprout avatar for Agency OS and a default user avatar. In My, the user can explicitly select a WeChat avatar or restore the default. The chosen file stays on this device, scoped to the account, and is never included in model requests. SVG sources are retained beside bundled PNGs for reliable native rendering. The real WeChat selection sheet and physical-device keyboard still need manual acceptance.
 
 ## Daily Mini Program development
 
@@ -137,7 +163,7 @@ The optional PostgreSQL integration test needs a disposable local database; it d
 - Optional full chat retention, cancellation, feedback, history, account deletion and usage limits
 - Morning Mist by default; Quiet Night is available after login through My > Appearance
 
-Supabase PostgreSQL migrations and DeepSeek/WeChat adapters are prepared. Remote Supabase, real model calls and real WeChat login require their own integration checks.
+Real DeepSeek generation and native chat display have been checked. Supabase PostgreSQL migrations are prepared, including the additive AI usage receipt column; remote migration and real WeChat login still require separate integration checks.
 
 ## Project layout
 

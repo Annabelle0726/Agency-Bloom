@@ -9,11 +9,38 @@ import EmptyState from '../../components/EmptyState.vue'
 import SvgIcon from '../../components/SvgIcon.vue'
 import { iconSources } from '../../icons'
 import NightCompass from '../../components/NightCompass.vue'
-import type { Card, ChatMessage, Issue, Onboarding, Suggestion, User } from '../../domain'
-import { ApiError, createApi } from '../../http'
+import type { Card, ChatMessage, Issue, Onboarding, User } from '../../domain'
+import { createApi } from '../../http'
+import { createChatSession } from '../../chat'
+import { createAvatarStore } from '../../avatar'
 
 const token = ref<string>(uni.getStorageSync('agency.session') || '')
 const user = ref<User | null>(null)
+const localAvatars = createAvatarStore({
+  read: key => uni.getStorageSync(key) || '',
+  write: (key, path) => path ? uni.setStorageSync(key, path) : uni.removeStorageSync(key),
+  save: path => new Promise((resolve, reject) => uni.saveFile({ tempFilePath: path, success: result => resolve(result.savedFilePath), fail: reject })),
+  remove: path => new Promise((resolve, reject) => uni.removeSavedFile({ filePath: path, success: () => resolve(), fail: reject })),
+})
+const userAvatar = ref('')
+const avatarBusy = ref(false)
+watch(() => user.value?.id, id => { userAvatar.value = id ? localAvatars.read(id) : '' })
+async function chooseAvatar(event: { detail: { avatarUrl?: string } }) {
+  const id = user.value?.id, path = event.detail.avatarUrl
+  if (!id || !path || avatarBusy.value) return
+  avatarBusy.value = true
+  try {
+    await localAvatars.choose(id, path)
+    if (user.value?.id === id) { userAvatar.value = localAvatars.read(id); notify('头像已更新，仅保存在这台设备') }
+  } catch { notify('头像没有保存成功，原头像仍然保留') }
+  finally { avatarBusy.value = false }
+}
+async function removeAvatar() {
+  const id = user.value?.id
+  if (!id || avatarBusy.value) return
+  await localAvatars.clear(id)
+  userAvatar.value = ''
+}
 const current = ref<Issue | null>(null)
 const config = ref({ dev_auth: false, ai_mode: 'demo' })
 const ready = ref(false)
@@ -47,13 +74,14 @@ onReady(syncStatusBar)
 watch(dark, syncStatusBar)
 // #endif
 const card = computed(() => current.value?.card ?? preview.value)
-const messages = ref<ChatMessage[]>([])
-const draft = ref('')
-const pendingText = ref('')
-const sending = ref(false)
-const suggestion = ref<Suggestion | null>(null)
-const pendingId = ref('')
-let pendingCancel: (() => void) | null = null
+const conversation = createChatSession({
+  post: (issueId, body) => api.request('POST', `/issues/${issueId}/chat`, body),
+  cancelRemote: id => request('POST', `/requests/${id}/cancel`),
+  requestId,
+  onError: message => { error.value = message },
+  onCancelled: message => notify(message),
+})
+const { messages, draft, pendingText, sending, suggestion } = conversation
 const feedbackText = ref('')
 const feedbackKind = ref('progress')
 const archives = ref<Issue[]>([])
@@ -73,7 +101,7 @@ function notify(message: string) {
   setTimeout(() => { toast.value = '' }, 2800)
 }
 function clearSession() {
-  pendingCancel?.()
+  conversation.reset()
   token.value = ''; user.value = null; current.value = null; messages.value = []; suggestion.value = null
   draft.value = ''; pendingText.value = ''; archives.value = []
   Object.assign(form, newOnboarding())
@@ -92,7 +120,9 @@ async function guarded(action: () => Promise<void>) {
   finally { busy.value = false }
 }
 async function loadCurrent() {
-  current.value = await request<Issue | null>('GET', '/issues/current')
+  const next = await request<Issue | null>('GET', '/issues/current')
+  if (next?.id !== current.value?.id) conversation.reset()
+  current.value = next
   if (current.value) {
     screen.value = 'space'
     messages.value = await request<ChatMessage[]>('GET', `/issues/${current.value.id}/messages`)
@@ -111,7 +141,8 @@ onHide(() => { if (sending.value) cancelChat() })
 async function saveInitial() {
   current.value = await request<Issue>('POST', '/issues', form)
   if (user.value && form.support_style) user.value.support_style = form.support_style
-  screen.value = 'space'; tab.value = 'now'; messages.value = []
+  conversation.reset()
+  screen.value = 'space'; tab.value = 'now'
   uni.removeStorageSync(DRAFT_KEY)
   notify('这件事，已经为你留下了')
 }
@@ -178,24 +209,11 @@ function requestId() {
 async function sendChat() {
   if (sending.value || !draft.value.trim() || !current.value) return
   if (!user.value?.ai_consent) { modal.value = 'ai'; return }
-  error.value = ''; sending.value = true; pendingText.value = draft.value.trim(); suggestion.value = null
-  const id = requestId(); pendingId.value = id
-  const operation = api.request<{ reply: string; suggestion: Suggestion; mode: string }>('POST', `/issues/${current.value.id}/chat`,
-    { request_id: id, message: pendingText.value, history: messages.value.slice(-8) })
-  pendingCancel = operation.cancel
-  try {
-    const result = await operation.promise
-    messages.value.push({ role: 'user', content: pendingText.value }, { role: 'assistant', content: result.reply })
-    suggestion.value = result.suggestion; draft.value = ''
-  } catch (err) {
-    if (err instanceof ApiError && err.cancelled) notify(err.message)
-    else error.value = err instanceof Error ? err.message : '回复没有完成，请重试'
-  } finally { sending.value = false; pendingText.value = ''; pendingCancel = null; pendingId.value = '' }
+  error.value = ''
+  await conversation.send(current.value.id)
 }
 function cancelChat() {
-  const id = pendingId.value
-  pendingCancel?.()
-  if (id) void request('POST', `/requests/${id}/cancel`).catch(() => {})
+  conversation.cancel()
 }
 async function consentAI() {
   await guarded(async () => { user.value = await request('PUT', '/me', { ai_consent: true }); modal.value = '' })
@@ -229,7 +247,7 @@ async function endIssue() {
   if (!current.value || !await confirm('结束这件事', '已经确认的卡片与进展会留在历史里，之后可以开始一个新问题')) return
   await guarded(async () => {
     await request('POST', `/issues/${current.value!.id}/end`)
-    current.value = null; messages.value = []; suggestion.value = null
+    conversation.reset(); current.value = null
     Object.assign(form, newOnboarding())
     screen.value = 'onboard'
   })
@@ -242,7 +260,7 @@ async function logOut() {
 }
 async function deleteAccount() {
   if (!await confirm('删除我的全部记录', '账号、卡片、反馈和已保存的聊天将被永久删除，无法撤销')) return
-  await guarded(async () => { await request('DELETE', '/me'); clearSession(); notify('你的个人记录已删除') })
+  await guarded(async () => { const id = user.value?.id; await request('DELETE', '/me'); if (id) await localAvatars.clear(id); clearSession(); notify('你的个人记录已删除') })
 }
 const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
 </script>
@@ -282,9 +300,9 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         <view v-else-if="tab === 'chat'" class="chat-content">
           <text class="eyebrow">LET'S THINK TOGETHER</text><text class="chat-title">一起，把它理清</text><text v-if="config.ai_mode === 'demo'" class="demo-chat-note">本地演示 · 以下回复为固定示例，不调用模型</text>
           <view class="context-pill"><view class="live-dot" /><text>{{ current.title }}</text></view>
-          <view v-if="!messages.length" class="chat-welcome"><view class="assistant-mark">a·</view><text class="body-copy">{{ '你不需要一次说清楚\n此刻，关于这件事，最让你犹豫的是什么？' }}</text><view class="prompt-list"><button v-for="prompt in ['我还不知道有哪些方向', '帮我比较现在的几个选择', '我知道想做什么，但卡住了']" :key="prompt" class="prompt-button" @click="draft = prompt" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ prompt }} <SvgIcon name="arrow-diagonal" :size="17" /></button></view></view>
-          <view v-for="(message, index) in messages" :key="index" class="message-row" :class="message.role"><text v-if="message.role === 'assistant'" class="message-name">AGENCY OS</text><text class="message-bubble">{{ message.content }}</text></view>
-          <view v-if="sending" class="message-row user"><text class="message-bubble">{{ pendingText }}</text></view>
+          <view v-if="!messages.length" class="chat-welcome"><image class="welcome-avatar" src="/static/avatar-agency.png" mode="aspectFit" aria-label="Agency OS 头像" /><text class="body-copy">{{ '你不需要一次说清楚\n想到什么，就从哪里说起' }}</text><view class="prompt-list"><button v-for="prompt in ['我还不知道有哪些方向', '帮我比较现在的几个选择', '我知道想做什么，但卡住了']" :key="prompt" class="prompt-button" @click="draft = prompt" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ prompt }} <SvgIcon name="arrow-diagonal" :size="17" /></button></view></view>
+          <view v-for="(message, index) in messages" :key="index" class="message-row" :class="message.role"><image class="chat-avatar" :src="message.role === 'assistant' ? '/static/avatar-agency.png' : (userAvatar || '/static/avatar-user.png')" mode="aspectFill" :aria-label="message.role === 'assistant' ? 'Agency OS 头像' : '你的头像'" /><view class="message-content"><text v-if="message.role === 'assistant'" class="message-name">AGENCY OS</text><text class="message-bubble">{{ message.content }}</text></view></view>
+          <view v-if="sending" class="message-row user"><image class="chat-avatar" :src="userAvatar || '/static/avatar-user.png'" mode="aspectFill" aria-label="你的头像" /><view class="message-content"><text class="message-bubble">{{ pendingText }}</text></view></view>
           <view v-if="sending" class="thinking"><view class="typing-dot" /><view class="typing-dot" /><view class="typing-dot" /><text>正在整理，随时可以停止</text></view>
           <view v-if="suggestion" class="proposal-card"><text class="eyebrow">一个待你确认的想法</text><text class="body-copy">{{ suggestion.next_step }}</text><button class="text-button" @click="openEditor(true)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">查看草稿，确认后加入卡片 <SvgIcon name="arrow-diagonal" :size="17" /></button></view>
           <text class="chat-disclosure">{{ user?.save_chat ? '已开启聊天保存，可在「我的」中关闭并清除' : '完整聊天默认不保存 · 确认的卡片会留下' }}</text>
@@ -293,6 +311,12 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
 
         <view v-else class="settings-content">
           <text class="eyebrow">MAKE YOURSELF AT HOME</text><text class="page-title">{{ '你的空间，\n由你做主' }}</text>
+          <view class="settings-group avatar-settings"><view class="avatar-profile"><image class="profile-avatar" :src="userAvatar || '/static/avatar-user.png'" mode="aspectFill" @error="userAvatar = ''" /><view><text class="setting-title">你的对话头像</text><text class="setting-description">可选，仅保存在这台设备，不发送给 AI</text></view></view>
+            <!-- #ifdef MP-WEIXIN -->
+            <button class="avatar-choose secondary" open-type="chooseAvatar" :disabled="avatarBusy" @chooseavatar="chooseAvatar" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ avatarBusy ? '正在保存' : '选择微信头像' }}</button>
+            <!-- #endif -->
+            <button v-if="userAvatar" class="text-button" @click="removeAvatar">恢复默认头像</button>
+          </view>
           <view class="settings-group"><text class="group-label">使用偏好</text><button class="setting-row" :disabled="busy" @click="modal = 'appearance'" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><view><text class="setting-title">外观设置</text><text class="setting-description">{{ dark ? '深夜 · Quiet Night' : '晨雾 · Morning Mist' }}</text></view><SvgIcon name="chevron" :size="17" /></button><button class="setting-row" :disabled="busy" @click="toggleSaveChat" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><view><text class="setting-title">保存完整聊天</text><text class="setting-description">关闭时也会清除已保存的聊天</text></view><view class="toggle" :class="{ on: user?.save_chat }"><view /></view></button></view>
           <view class="settings-group"><button class="setting-row" :disabled="busy" @click="toggleAIConsent" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><view><text class="setting-title">允许 AI 对话</text><text class="setting-description">可以随时撤回同意，停止新的处理</text></view><view class="toggle" :class="{ on: user?.ai_consent }"><view /></view></button></view>
           <view class="settings-group"><button class="setting-row" @click="modal = 'support'" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><view><text class="setting-title">此刻希望获得的帮助</text><text class="setting-description">{{ supportStyles.find(item => item.id === user?.support_style)?.title || '帮我理清问题' }}</text></view><SvgIcon name="chevron" :size="17" /></button></view><view class="settings-group"><text class="group-label">我的记录</text><button class="setting-row" @click="showHistory" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><text class="setting-title">回看走过的路</text><SvgIcon name="arrow-diagonal" :size="17" /></button><button class="setting-row" @click="modal = 'privacy'" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><text class="setting-title">隐私与使用说明</text><SvgIcon name="arrow-diagonal" :size="17" /></button></view>

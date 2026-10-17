@@ -103,5 +103,7 @@ class AIRequest(Base):
     )
     month: Mapped[str] = mapped_column(String(7))
     cost_micro: Mapped[int] = mapped_column(Integer)
+    # Usage/pricing metadata only; no prompt, response text, key or private context.
+    usage: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="pending")
     created_at: Mapped[str] = mapped_column(String(40), default=now)

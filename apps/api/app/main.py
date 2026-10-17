@@ -469,6 +469,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             user.support_style,
             item.life_contexts,
             item.concerns,
+            current_issue={"title": item.title, "stage": item.stage},
         )
         reserved = ai.reservation_micro(settings, prompt)
         insert = sqlite_insert if sqlite else pg_insert
@@ -509,7 +510,8 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                     cancelled = check.get(AIRequest, key).status != "pending"
                 if cancelled or await request.is_disconnected():
                     raise asyncio.CancelledError()
-            result, actual_cost = await task
+            generation = await task
+            result, actual_cost = generation.output, generation.cost_micro
             with sessions.begin() as done:
                 record = done.get(AIRequest, key)
                 live_user, live_issue = done.get(User, user_id), done.get(Issue, issue_id)
@@ -527,11 +529,12 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                     .values(used_micro=Budget.used_micro - reserved + max(0, actual_cost))
                 )
                 record.cost_micro = max(0, actual_cost)
+                record.usage = generation.usage
                 record.status = "completed"
                 if live_user.save_chat:
                     done.add(Message(issue_id=issue_id, role="user", content=body.message))
                     done.add(Message(issue_id=issue_id, role="assistant", content=result.reply))
-            return result.model_dump() | {"mode": settings.ai_mode}
+            return result.model_dump() | {"mode": settings.ai_mode, "usage": generation.usage}
         except asyncio.CancelledError:
             task.cancel()
             with suppress(asyncio.CancelledError, Exception):
