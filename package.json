@@ -1,0 +1,29 @@
+{
+  "name": "agency-os",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "npm --prefix apps/miniprogram run dev:preview",
+    "dev:mp": "npm --prefix apps/miniprogram run dev:mp-weixin",
+    "dev:wechat": "node tools/wechat.mjs dev",
+    "wechat:open": "node tools/wechat.mjs open dev",
+    "wechat:open:build": "node tools/wechat.mjs open build",
+    "test:tools": "node --test tools/wechat.test.mjs",
+    "dev:api": "uv run --directory apps/api uvicorn app.main:app --reload --reload-dir app --host 127.0.0.1 --port 8000",
+    "test:api": "uv run --directory apps/api pytest",
+    "test:ui": "npm --prefix apps/miniprogram test",
+    "build:mp": "npm --prefix apps/miniprogram run build:mp-weixin && node tools/check-wechat.mjs build --if-available",
+    "check:mp": "node tools/check-wechat.mjs build",
+    "check:mp:dev": "node tools/check-wechat.mjs dev",
+    "typecheck": "npm --prefix apps/miniprogram run typecheck",
+    "db:link": "supabase link --project-ref ycombbpglsmbvjlrjtgc",
+    "lint:api": "uv run --directory apps/api ruff check app tests"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5",
+    "supabase": "2.111.0"
+  },
+  "dependencies": {
+    "@supabase/server": "^1.9.2"
+  }
+}

@@ -1,0 +1,60 @@
+# 接入与部署
+
+## 当前配置
+
+当前使用本机 SQLite 和固定示例回复。`apps/api/.env` 是后端唯一默认加载的环境文件，前端使用 `apps/miniprogram/.env`。从仓库根目录运行 npm 脚本会自动使用正确的工作目录。
+
+Supabase 项目 ref 为 `ycombbpglsmbvjlrjtgc`。本地 `.env` 中保留项目 URL、publishable key 和 JWKS URL 作为接入资料；当前应用不消费这些变量。`SUPABASE_SECRET_KEY` 留空，应用不需要这个 secret 才能运行。
+
+本项目采用「小程序 → FastAPI → PostgreSQL」结构：微信身份由后端换取并验证 openid，应用签发随机不透明会话，数据库只存会话的 SHA-256 摘要。没有使用 Supabase Auth，因此不能把本应用会话当作 Supabase JWT；也不需要在小程序安装 Supabase JS SDK。
+
+## Supabase（用户决定稍后再接）
+
+本地 Supabase CLI 已锁定在根目录依赖，初始化配置已存在。连接云端时，在自己的终端登录：
+
+```powershell
+npx supabase login
+npm run db:link
+npx supabase db push --dry-run
+# 确认目标项目和迁移内容后才执行：
+npx supabase db push
+```
+
+`supabase login` 使用个人访问令牌，不能使用 publishable key 或 secret API key 代替。数据库连接密码也不是这两种 API key。通过 CLI 安全输入凭据，不要把它们贴在聊天中。
+
+从 Supabase Connect 面板复制适合部署环境的数据库连接信息，配置后端：
+
+```dotenv
+AGENCY_DATABASE_URL=postgresql+psycopg://postgres.PROJECT_REF:URL_ENCODED_PASSWORD@YOUR_SESSION_POOLER_HOST:5432/postgres?sslmode=require
+```
+
+上面是模板，host 必须取自实际项目，密码中的特殊字符需要 URL 编码。一般长期运行的 Python 服务可以使用 direct 或 session pooler；direct 地址的网络支持情况须按部署环境确认。详见 [Supabase 连接文档](https://supabase.com/docs/guides/database/connecting-to-postgres)。
+
+PostgreSQL 始终通过版本化 SQL 迁移建表，应用启动不自动建表。SQLite 开发模式则自动建表。迁移启用所有业务表 RLS，同时撤销 PUBLIC、anon、authenticated、service_role 的直接表权限。客户端仅访问 FastAPI；后端通过可信数据库角色访问，并对每个资源执行用户归属校验。不要把数据库连接串或后端数据库角色下发给前端。RLS 细节见 [官方说明](https://supabase.com/docs/guides/database/postgres/row-level-security)。
+
+## 微信与 DeepSeek
+
+```dotenv
+AGENCY_WECHAT_APP_ID=你的微信小程序AppID
+AGENCY_WECHAT_APP_SECRET=仅保存在后端的AppSecret
+AGENCY_AI_MODE=deepseek
+AGENCY_DEEPSEEK_API_KEY=重新生成的有效密钥
+AGENCY_DEEPSEEK_MODEL=deepseek-flash
+```
+
+前端 `apps/miniprogram/src/manifest.json` 的 `mp-weixin.appid` 已与本机新增的微信开发者工具项目配置同步。后端 AppID 与 AppSecret 仍需在启用真实登录时配置。应用调用 `uni.login`，后端调用微信 `jscode2session`；不收集手机号。当前真实登录协议只完成模拟上游测试，需在开发者工具与真机完成联调。
+
+DeepSeek 请求显式关闭思考模式，限制输出长度，验证 JSON 结构；请求只从后端发起。默认 20 元/月是分配给 AI 的应用额度，服务器等开支需包含在用户设定的总 100 元/月中。输入/输出单价是用于限制请求的可配置估算参数，必须在真实接入时对照账号币种和 [官方最新价格](https://api-docs.deepseek.com/quick_start/pricing/) 校准，并在服务商账户设置可用的余额/额度控制。应用额度不能控制其他程序对同一密钥的调用，也不能代替真实账单。
+
+每次调用在数据库事务中先预留费用，成功后按返回 token 用量和配置单价结算。网络中断、取消或结果不确定时保留预留额度，不自动重试；这可能高估应用用量，但不会因重复重试反复发送同一请求。每天每个账号默认最多 30 次。卡片编辑与反馈不受 AI 额度影响。
+
+## 上线前的具体未完成项
+
+1. 获取微信 AppID/AppSecret、验证小程序类目与实际发布要求，完成真机交互验收。
+2. 部署 Python 服务，配置 HTTPS 和微信 request 合法域名；真机不能访问开发电脑的 `127.0.0.1`。
+3. 连接 Supabase 并应用迁移，核实实际数据区域和备份/留存设置。
+4. 使用替换后的 DeepSeek 密钥做少量真实案例评估，核对费用参数。
+5. 补齐运营主体、联系方式与实际第三方数据说明，再邀请朋友试用。
+6. 处理 `docs/VALIDATION.md` 记录的编译依赖安全告警；开发服务器只绑定本机，不可直接作为公网服务。
+
+生产模式设置 `AGENCY_ENVIRONMENT=production`、`AGENCY_ALLOW_DEV_AUTH=false`。启动检查会拒绝本地登录、SQLite、固定示例 AI 或缺失微信/模型凭据的生产配置。生产 API 文档关闭；反向代理还应限制请求体大小、连接数和认证端点频率。

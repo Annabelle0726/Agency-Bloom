@@ -1,0 +1,25 @@
+# Existing virtual environment at the workspace root
+/Lib/
+/Scripts/
+/pyvenv.cfg
+/.lock
+/CACHEDIR.TAG
+.idea/
+.codeartsdoer/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+output/
+.playwright-cli/
+coverage/
+project.private.config.json

@@ -1,0 +1,44 @@
+name: Check application
+on:
+  push:
+  pull_request:
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/miniprogram/package-lock.json
+      - run: npm ci
+        working-directory: apps/miniprogram
+      - run: npm run test:ui
+      - run: npm run typecheck
+      - run: npm run test:tools
+      - run: npm run build:mp
+      - run: npm --prefix apps/miniprogram run build:preview
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: agency-local-test
+          POSTGRES_DB: agency_verify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      AGENCY_TEST_POSTGRES_URL: postgresql://postgres:agency-local-test@127.0.0.1:5432/agency_verify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --directory apps/api --frozen
+      - run: uv run --directory apps/api ruff check app tests
+      - run: uv run --directory apps/api pytest

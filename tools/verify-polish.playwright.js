@@ -1,0 +1,75 @@
+// Visual and interaction checks against a disposable account on the local API only
+async (sourcePage) => {
+  const context = await sourcePage.context().browser().newContext({ viewport: { width: 390, height: 844 } })
+  const page = await context.newPage()
+  const errors = []
+  let createdToken = ''
+  const button = text => page.locator('uni-button:not([disabled])').filter({ hasText: text })
+  const next = () => button(/^继续$/).click()
+  const snapshot = async name => {
+    await page.waitForLoadState('networkidle')
+    await page.screenshot({ path: 'output/playwright/polish-' + name + '.png', animations: 'disabled' })
+    const brokenIcons = await page.locator('.svg-icon img').evaluateAll(images => images.some(img => !img.complete || img.naturalWidth === 0))
+    if (brokenIcons) throw Error('An SVG failed to load on ' + name)
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw Error('Horizontal overflow on ' + name)
+  }
+  page.on('pageerror', error => errors.push(error.message))
+  try {
+    await page.goto('http://127.0.0.1:5173/')
+    await button('开始探索').click()
+    await button('看不到未来的方向').click()
+    await button('担心被 AI 和时代淘汰').click()
+    await snapshot('selected')
+    await next()
+    await button('看不到未来的方向').click()
+    await snapshot('focus')
+    await next()
+    await button('在职工作').click()
+    await button('职业转换').click()
+    await snapshot('contexts')
+    await next()
+    await button('帮我理清问题').click()
+    await snapshot('support')
+    await next()
+    await snapshot('reflection')
+    await button('保存我的方向').click()
+    await page.locator('.login-content').waitFor()
+    await snapshot('login')
+    if (await page.locator('body').innerText().then(text => text.includes('。'))) throw Error('Auth UI contains full stops')
+    await page.locator('[aria-label="同意用户协议与隐私政策"]').click()
+    const authResponse = page.waitForResponse(response => response.url() === 'http://127.0.0.1:8000/api/auth/dev' && response.ok())
+    await button('体验本地演示').click()
+    createdToken = (await (await authResponse).json()).token
+    await page.locator('.home-actions').waitFor()
+    await page.locator('.toast').waitFor({ state: 'hidden' })
+    await snapshot('home')
+    // Navigate from a scrolled screen; scrolling must not wait for a server response
+    await page.locator('.end-link').scrollIntoViewIfNeeded()
+    await page.locator('.tabbar uni-button').filter({hasText:'对话'}).click()
+    await page.locator('.chat-title').waitFor()
+    await snapshot('chat')
+    const composer = await page.locator('.composer').boundingBox()
+    if (composer.y < 0 || composer.y + composer.height > 844) throw Error('Composer moved outside viewport')
+    await page.locator('.tabbar uni-button').filter({hasText:'我的'}).click()
+    await button('外观设置').click()
+    await button('深夜').click()
+    await page.locator('.preview-stage.dark').waitFor()
+    await snapshot('themes')
+    await button('完成').click()
+    await page.locator('.tabbar uni-button').filter({hasText:'首页'}).click()
+    await snapshot('dark')
+    await page.setViewportSize({width:320, height:640})
+    await snapshot('small')
+    await page.emulateMedia({reducedMotion:'reduce'})
+    await page.locator('.tabbar uni-button').filter({hasText:'对话'}).click()
+    const animation = await page.locator('.chat-content').evaluate(el => getComputedStyle(el).animationName)
+    if (animation !== 'none') throw Error('Reduced motion is not respected')
+    if (errors.length) throw Error(errors.join('\n'))
+  } finally {
+    if (createdToken) {
+      const removed = await context.request.delete('http://127.0.0.1:8000/api/me', {headers:{Authorization:'Bearer ' + createdToken}})
+      if (!removed.ok()) throw Error('Could not remove disposable QA account')
+    }
+    await context.close()
+  }
+}
