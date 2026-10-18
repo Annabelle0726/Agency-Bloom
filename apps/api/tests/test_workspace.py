@@ -66,6 +66,45 @@ def send(client, auth, conv, message="保留收入", **extra):
     )
 
 
+def test_delete_conversation_preserves_exploration_memory_and_other_sessions(workspace):
+    from app.local_schema import upgrade_local
+
+    client, auth, item, captured = workspace
+    first = client.get('/api/conversations', headers=auth).json()[0]
+    second = conversation(client, auth, item)
+    assert send(client, auth, first).status_code == 200
+    memory = client.post('/api/memories', headers=auth, json={
+        'content': '每周两小时', 'confirmed': True, 'source_conversation_id': first['id'],
+    }).json()
+    usage = client.get('/api/usage', headers=auth).json()
+    path = f"/api/conversations/{first['id']}"
+    assert client.delete(path + '?version=1', headers=login(client)).status_code == 404
+    assert client.delete(path + '?version=2', headers=auth).status_code == 409
+    assert client.delete(path + '?version=1', headers=auth).status_code == 204
+    assert client.get(path, headers=auth).status_code == 404
+    assert client.get(path + '/messages', headers=auth).status_code == 404
+    assert client.get(f"/api/conversations/{second['id']}", headers=auth).status_code == 200
+    assert client.get(f"/api/issues/{item['id']}", headers=auth).status_code == 200
+    assert client.get(f"/api/issues/{item['id']}/messages", headers=auth).json() == []
+    assert client.get('/api/usage', headers=auth).json() == usage
+    retained = client.get('/api/memories', headers=auth).json()
+    assert retained[0]['id'] == memory['id']
+    assert retained[0]['source_conversation_id'] is None
+    # Repeated startup must not resurrect the deterministic legacy conversation.
+    route = next(r for r in client.app.routes if r.path == '/api/conversations')
+    dependency = next(d.call for d in route.dependant.dependencies if d.name == 'db')
+    generator = dependency()
+    db = next(generator)
+    upgrade_local(db.get_bind())
+    generator.close()
+    assert client.get(path, headers=auth).status_code == 404
+    count = len(captured)
+    assert client.post(f"/api/issues/{item['id']}/chat", headers=auth, json={
+        'request_id': str(uuid4()), 'message': '旧客户端继续',
+    }).status_code == 409
+    assert len(captured) == count
+
+
 def test_two_conversations_restore_separately_and_archive_without_ending_exploration(workspace):
     client, auth, item, captured = workspace
     first = conversation(client, auth, item)
@@ -332,7 +371,7 @@ def test_local_upgrade_preserves_legacy_messages_and_is_idempotent(tmp_path):
     engine.dispose()
 
 
-@pytest.mark.parametrize("change", ["archive", "memory", "retention", "revoke"])
+@pytest.mark.parametrize("change", ["archive", "memory", "retention", "revoke", "delete"])
 def test_context_changes_cancel_inflight_work_without_saving_stale_reply(tmp_path, change):
     import asyncio
     import threading
@@ -370,7 +409,9 @@ def test_context_changes_cancel_inflight_work_without_saving_stale_reply(tmp_pat
         pending = pool.submit(send, client, auth, conv)
         try:
             assert entered.wait(5)
-            if change == "archive":
+            if change == "delete":
+                result = client.delete(f"/api/conversations/{conv['id']}?version=1", headers=auth)
+            elif change == "archive":
                 result = client.put(
                     f"/api/conversations/{conv['id']}",
                     headers=auth,
@@ -383,10 +424,13 @@ def test_context_changes_cancel_inflight_work_without_saving_stale_reply(tmp_pat
                     "revoke": {"ai_consent": False},
                 }
                 result = client.put("/api/me", headers=auth, json=values[change])
-            assert result.status_code == 200
+            assert result.status_code == (204 if change == "delete" else 200)
         finally:
             release.set()
         assert pending.result(timeout=5).status_code == 409
+        if change == "delete":
+            assert client.get(f"/api/conversations/{conv['id']}", headers=auth).status_code == 404
+            return
         assert (
             client.get(f"/api/conversations/{conv['id']}/messages", headers=auth).json()["items"]
             == []

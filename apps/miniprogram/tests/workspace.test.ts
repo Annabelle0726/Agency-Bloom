@@ -1,6 +1,38 @@
 import { expect, it } from 'vitest'
 import { createChatWorkspace } from '../src/chat-workspace'
 import type { ChatResponse } from '../src/domain'
+import { conversationGreeting } from '../src/conversation-greeting'
+
+it('greets with enabled scoped memory only after consent, otherwise the provided question', () => {
+  const issue = { id: 'a', actual_question: '如何保留收入？' }
+  const memories = [
+    { content: '别的探索', enabled: true, issue_id: 'b' },
+    { content: '停用的记忆', enabled: false, issue_id: null },
+    { content: '每周两小时', enabled: true, issue_id: 'a' },
+  ]
+  expect(conversationGreeting(true, memories, issue)).toContain('每周两小时')
+  expect(conversationGreeting(false, memories, issue)).toContain('如何保留收入？')
+  expect(conversationGreeting(true, memories.slice(0, 2), issue)).toContain('如何保留收入？')
+  expect(conversationGreeting(true, memories)).not.toContain('每周两小时')
+  expect(conversationGreeting(false, [], undefined)).toBe('今天有什么想聊的？从一个问题或一个念头开始就好')
+})
+
+it('removes a window, discards late replies and preserves another window draft', async () => {
+  let reply!: (value: ChatResponse) => void
+  const workspace = createChatWorkspace({
+    post: () => ({ promise: new Promise(resolve => { reply = resolve }), cancel() {} }),
+    cancelRemote: async () => {}, requestId: () => 'deleted', onError() {}, onCancelled() {},
+  })
+  workspace.select('a'); const old = workspace.active.value; old.draft.value = 'A'
+  const pending = old.send('a')
+  workspace.select('b'); workspace.active.value.draft.value = 'B'
+  workspace.remove('a')
+  reply({ reply: '已删除会话的迟到回复', suggestion: null, mode: 'demo' }); await pending
+  expect(old.messages.value).toEqual([])
+  expect(workspace.sessions.a).toBeUndefined()
+  expect(workspace.active.value.draft.value).toBe('B')
+  workspace.remove('b'); expect(workspace.activeId.value).toBe('')
+})
 
 it('switches independent drafts and routes late responses to their originating conversation', async () => {
   const replies = new Map<string, (value: ChatResponse) => void>()

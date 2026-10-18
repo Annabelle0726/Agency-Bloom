@@ -623,6 +623,17 @@ function changedConversation(item: Conversation) {
   if (index < 0) conversations.value.unshift(item); else conversations.value[index] = item
   if (item.archived_at) workspace.get(item.id).cancel()
 }
+async function deletedConversation(id: string) {
+  const wasActive = workspace.activeId.value === id
+  workspace.remove(id)
+  openedIds.value = openedIds.value.filter(key => key !== id)
+  conversations.value = conversations.value.filter(item => item.id !== id)
+  if (wasActive) {
+    if (user.value) { try { uni.removeStorageSync(selectedConversationKey(user.value.id)) } catch { /* Missing IDs are ignored on restore. */ } }
+    const next = conversations.value.find(item => !item.archived_at && item.issue_id === current.value?.id)
+    if (next) await guarded(() => activateConversation(next, false))
+  }
+}
 async function activateConversation(item: Conversation, navigate = true) {
   const session = workspace.get(item.id)
   const issue = await request<Issue>('GET', `/issues/${item.issue_id}`)
@@ -874,6 +885,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <text class="chat-title">{{ activeConversation?.title || chatEntry.heading }}</text>
           <scroll-view v-if="windows.length > 1" scroll-x class="conversation-windows"><button v-for="item in windows" :key="item.id" :class="{ active: item.id === activeConversation?.id }" :disabled="busy" @click="selectConversation(item)">{{ runningIds.includes(item.id) ? '◌ ' : '' }}{{ item.title }}</button></scroll-view>
           <view class="chat-workspace-tools"><button @click="showHistory">会话与探索</button><button :disabled="!activeConversation" @click="drawer = 'summary'">整理当前会话</button><button :disabled="!activeConversation" @click="drawer = 'details'">关联与设置</button></view>
+          <view v-if="!activeConversation" class="notice"><text>当前探索还没有进行中的会话</text><button class="text-button" @click="showHistory">从一段新会话开始</button></view>
           <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="workspace.active.value.error.value = ''; operations.clear('ai')"><SvgIcon name="close" :size="18" /></button><button v-if="workspace.active.value.lastRequestId.value" class="text-button" :disabled="busy" @click="recoverReply">查看这条请求的结果</button></view>
           <text class="chat-context-note">{{ workspace.active.value.summary.value ? '已接续审阅后的总结 · ' : '' }}{{ user?.use_memory ? '长期记忆已启用 · ' : '' }}{{ activeConversation?.linked_issue_ids.length ? `引用 ${activeConversation.linked_issue_ids.length} 个关联探索 · ` : '' }}每段会话保留自己的上下文</text>
           <view v-if="readOnlyConversation" class="notice"><text>{{ current.ended_at ? '所属探索已结束，恢复探索后可以继续' : '会话已归档，可以在会话面板恢复' }}</text><button v-if="current.ended_at" class="text-button" @click="resumeExploration">恢复探索</button></view>
@@ -904,7 +916,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <SvgIcon v-if="selectedMode === mode.id" name="check" :size="17" />
             </button>
           </view>
-          <view v-if="!messages.length" class="chat-welcome">
+          <view v-if="!messages.length && activeConversation" class="chat-welcome">
             <view class="chat-welcome-intro">
               <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" /></view>
               <text class="body-copy">{{ chatEntry.introduction }}</text>
@@ -969,7 +981,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <text class="chat-disclosure">
             {{ user?.save_chat ? '已开启聊天保存，可在「我的」中关闭并清除' : '完整聊天默认不保存 · 确认的卡片会留下' }}
           </text>
-          <view class="composer"><textarea v-model="draft" class="chat-input" :disabled="readOnlyConversation" :adjust-position="false" @linechange="measureComposer" @input="starterHint = ''"
+          <view class="composer"><textarea v-model="draft" class="chat-input" :disabled="readOnlyConversation || !activeConversation" :adjust-position="false" @linechange="measureComposer" @input="starterHint = ''"
                                            :cursor-spacing="24" maxlength="2000" :auto-height="true"
                                            placeholder="想到什么，就从哪里说起……"/>
             <button class="send-button" :disabled="!sending && (!draft.trim() || readOnlyConversation || !activeConversation)"
@@ -1251,7 +1263,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                           :generating="sending" :running="runningIds" :error="chatError || error" :request="request"
                           @close="drawer = ''" @view-changed="drawer = $event" @select="selectConversation" @refresh="guarded(refreshWorkspace)"
                           @create-issue="beginAnotherExploration" @select-issue="selectExploration" @generate="generateSummary" @reviewed="reviewSummary"
-                          @changed="changedConversation" @user-changed="user = $event" @context-changed="workspace.cancelAll()" />
+                          @changed="changedConversation" @deleted="deletedConversation" @user-changed="user = $event" @context-changed="workspace.cancelAll()" />
       <view v-if="toast" class="toast">{{ toast }}</view>
     </view>
   </view>

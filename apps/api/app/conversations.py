@@ -197,6 +197,24 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
     ):
         return conversation_view(db, owned_conversation(db, user, conversation_id))
 
+    @app.delete("/api/conversations/{conversation_id}", status_code=204)
+    def delete_conversation(
+        conversation_id: str,
+        version: int = Query(ge=1),
+        user: User = Depends(authenticated),
+        db: Session = Depends(db_dependency),
+    ):
+        lock_user(db, user)
+        item = owned_conversation(db, user, conversation_id)
+        if item.version != version:
+            raise HTTPException(409, "会话已更新，请重新打开后核对")
+        cancel_pending(db, user.id, item.id)
+        # FK cascades remove messages/links; independently confirmed memories and
+        # usage-only billing records survive with their source reference cleared.
+        db.delete(item)
+        db.commit()
+        return Response(status_code=204)
+
     @app.put("/api/conversations/{conversation_id}")
     def change_conversation(
         conversation_id: str,

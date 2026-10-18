@@ -553,6 +553,10 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         item = owned(db, user, issue_id)
         db.refresh(item)
         active(item)
+        if not conversation:
+            legacy_conversation = db.get(Conversation, issue_id)
+            if not legacy_conversation or legacy_conversation.archived_at:
+                raise HTTPException(409, "原会话已删除或归档，请打开或新建一段会话")
         if conversation:
             db.refresh(conversation)
             if conversation.archived_at:
@@ -633,7 +637,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                 month=month,
                 cost_micro=reserved,
                 kind=body.task,
-                conversation_id=conversation.id if conversation else None,
+                conversation_id=conversation.id if conversation else issue_id,
             )
         )
         try:
@@ -658,7 +662,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                 record = done.get(AIRequest, key)
                 live_user, live_issue = done.get(User, user_id), done.get(Issue, issue_id)
                 live_conversation = (
-                    done.get(Conversation, conversation.id) if conversation else None
+                    done.get(Conversation, conversation.id if conversation else issue_id)
                 )
                 if (
                     record.status != "pending"
@@ -666,7 +670,8 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                     or not live_user.ai_consent
                     or not live_issue
                     or live_issue.ended_at
-                    or (conversation and (not live_conversation or live_conversation.archived_at))
+                    or not live_conversation
+                    or live_conversation.archived_at
                 ):
                     raise asyncio.CancelledError()
                 done.execute(

@@ -51,6 +51,7 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
   return {
     '--bg': p.bg, '--paper': p.paper, '--ink': p.ink, '--muted': p.muted, '--line': p.line,
     '--accent': p.accent, '--button-fill': p.fill, '--soft': p.soft, '--accent-light': p.soft,
+    '--scrollbar-thumb': p.muted, '--scrollbar-track': p.soft,
     '--selection': p.soft, '--selection-border': p.accent, '--disabled-fill': p.soft, '--gold': p.gold,
     '--icon-filter': theme.dark ? 'brightness(0) invert(.91)' : 'none',
     '--shadow': theme.dark ? 'none' : '0 8px 30px #25314809',

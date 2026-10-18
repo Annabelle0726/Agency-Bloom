@@ -4,9 +4,13 @@
 
 An exploration owns a versioned decision card and feedback. Each conversation has a primary exploration, a title, a response mode, independent chat state, and an optional reviewed summary. Multiple explorations can remain active. Up to three other owned exploration cards can be explicitly linked to a conversation; their transcripts are never included automatically.
 
-The right drawer exposes active conversations, archived conversations, exploration switching/creation, and a memory manager. Mobile windows are independently retained conversations shown one at a time, with a strip for switching opened conversations. Only the selected conversation ID is remembered locally per account; drafts and message text are not written to device storage. Closing the drawer does not cancel a reply. Hiding the Mini Program cancels outstanding requests; background execution and desktop side-by-side panes are not promised.
+The left drawer exposes active conversations, explorations, archived conversations (in that order), and a memory manager. Its empty state also opens the new-conversation form. A local greeting quotes one enabled global/current-exploration memory only with memory-use consent, falling back to the user's actual question or neutral copy. This makes no model request and creates no chat message. Native scrollbars are hidden; a theme-colored indicator appears briefly only when scrolling overflowing content. Browser scrollbars use the same theme tokens.
+
+Mobile windows are independently retained conversations shown one at a time, with a strip for switching opened conversations. Only the selected conversation ID is remembered locally per account; drafts and message text are not written to device storage. Closing the drawer does not cancel a reply. Hiding the Mini Program cancels outstanding requests; background execution and desktop side-by-side panes are not promised.
 
 Archiving hides a conversation from the active list and stops a pending response. Restoring it does not create a new exploration. Ending an exploration prevents further chat until it is explicitly resumed. The decision card remains separate from generated chat suggestions, summaries and memories.
+
+Deletion is available in both active and archived lists, after an explicit scope confirmation. `DELETE /api/conversations/{id}?version=N` checks ownership and version, cancels pending requests, and deletes the conversation, messages and context links. Memory source references and usage-only billing references become null; confirmed memories, exploration cards and budget ledgers survive. The UI clears the deleted window/draft and selects another active conversation in that exploration when available. Otherwise it offers a new conversation and disables the composer.
 
 ## Context contract
 
@@ -31,7 +35,7 @@ Deleting a memory removes it from the memory context; it does not redact the sam
 ## API and migration
 
 - `/api/conversations`: create and list (active/archived, exploration filter, offset/limit).
-- `/api/conversations/{id}`: get and versioned update (rename, response mode, links, archive/restore).
+- `/api/conversations/{id}`: get, versioned update (rename, response mode, links, archive/restore), and versioned deletion.
 - `/api/conversations/{id}/messages`: stable `(created_at,id)` cursor pagination and structured response artifacts.
 - `/api/conversations/{id}/summary`: versioned user-reviewed summary or explicit removal.
 - `/api/memories`: owned list and explicitly confirmed creation.
@@ -40,7 +44,7 @@ Deleting a memory removes it from the memory context; it does not redact the sam
 - `/api/requests/{request_id}`: ownership-checked status without another model call. Only retained completed chat is recoverable from messages. No response-body cache is created when retention is off.
 - `/api/issues/{id}/resume`: resume an ended exploration.
 
-`20261018010000_conversations_and_memories.sql` must be applied to a deployment before its new API is started. SQLite development startup performs the corresponding upgrade. Old messages receive a stable conversation whose ID matches their exploration, without inventing thread boundaries. The one-active-exploration index is removed intentionally; accounts, cards, feedback and cost ledgers are preserved. Existing issue-scoped chat endpoints remain compatible for older clients.
+`20261018010000_conversations_and_memories.sql` must be applied to a deployment before its new API is started. SQLite development startup performs the corresponding upgrade. Old messages receive a stable conversation whose ID matches their exploration, without inventing thread boundaries. Backfill runs only when adding the legacy message conversation column, so later startups cannot resurrect deleted conversations. The one-active-exploration index is removed intentionally; accounts, cards, feedback and cost ledgers are preserved. Existing issue-scoped chat endpoints remain compatible while their original conversation exists and is active; otherwise they return 409 before calling the provider and require opening/creating a conversation.
 
 No hosted migration or private local application migration is performed by the verification workflow. Deployment backups and migration execution remain deployment work.
 

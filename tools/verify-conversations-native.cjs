@@ -62,13 +62,14 @@ async function shot(name) { await mp.screenshot({ path: path.join(out, name + '.
   await tapText(page, '会话与探索');
   let panel = await drawer();
   const info = await mp.systemInfo();
-  // The drawer animates from the right; measure its settled position.
-  await until(async () => { const el = await (await drawer()).$('.workspace-drawer'); const p = await el.offset(), s = await el.size(); return p.left > 0 && Math.abs(p.left + s.width - info.windowWidth) < 3; }, 'Drawer did not settle at right edge');
+  // Measure after the slide-in animation has settled.
+  await until(async () => { const el = await (await drawer()).$('.workspace-drawer'); const p = await el.offset(); return Math.abs(p.left) < 1; }, 'Drawer did not settle at left edge');
   panel = await drawer(); const box = await panel.$('.workspace-drawer');
   const pos = await box.offset(), size = await box.size();
   console.log(JSON.stringify({ phase: 'drawer-geometry', width: info.windowWidth, height: info.windowHeight, pos, size }));
   await shot('drawer');
-  assert.ok(pos.left > 0 && Math.abs(pos.left + size.width - info.windowWidth) < 3, 'Drawer anchors on the right');
+  assert.ok(Math.abs(pos.left) < 1 && size.width < info.windowWidth, 'Drawer anchors on the left');
+  assert.deepEqual(await Promise.all((await panel.$$('.conversation-sections button')).map(b => b.text())), ['进行中', '探索', '已归档']);
   await tapText(panel, '＋ 新会话'); panel = await drawer();
   console.log('phase:new-conversation');
   await (await panel.$('.text-input')).input('测试：并行会话 B');
@@ -134,9 +135,57 @@ async function shot(name) { await mp.screenshot({ path: path.join(out, name + '.
   await tapText(page, '会话与探索'); panel = await drawer();
   for (const button of await panel.$$('.conversation-select')) { if ((await button.text()).includes('开始探索')) { await button.tap(); break; } }
   await until(async () => (await page.$$('.message-row')).length === 2, 'Saved A messages not restored');
+  console.log('phase:delete-and-empty-greeting');
+  await tapText(page, '会话与探索'); panel = await drawer();
+  // Delete through the native UI, including the selected conversation.
+  for (let i = 0; i < 2; i++) {
+    panel = await drawer(); await (await panel.$('.delete-conversation')).tap();
+    await until(async () => (await api('/api/conversations')).length === 1 - i, 'Conversation deletion did not finish');
+  }
+  panel = await drawer();
+  assert.ok((await (await panel.$('.empty-greeting')).text()).includes('每周两小时做小尝试'));
+  assert.equal(await panel.$('.drawer-scroll-indicator'), null, 'An idle empty drawer needs no scrollbar');
+  await shot('empty-memory');
+  await (await panel.$('.empty-create')).tap();
+  await until(async () => !!await (await drawer()).$('.text-input'), 'Empty-state creation form did not render');
+  panel = await drawer();
+  await (await panel.$('.text-input')).input('测试：空状态创建'); await tapText(panel, '开始这段会话');
+  await until(async () => (await (await page.$('.chat-title')).text()).includes('空状态创建'), 'Empty-state create did not open a conversation');
+  assert.equal((await page.$$('.message-row')).length, 0, 'Greeting must not fabricate chat turns');
+  // Question fallback and six theme renders use this disposable account only.
+  await api('/api/me', 'PUT', { use_memory: false });
+  const question = await api('/api/issues', 'POST', { title: '测试：工作与学习', actual_question: '如何在保留收入的同时探索新方向？' });
+  for (const item of await api('/api/conversations')) await api(`/api/conversations/${item.id}?version=${item.version}`, 'DELETE');
+  const callsBeforeGreeting = (await api('/qa/status')).calls;
+  for (const theme of ['light', 'dark', 'dawn', 'forest', 'lavender', 'minimal']) {
+    await api('/api/me', 'PUT', { theme });
+    await mp.callWxMethod('reLaunch', { url: '/pages/index/index' });
+    await until(async () => !!await page.$('[data-tab="chat"]'), 'Theme reload did not restore account');
+    await (await page.$('[data-tab="chat"]')).tap(); await wait(300); await fresh();
+    await tapText(page, '会话与探索'); panel = await drawer();
+    // Pin the specific exploration instead of depending on timestamp ordering.
+    await tapText(panel, question.title); panel = await drawer();
+    assert.ok((await (await panel.$('.empty-greeting')).text()).includes(question.actual_question));
+    assert.equal(await panel.$('.drawer-scroll-indicator'), null);
+    await shot('empty-' + theme);
+    const overflow = [];
+    for (let i = 0; i < 9; i++) overflow.push(await api('/api/conversations', 'POST', { issue_id: question.id, title: `测试：方向比较 ${i + 1}` }));
+    await (await panel.$('.drawer-heading .icon-button')).tap(); await fresh(); await tapText(page, '会话与探索'); panel = await drawer();
+    const scroller = await panel.$('.drawer-scroll');
+    assert.ok(await scroller.scrollHeight() > (await scroller.size()).height, 'Overflow fixture must actually scroll');
+    await scroller.scrollTo(0, 240); await wait(80);
+    const indicator = await panel.$('.drawer-scroll-indicator > view');
+    assert.ok(indicator, 'Themed indicator must appear during actual native scrolling');
+    const colors = { light: 'rgb(101, 112, 134)', dark: 'rgb(162, 175, 176)', dawn: 'rgb(123, 104, 88)', forest: 'rgb(95, 113, 99)', lavender: 'rgb(116, 103, 127)', minimal: 'rgb(103, 110, 105)' };
+    assert.equal(await indicator.style('background-color'), colors[theme]);
+    await shot('scroll-' + theme);
+    await wait(1000); assert.equal(await panel.$('.drawer-scroll-indicator'), null, 'Indicator must disappear while idle');
+    for (const item of overflow) await api(`/api/conversations/${item.id}?version=${item.version}`, 'DELETE');
+  }
+  assert.equal((await api('/qa/status')).calls, callsBeforeGreeting, 'Greetings must not call a model');
   assert.equal((await api('/qa/status')).paid_requests, 0);
   assert.deepEqual(errors, []);
   const report = { passed: true, width: info.windowWidth, height: info.windowHeight, model: info.model, paid_requests: 0,
-    flows: ['right drawer', 'independent drafts', 'late reply routing', 'summary review/save', 'memory create/use/merge/disable', 'archive/restore', 'last selected conversation restoration', 'no draft persistence'], runtime_errors: errors };
+    flows: ['left drawer', 'tab order', 'independent drafts', 'late reply routing', 'summary review/save', 'memory create/use/merge/disable', 'archive/restore', 'last selected conversation restoration', 'no draft persistence', 'delete selected and other conversations', 'empty state creation', 'memory greeting', 'question fallback', 'six themes without idle scrollbar', 'six actual overflow scrolls with theme colors and idle dismissal', 'no model call for greetings'], runtime_errors: errors };
   await fs.writeFile(path.join(out, 'native-report.json'), JSON.stringify(report, null, 2)); console.log(JSON.stringify(report));
 })().catch(async error => { try { if (mp) await shot('failure'); } catch {} console.error(error.message, error.stack?.split('\n').slice(1, 7).join('\n'), errors); process.exitCode = 1; }).finally(async () => { if (mp) { try { await mp.restoreWxMethod('showModal'); } catch {} await mp.disconnect(); } });

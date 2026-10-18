@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, getCurrentInstance, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { Conversation, ConversationSummary, Issue, Memory, User } from '../domain'
 import SvgIcon from './SvgIcon.vue'
+import { conversationGreeting } from '../conversation-greeting'
 // Only this drawer consumes the global theme/form styles; its styles do not leak out.
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
@@ -15,9 +16,25 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []; select: [conversation: Conversation]; refresh: []; createIssue: []; selectIssue: [issue: Issue];
   generate: []; reviewed: [summary: ConversationSummary | null]; changed: [conversation: Conversation];
-  userChanged: [user: User]; contextChanged: []; viewChanged: [view: View]
+  userChanged: [user: User]; contextChanged: []; viewChanged: [view: View]; deleted: [id: string]
 }>()
 const busy = ref(false), notice = ref(''), archive = ref(false), filterIssue = ref(''), showExplorations = ref(false)
+const instance = getCurrentInstance()
+const scrollIndicator = ref<{ height: number; top: number } | null>(null)
+let scrollTimer: ReturnType<typeof setTimeout> | undefined
+let alive = true
+onBeforeUnmount(() => { alive = false; clearTimeout(scrollTimer) })
+function onScroll(event: { detail: { scrollTop: number; scrollHeight: number } }) {
+  const { scrollTop, scrollHeight } = event.detail
+  uni.createSelectorQuery().in(instance?.proxy).select('.drawer-scroll').boundingClientRect(rect => {
+    if (!alive || !rect || Array.isArray(rect)) return
+    const height = rect.height || 0
+    if (scrollHeight <= height + 1) { scrollIndicator.value = null; return }
+    const thumb = Math.max(8, Math.min(100, height / scrollHeight * 100))
+    scrollIndicator.value = { height: thumb, top: Math.max(0, Math.min(100 - thumb, scrollTop / (scrollHeight - height) * (100 - thumb))) }
+    clearTimeout(scrollTimer); scrollTimer = setTimeout(() => { scrollIndicator.value = null }, 800)
+  }).exec()
+}
 const title = ref(''), newIssueIndex = ref(0), newForm = ref(false)
 const activeIssues = computed(() => props.issues.filter(i => !i.ended_at))
 const issueNames = computed(() => activeIssues.value.map(i => i.title || '未命名探索'))
@@ -29,6 +46,8 @@ const memories = ref<Memory[]>([]), selected = ref<string[]>([]), editing = ref<
 const memoryContent = ref(''), category = ref<Memory['category']>('fact'), memoryScope = ref(''), memoryFilter = ref('all')
 const categories = [{ id: 'fact', label: '事实' }, { id: 'preference', label: '偏好' }, { id: 'constraint', label: '约束' }] as const
 const shownMemories = computed(() => memories.value.filter(m => memoryFilter.value === 'all' || m.category === memoryFilter.value))
+const greetingIssue = computed(() => props.issues.find(i => i.id === (filterIssue.value || props.active?.issue_id)) || activeIssues.value[0])
+const greeting = computed(() => conversationGreeting(!!props.user?.use_memory, memories.value, greetingIssue.value))
 const heading = computed(() => ({ list: '会话与探索', summary: '整理当前会话', memories: '整理长期记忆', details: '会话设置' }[props.view]))
 function issueName(id: string | null) { return props.issues.find(i => i.id === id)?.title || (id ? '未命名探索' : '所有探索') }
 async function run(action: () => Promise<void>) { if (busy.value) return; busy.value = true; notice.value = ''; try { await action() } catch (e) { notice.value = e instanceof Error ? e.message : '暂时没有完成，请重试' } finally { busy.value = false } }
@@ -37,8 +56,15 @@ watch(() => props.summaryDraft || props.summary, value => {
   edited.overview = value?.overview || ''
   for (const field of summaryFields) edited[field.key] = value?.[field.key].join('\n') || ''
 }, { immediate: true })
-watch(() => props.view, view => { if (view === 'memories') void loadMemories() }, { immediate: true })
+watch(() => [props.view, props.user?.use_memory], () => {
+  if (props.view === 'memories' || (props.view === 'list' && props.user?.use_memory)) void loadMemories()
+}, { immediate: true })
 function loadMemories() { return run(async () => { memories.value = await props.request('GET', '/memories'); selected.value = [] }) }
+function openNewConversation() {
+  if (!activeIssues.value.length) { emit('createIssue'); return }
+  newIssueIndex.value = Math.max(0, activeIssues.value.findIndex(i => i.id === greetingIssue.value?.id))
+  title.value = ''; newForm.value = true; archive.value = false; showExplorations.value = false
+}
 function chooseIssue(event: { detail: { value: string | number } }) { newIssueIndex.value = Number(event.detail.value) }
 async function create() { await run(async () => {
   const issue = activeIssues.value[newIssueIndex.value]; if (!issue) throw Error('请先开始一个探索')
@@ -48,6 +74,13 @@ async function create() { await run(async () => {
 async function archiveConversation(item: Conversation) {
   if (!item.archived_at && !await confirm('归档这段会话？', '会话会移入归档列表，所属探索继续保留。未开启聊天保存时，原文只在本次使用中可见')) return
   await run(async () => { const updated = await props.request<Conversation>('PUT', `/conversations/${item.id}`, { version: item.version, archived: !item.archived_at }); emit('changed', updated); emit('refresh') })
+}
+async function deleteConversation(item: Conversation) {
+  if (busy.value || !await confirm('删除这段会话？', '这段会话的消息、总结和未发送草稿将永久删除，正在生成的回复会停止。探索卡片和已确认的长期记忆保留；记忆可单独删除')) return
+  await run(async () => {
+    await props.request('DELETE', `/conversations/${item.id}?version=${item.version}`)
+    emit('deleted', item.id); notice.value = '会话已删除'
+  })
 }
 async function saveDetails() { if (!props.active) return; await run(async () => {
   const item = await props.request<Conversation>('PUT', `/conversations/${props.active!.id}`, { version: props.active!.version, title: detailTitle.value, linked_issue_ids: linked.value })
@@ -101,22 +134,28 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
     <view class="workspace-drawer" role="dialog" :aria-label="heading" @click.stop>
       <view class="drawer-heading"><view><text class="eyebrow">YOUR SPACE</text><text class="section-title">{{ heading }}</text></view><button class="icon-button" :disabled="busy" aria-label="关闭会话面板" @click="emit('close')"><SvgIcon name="close" :size="20" /></button></view>
       <view class="drawer-tabs"><button :class="{ selected: view === 'list' }" @click="emit('viewChanged', 'list')">会话</button><button :class="{ selected: view === 'memories' }" @click="emit('viewChanged', 'memories')">长期记忆</button></view>
-      <scroll-view scroll-y class="drawer-scroll">
+      <view class="drawer-body">
+      <scroll-view scroll-y enhanced :show-scrollbar="false" class="drawer-scroll" @scroll="onScroll">
+        <view class="drawer-scroll-content">
         <view v-if="notice || error" class="notice">{{ notice || error }}</view>
         <template v-if="view === 'list'">
-          <button class="primary new-conversation" :disabled="busy" @click="newForm = !newForm">＋ 新会话</button>
+          <button class="primary new-conversation" :disabled="busy" @click="newForm ? newForm = false : openNewConversation()">＋ 新会话</button>
           <view v-if="newForm" class="drawer-form">
             <input v-model="title" class="text-input" maxlength="120" placeholder="这次想聊什么（可稍后命名）" />
             <picker :range="issueNames" :value="newIssueIndex" @change="chooseIssue"><view class="scope-picker">所属探索：{{ issueNames[newIssueIndex] || '先开始一个探索' }} <SvgIcon name="chevron" :size="14" /></view></picker>
             <button class="primary" :disabled="busy || !activeIssues.length" @click="create">开始这段会话</button>
           </view>
-          <view class="drawer-tabs"><button :class="{ selected: !archive && !showExplorations }" @click="archive = false; showExplorations = false">进行中</button><button :class="{ selected: archive && !showExplorations }" @click="archive = true; showExplorations = false">已归档</button><button :class="{ selected: showExplorations }" @click="showExplorations = true">探索</button></view>
+          <view class="drawer-tabs conversation-sections"><button :class="{ selected: !archive && !showExplorations }" @click="archive = false; showExplorations = false">进行中</button><button :class="{ selected: showExplorations }" @click="showExplorations = true">探索</button><button :class="{ selected: archive && !showExplorations }" @click="archive = true; showExplorations = false">已归档</button></view>
           <template v-if="!showExplorations">
-            <scroll-view scroll-x class="scope-filters"><button :class="{ selected: !filterIssue }" @click="filterIssue = ''">全部探索</button><button v-for="issue in issues" :key="issue.id" :class="{ selected: filterIssue === issue.id }" @click="filterIssue = issue.id">{{ issue.title || '未命名探索' }}</button></scroll-view>
-            <text v-if="!visible.length" class="muted drawer-empty">{{ archive ? '还没有归档的会话' : '从一段新会话开始' }}</text>
+            <scroll-view scroll-x enhanced :show-scrollbar="false" class="scope-filters"><button :class="{ selected: !filterIssue }" @click="filterIssue = ''">全部探索</button><button v-for="issue in issues" :key="issue.id" :class="{ selected: filterIssue === issue.id }" @click="filterIssue = issue.id">{{ issue.title || '未命名探索' }}</button></scroll-view>
+            <view v-if="!visible.length && !newForm" class="drawer-empty">
+              <text class="empty-heading">{{ archive ? '还没有归档的会话' : '留一点空间，聊聊现在' }}</text>
+              <text class="muted empty-greeting">{{ archive ? '归档后的会话会留在这里，随时可以恢复' : greeting }}</text>
+              <button class="secondary empty-create" :disabled="busy" @click="openNewConversation">＋ 从一段新会话开始</button>
+            </view>
             <view v-for="item in visible" :key="item.id" class="conversation-item" :class="{ active: active?.id === item.id }">
               <button class="conversation-select" :disabled="busy" @click="emit('select', item)"><text class="conversation-title">{{ item.title }}</text><text class="muted small">{{ issueName(item.issue_id) }}</text><text class="muted small">{{ running.includes(item.id) ? '正在回应…' : new Date(item.updated_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) }} · {{ user?.save_chat ? '已开启保存' : '原文仅本次使用' }}</text></button>
-              <button class="text-button archive-action" :disabled="busy" @click="archiveConversation(item)">{{ item.archived_at ? '恢复会话' : '归档' }}</button>
+              <view class="conversation-actions"><button class="text-button archive-action" :disabled="busy" @click="archiveConversation(item)">{{ item.archived_at ? '恢复会话' : '归档' }}</button><button class="text-button delete-conversation" :disabled="busy" @click="deleteConversation(item)">删除</button></view>
             </view>
           </template>
           <template v-else><button v-for="issue in issues" :key="issue.id" class="exploration-item" @click="emit('selectIssue', issue)"><text>{{ issue.title || '未命名探索' }}</text><text class="muted small">{{ issue.ended_at ? '已结束 · 查看或恢复' : '进行中 · 打开探索' }}</text></button><button class="secondary" @click="emit('createIssue')">＋ 开始另一个探索</button></template>
@@ -158,7 +197,10 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
             <view class="memory-actions"><button @click="editMemory(item)">编辑</button><button :disabled="busy" @click="toggleMemory(item)">{{ item.enabled ? '停用' : '启用' }}</button><button :disabled="busy" @click="deleteMemory(item)">删除</button></view>
           </view>
         </template>
+        </view>
       </scroll-view>
+      <view v-if="scrollIndicator" class="drawer-scroll-indicator" aria-hidden="true"><view :style="{ height: scrollIndicator.height + '%', top: scrollIndicator.top + '%' }" /></view>
+      </view>
     </view>
   </view>
 </template>

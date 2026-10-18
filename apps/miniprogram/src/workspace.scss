@@ -1,14 +1,21 @@
 /* Direct global source: preserves native component style isolation. */
-.workspace-backdrop { position:fixed; inset:0; z-index:60; background:rgba(21,30,48,.32); display:flex; justify-content:flex-end; }
+.workspace-backdrop { position:fixed; inset:0; z-index:60; background:rgba(21,30,48,.32); display:flex; justify-content:flex-start; }
 .keyboard-open .workspace-backdrop { bottom:var(--keyboard-height); }
-.workspace-drawer { width:91vw; max-width:460px; height:100%; background:var(--paper); color:var(--ink); box-shadow:-12px 0 40px rgba(0,0,0,.12); display:flex; flex-direction:column; padding-top:max(22px, calc(var(--capsule-bottom, 24px) + 10px)); box-sizing:border-box; animation:drawer-enter .18s ease-out; }
+.workspace-drawer { width:91vw; max-width:460px; height:100%; background:var(--paper); color:var(--ink); box-shadow:12px 0 40px rgba(0,0,0,.12); display:flex; flex-direction:column; padding-top:max(22px, calc(var(--capsule-bottom, 24px) + 10px)); box-sizing:border-box; animation:drawer-enter .18s ease-out; }
 .drawer-heading { display:flex; align-items:center; justify-content:space-between; padding:0 20px 14px; flex-shrink:0; }
 .drawer-heading .section-title { display:block; margin-top:5px; font-size:22px; }
 .drawer-tabs { display:flex; gap:6px; padding:10px 0; }
 .workspace-drawer > .drawer-tabs { padding:0 20px 12px; border-bottom:1px solid var(--line); }
 .drawer-tabs button, .scope-filters button { background:transparent; color:var(--muted); border:1px solid transparent; padding:7px 10px; font-size:13px; line-height:1.4; border-radius:12px; margin:0; }
 .drawer-tabs .selected, .scope-filters .selected { background:var(--soft); border-color:var(--line); color:var(--ink); }
-.drawer-scroll { flex:1; min-height:0; height:0; padding:16px 20px calc(28px + env(safe-area-inset-bottom)); box-sizing:border-box; }
+.drawer-body { flex:1; min-height:0; position:relative; overflow:hidden; }
+/* Some Developer Tools render a full-height internal bar despite show-scrollbar=false.
+   Keep that native gutter outside the clipped body; preserve content width with padding. */
+.drawer-scroll { width:calc(100% + 12px); height:100%; box-sizing:border-box; scrollbar-width:none; }
+.drawer-scroll-content { padding:16px 32px calc(28px + env(safe-area-inset-bottom)) 20px; box-sizing:border-box; }
+.drawer-scroll::-webkit-scrollbar, .drawer-scroll ::-webkit-scrollbar, .scope-filters::-webkit-scrollbar { display:none; width:0; height:0; }
+.drawer-scroll-indicator { position:absolute; right:4px; top:8px; bottom:8px; width:3px; background:var(--scrollbar-track); border-radius:3px; pointer-events:none; }
+.drawer-scroll-indicator > view { position:absolute; width:100%; background:var(--scrollbar-thumb); border-radius:3px; }
 .drawer-scroll .body-copy, .drawer-scroll .muted { display:block; line-height:1.65; }
 .drawer-scroll .primary, .drawer-scroll .secondary { width:100%; margin:12px 0; }
 .drawer-form { padding:14px; background:var(--soft); border:1px solid var(--line); border-radius:16px; margin:10px 0 16px; }
@@ -20,7 +27,13 @@
 .conversation-select { display:block; width:100%; background:none; text-align:left; padding:0; margin:0; line-height:1.5; }
 .conversation-title { display:block; font-size:16px; font-weight:600; color:var(--ink); margin-bottom:4px; word-break:break-word; }
 .archive-action { font-size:12px; margin-top:10px; padding:4px 0; }
+.conversation-actions { display:flex; justify-content:space-between; gap:16px; }
+.conversation-actions button { margin:10px 0 0; padding:5px 0; font-size:12px; }
+.conversation-actions .delete-conversation { color:var(--muted); }
 .drawer-empty { padding:28px 0; text-align:center; }
+.empty-heading { display:block; font-size:17px; color:var(--ink); line-height:1.6; }
+.empty-greeting { margin:12px 8px 20px; font-size:14px; white-space:normal; overflow-wrap:anywhere; }
+.drawer-scroll .empty-create { width:auto; display:inline-block; padding:10px 16px; font-size:13px; }
 .exploration-item, .link-choice, .memory-candidate { width:100%; display:block; text-align:left; background:var(--soft); color:var(--ink); padding:14px; border-radius:12px; margin:9px 0; font-size:14px; line-height:1.6; }
 .exploration-item text { display:block; }
 .drawer-scroll .field-label { display:block; font-size:13px; font-weight:600; margin:18px 0 8px; }
@@ -42,5 +55,5 @@
 .conversation-windows button { display:inline-block; max-width:180px; overflow:hidden; text-overflow:ellipsis; font-size:12px; padding:8px 12px; border-radius:12px; margin:0 6px 0 0; background:var(--paper); color:var(--muted); border:1px solid var(--line); line-height:1.5; }
 .conversation-windows button.active { color:var(--ink); background:var(--soft); }
 .chat-context-note { display:block; color:var(--muted); font-size:12px; line-height:1.6; margin:8px 0; }
-@keyframes drawer-enter { from { transform:translateX(100%); } to { transform:translateX(0); } }
+@keyframes drawer-enter { from { transform:translateX(-100%); } to { transform:translateX(0); } }
 @media (prefers-reduced-motion:reduce) { .workspace-drawer { animation:none; } }

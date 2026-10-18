@@ -11,6 +11,10 @@ export function createChatWorkspace(options: ChatOptions) {
   const active = computed(() => activeId.value ? get(activeId.value) : empty)
   function select(id: string) { get(id); activeId.value = id }
   function cancelAll() { Object.values(sessions).forEach(session => session.cancel()) }
+  function remove(id: string) {
+    sessions[id]?.reset(); delete sessions[id]
+    if (activeId.value === id) { activeId.value = ''; empty.reset() }
+  }
   function reset() { Object.values(sessions).forEach(session => session.reset()); for (const id of Object.keys(sessions)) delete sessions[id]; activeId.value = ''; empty.reset() }
-  return { activeId, active, sessions, get, select, cancelAll, reset }
+  return { activeId, active, sessions, get, select, cancelAll, remove, reset }
 }
