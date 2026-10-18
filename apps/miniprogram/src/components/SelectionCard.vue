@@ -11,7 +11,7 @@ defineEmits<{ select: [] }>()
     <view v-if="radio && !artwork" class="selection-radio" :class="{ checked: selected }"><view /></view>
     <view class="selection-copy">
       <view class="selection-heading">
-        <SvgIcon v-if="!radio && icon && !artwork" class="selection-icon" :name="icon" :size="21" />
+        <view v-if="!radio && icon && !artwork" class="selection-icon"><SvgIcon :name="icon" :size="21" /></view>
         <text class="selection-title">{{ title }}</text>
       </view>
       <text v-if="detail" class="selection-detail" :class="{ 'with-icon': !radio && icon && !artwork }">{{ detail }}</text>
@@ -23,7 +23,7 @@ defineEmits<{ select: [] }>()
 .selection-card { display:flex; align-items:center; gap:13px; width:100%; min-height:57px; margin:0; padding:15px 16px; background:var(--paper); border:1px solid var(--line); border-radius:8px; color:var(--ink); text-align:left; box-sizing:border-box; transition:background var(--motion-press),border-color var(--motion-press),transform var(--motion-press); touch-action:manipulation; }
 .selection-card::after { border:0; }
 .selection-card.chosen { background:var(--selection); border-color:var(--selection-border); box-shadow:inset 0 0 0 .5px var(--selection-border); }
-.selection-icon { width:21px; height:21px; flex-shrink:0; opacity:.85; }
+.selection-icon { display:flex; align-items:center; justify-content:center; width:21px; height:21px; flex-shrink:0; opacity:.85; }
 .selection-copy { flex:1; min-width:0; }
 .selection-heading { display:flex; align-items:center; gap:13px; }
 .selection-heading .selection-title { flex:1; min-width:0; }

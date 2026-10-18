@@ -785,8 +785,8 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <button class="chat-mode-trigger" :aria-expanded="modePickerOpen" :disabled="busy || sending"
                     @click="modePickerOpen = !modePickerOpen" hover-class="pressed"
                     :hover-start-time="0" :hover-stay-time="70">
-              <text>{{ supportStyles.find(item => item.id === selectedMode)?.title }}</text>
-              <text class="chat-mode-chevron">{{ modePickerOpen ? '⌃' : '⌄' }}</text>
+              <text class="chat-mode-title">{{ supportStyles.find(item => item.id === selectedMode)?.title }}</text>
+              <view class="chat-mode-chevron" :class="{ 'is-open': modePickerOpen }" aria-hidden="true"><SvgIcon name="chevron" :size="16" /></view>
             </button>
           </view>
           <view v-if="modePickerOpen" class="chat-mode-panel">
@@ -804,7 +804,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </view>
           <view v-if="!messages.length" class="chat-welcome">
             <view class="chat-welcome-intro">
-              <CompanionAvatar :size="32" state="idle" />
+              <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" /></view>
               <text class="body-copy">{{ chatEntry.introduction }}</text>
             </view>
             <text v-if="welcomeContext" class="welcome-context">{{ welcomeContext }}</text>
