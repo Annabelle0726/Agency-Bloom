@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { iconSources } from '../icons'
 
+defineOptions({ virtualHost: true })
 const props = withDefaults(defineProps<{ name: string; light?: boolean; size?: number }>(), { size: 22, light: false })
 const source = computed(() => (iconSources[props.name as keyof typeof iconSources] || iconSources.arrow)[props.light ? 'light' : 'ink'])
 </script>

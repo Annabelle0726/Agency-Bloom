@@ -5,6 +5,7 @@
   left:50%;
   right:auto;
   bottom:0;
+  height: 72px;
   transform:translateX(-50%);
   width:100%;
   max-width:440px;
@@ -12,7 +13,7 @@
   padding:10px 22px calc(10px + env(safe-area-inset-bottom));
   border:0;
   border-top:1px solid rgba(255,255,255,.9);
-  border-radius:22px 22px 0 0;
+  border-radius:10px 10px 0 0;
   background:rgba(252,253,255,.94);
   box-shadow:0 -8px 32px rgba(60,79,118,.055);
   backdrop-filter:blur(18px);
@@ -37,6 +38,9 @@
 .journey-nav .active .nav-label { font-weight:600; }
 .journey-nav .tab-icon-frame {
   width:32px;
+   display:flex;
+   align-items:center;
+   justify-content:center;
   height:27px;
   border-radius:10px;
   background:transparent;
@@ -54,7 +58,7 @@
 .journey-nav button.nav-conversation { justify-content:flex-end; padding-bottom:4px; }
 .journey-nav .nav-conversation .tab-icon-frame {
   position:absolute;
-  top:-24px;
+  top:-35px;
   width:58px;
   height:58px;
   border:5px solid #f7f9ff;
@@ -84,7 +88,7 @@
   background:linear-gradient(140deg,#9db4e0,#627fd0 55%,#71a9c8);
 }
 @media(min-width:600px) {
-  .tabbar.journey-nav { bottom:24px; border-radius:22px 22px 25px 25px; }
+  .tabbar.journey-nav { bottom:20px; border-radius:10px; }
   .app-shell.chat-page { --composer-base-offset:120px; }
 }
 @media(prefers-reduced-motion:reduce) {
