@@ -54,6 +54,7 @@ class Preferences(StrictModel):
     ai_consent: bool | None = None
     theme: Literal["light", "dark", "dawn", "forest", "lavender", "minimal"] | None = None
     support_style: SupportStyle | None = None
+    use_memory: bool | None = None
 
 
 class Card(StrictModel):
@@ -121,11 +122,70 @@ class InsightFeedback(StrictModel):
     reaction: Literal["dismissed"]
 
 
+class ConversationSummary(StrictModel):
+    overview: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1200)] = ""
+    decisions: Lines = []
+    open_questions: Lines = []
+    next_steps: Lines = []
+
+
 class ChatInput(StrictModel):
     request_id: UUID
     message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
     history: list[ChatMessage] = Field(default=[], max_length=8)
     insight_feedback: list[InsightFeedback] = Field(default=[], max_length=3)
+    task: Literal["chat", "summary"] = "chat"
+    session_summary: ConversationSummary | None = None
+
+
+class ConversationChatInput(ChatInput):
+    history: list[ChatMessage] = Field(default=[], max_length=80)
+
+
+class ConversationInput(StrictModel):
+    issue_id: str
+    title: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)
+    ] = "新会话"
+    support_style: SupportStyle = "discover"
+
+
+class ConversationUpdate(StrictModel):
+    version: int = Field(ge=1)
+    title: (
+        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+        | None
+    ) = None
+    support_style: SupportStyle | None = None
+    archived: bool | None = None
+    linked_issue_ids: list[str] | None = Field(default=None, max_length=3)
+
+
+class SummaryUpdate(StrictModel):
+    version: int = Field(ge=1)
+    summary: ConversationSummary | None
+
+
+class MemoryInput(StrictModel):
+    content: Line
+    category: Literal["fact", "preference", "constraint"] = "fact"
+    issue_id: str | None = None
+    source_conversation_id: str | None = None
+    enabled: bool = True
+    confirmed: Literal[True]
+
+
+class MemoryUpdate(MemoryInput):
+    version: int = Field(ge=1)
+
+
+class MemoryReference(StrictModel):
+    id: str
+    version: int = Field(ge=1)
+
+
+class MemoryMerge(MemoryInput):
+    items: list[MemoryReference] = Field(min_length=2, max_length=10)
 
 
 class Suggestion(StrictModel):
@@ -168,3 +228,4 @@ class AIOutput(StrictModel):
     reply: Annotated[str, StringConstraints(min_length=1, max_length=4000)]
     suggestion: Suggestion | None = None
     insight: Insight | None = None
+    summary: ConversationSummary | None = None

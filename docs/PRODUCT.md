@@ -1,5 +1,7 @@
 # 第一版产品约定
 
+> Current conversation architecture (2026-10-18): see [CONVERSATIONS.md](CONVERSATIONS.md). Its multi-exploration, independent-conversation, reviewed-summary and user-controlled-memory contracts supersede the single-current-question assumptions in this earlier product note.
+
 我们不断向前，是想靠近怎样的生活
 
 帮助用户靠近自己愿意亲自度过的生活，保留行动、休息、求助与修改目标的选择权。当前仍从工作与方向中的具体问题切入，不把努力直接解释为内耗，也不把收入、效率或坚持默认当成唯一标准。方向分支关注期望的日常生活；反馈可记录事实、感受与改变，不要求每次都有进展。复盘一次只追问一个有用的问题，不增加打卡或绩效评分。

@@ -6,6 +6,20 @@ Agency OS helps adults explore career possibilities, compare choices, and learn 
 
 Use confirmed user information as facts. Keep model assumptions and unverified market information separate. Suggestions and insights are optional; only explicit user confirmation can turn them into saved decision-card content. Do not add automatic career research, unsolicited reminders, or extra model calls.
 
+## Conversations, context, and memory
+
+Read [CONTEXT.md](CONTEXT.md) for the domain vocabulary and [docs/CONVERSATIONS.md](docs/CONVERSATIONS.md) for contracts and migration details.
+
+- An exploration is a long-running question; a conversation is an independent discussion. Multiple active explorations and multiple conversations per exploration are supported. Archive a conversation without ending its exploration. Window selection is UI state, not a new account or exploration.
+- The right drawer is the conversation/exploration navigator and memory manager. Keep drafts, errors, pending requests, summaries and proposals isolated by conversation ID. A response arriving after a window switch belongs to its originating conversation.
+- Use only the current conversation's recent messages, its reviewed summary, its exploration, explicitly linked exploration cards (at most three), and enabled, scope-matched memories. Never silently combine transcripts from other conversations.
+- Summarization is an explicit user action using the same consent, budget, cancellation and no-retry boundary as chat. Generated summaries are drafts; review is required before they become context. Summary generation must not append invented conversation turns or automatically create memories/cards.
+- Conversation names and membership are saved as metadata. Transcripts, structured reply artifacts and reviewed summaries require chat retention. With retention off, transcripts, drafts and reviewed summaries stay in memory only. Disabling retention clears stored messages and summaries, including in-flight saves; it does not delete separately confirmed memories/cards.
+- Long-term memories require explicit confirmation, support global or exploration scope, and are editable, individually enabled/disabled, mergeable and deletable. Using memories is a separate account preference, off by default. Merging requires a reviewable replacement and version checks. Never infer permanent personality traits from a rejection or a conversation summary.
+- Changes to consent, context links, summaries or memories invalidate affected pending generations. Preserve account ownership, optimistic versions, budget reservations and usage-only billing records. Deleting a memory does not rewrite its wording in existing chat transcripts.
+- SQLite startup upgrades and PostgreSQL migrations preserve old messages by assigning one deterministic legacy conversation per exploration. Do not infer historical thread boundaries. Never run migrations or QA against the user's private database during development verification.
+- Validate through isolated MockTransport, then a separate tourist Mini Program project. `tools/mock-conversations-api.py` uses a fresh disposable database on port 8018; `tools/verify-conversations-native.cjs` targets only its copied project and automation port 9438. Never connect that helper to the user's existing project/session.
+
 ## Project structure
 
 - `apps/miniprogram`: Vue 3, TypeScript, uni-app, and SCSS; WeChat Mini Program is the primary platform.

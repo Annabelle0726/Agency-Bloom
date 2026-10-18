@@ -18,11 +18,12 @@ import {iconSources} from '../../icons'
 import {themes, navigationItems, themeForSession, themeStyle, themeNavSvg} from '../../themes'
 import type {ThemeId, SpaceTab} from '../../themes'
 import ThemePreview from '../../components/ThemePreview.vue'
-import type {Card, ChatMessage, Issue, Onboarding, User, Experiment} from '../../domain'
+import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary} from '../../domain'
 import {ApiError, createApi} from '../../http'
 import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
-import {createChatSession} from '../../chat'
+import {createChatWorkspace} from '../../chat-workspace'
+import ConversationDrawer from '../../components/ConversationDrawer.vue'
 import {createAvatarStore} from '../../avatar'
 
 const token = ref<string>(uni.getStorageSync('agency.session') || '')
@@ -87,6 +88,7 @@ async function removeAvatar() {
 }
 
 const current = ref<Issue | null>(null)
+const selectedConversationKey = (userId: string) => `agency.selected-conversation.v1:${userId}`
 const config = ref<{ dev_auth: boolean; wechat_auth?: boolean; ai_mode: string }>({dev_auth: false, ai_mode: 'demo'})
 const ready = ref(false)
 const screen = ref<EntryScreen>(initialScreen(!!token.value, !!uni.getStorageSync(OPENING_KEY)))
@@ -127,12 +129,12 @@ uni.onKeyboardHeightChange(keyboardChanged)
 onUnmounted(() => uni.offKeyboardHeightChange(keyboardChanged))
 // #endif
 const tab = ref<SpaceTab>('now')
-const modal = ref<'' | 'privacy' | 'edit' | 'feedback' | 'ai' | 'history' | 'appearance' | 'support' | 'experiment'>('')
+const modal = ref<'' | 'privacy' | 'edit' | 'feedback' | 'ai' | 'appearance' | 'support' | 'experiment'>('')
 const operations = createOperationState()
 const busy = computed(() => operations.busy.auth || operations.busy.data)
 const error = computed({ get: () => operations.errors.data, set: value => { operations.errors.data = value } })
 const authError = computed(() => operations.errors.auth)
-const chatError = computed(() => operations.errors.ai)
+const chatError = computed(() => workspace.active.value.error.value || operations.errors.ai)
 const offline = computed(() => !!operations.errors.init)
 const toast = ref('')
 const form = reactive<Onboarding>(newOnboarding())
@@ -159,16 +161,28 @@ onReady(syncStatusBar)
 watch(activeTheme, syncStatusBar)
 // #endif
 const card = computed(() => current.value?.card ?? preview.value)
-const conversation = createChatSession({
-  post: (issueId, body) => api.request('POST', `/issues/${issueId}/chat`, body),
+const workspace = createChatWorkspace({
+  post: (conversationId, body) => api.request('POST', `/conversations/${conversationId}/chat`, body),
   cancelRemote: id => request('POST', `/requests/${id}/cancel`),
   requestId,
-  onError: message => {
-    operations.errors.ai = message
-  },
+  onError: () => {},
   onCancelled: message => notify(message),
 })
-const {messages, draft, pendingText, sending, suggestion, insight, insightReaction} = conversation
+const conversations = ref<Conversation[]>([])
+const activeConversation = computed(() => conversations.value.find(c => c.id === workspace.activeId.value) || null)
+const drawer = ref<'' | 'list' | 'summary' | 'memories' | 'details'>('')
+const openedIds = ref<string[]>([])
+const windows = computed(() => openedIds.value.map(id => conversations.value.find(c => c.id === id)).filter((c): c is Conversation => !!c))
+const runningIds = computed(() => Object.entries(workspace.sessions).filter(([, session]) => session.sending.value).map(([id]) => id))
+const messages = computed({ get: () => workspace.active.value.messages.value, set: value => { workspace.active.value.messages.value = value } })
+const draft = computed({ get: () => workspace.active.value.draft.value, set: value => { workspace.active.value.draft.value = value } })
+const pendingText = computed({ get: () => workspace.active.value.pendingText.value, set: value => { workspace.active.value.pendingText.value = value } })
+const sending = computed(() => workspace.active.value.sending.value)
+const suggestion = computed({ get: () => workspace.active.value.suggestion.value, set: value => { workspace.active.value.suggestion.value = value } })
+const insight = computed({ get: () => workspace.active.value.insight.value, set: value => { workspace.active.value.insight.value = value } })
+const insightReaction = computed(() => workspace.active.value.insightReaction.value)
+const generatingSummary = computed(() => sending.value && workspace.active.value.sendingTask.value === 'summary')
+const readOnlyConversation = computed(() => !!activeConversation.value?.archived_at || !!current.value?.ended_at)
 // Animate only genuinely new assistant replies. Restored history remains still.
 const speakingIndex = ref<number | null>(null)
 let speakingTimer: ReturnType<typeof setTimeout> | undefined
@@ -193,7 +207,7 @@ let experimentBase: Card | null = null
 let experimentVersion = 0
 const canSaveExperiment = computed(() => experimentFields.every(f => experimentEditor[f.key].trim()) &&
   !!experimentBase && experimentProposal(experimentBase, experimentEditor).next_step.length <= 600)
-const selectedMode = computed(() => canonicalSupportStyle(user.value?.support_style))
+const selectedMode = computed(() => canonicalSupportStyle(activeConversation.value?.support_style || user.value?.support_style))
 const welcomeContext = computed(() => current.value?.focus_response || current.value?.actual_question || current.value?.background || '')
 const chatEntry = computed(() => chatEntryFor(selectedMode.value, current.value || {}))
 const modePickerOpen = ref(false)
@@ -201,7 +215,7 @@ const starterHint = ref('')
 
 function reactToInsight(action: 'interested' | 'dismissed' | 'experiment') {
   if (busy.value || sending.value || !insight.value || !current.value) return
-  const experiment = conversation.reactToInsight(action)
+  const experiment = workspace.active.value.reactToInsight(action)
   if (action === 'dismissed') { notify('已略过这个角度，不会写入卡片'); return }
   if (action === 'experiment' && experiment) {
     Object.assign(experimentEditor, experiment)
@@ -250,7 +264,7 @@ function notify(message: string) {
 }
 
 function clearSession() {
-  conversation.reset()
+  workspace.reset(); conversations.value = []; openedIds.value = []; drawer.value = ''
   token.value = '';
   user.value = null;
   current.value = null;
@@ -286,11 +300,13 @@ async function guarded(action: () => Promise<void>, scope: OperationScope = 'dat
 
 async function loadCurrent() {
   const next = await request<Issue | null>('GET', '/issues/current')
-  if (next?.id !== current.value?.id) conversation.reset()
   current.value = next
+  await refreshWorkspace()
   if (current.value) {
     screen.value = 'space'
-    messages.value = await request<ChatMessage[]>('GET', `/issues/${current.value.id}/messages`)
+    const savedId = user.value ? uni.getStorageSync(selectedConversationKey(user.value.id)) : ''
+    const selected = conversations.value.find(c => c.id === (workspace.activeId.value || savedId)) || conversations.value.find(c => c.issue_id === current.value?.id && !c.archived_at)
+    if (selected) await activateConversation(selected, false)
   } else {
     // A returning account may have only ended explorations. It still lands at home.
     archives.value = await request<Issue[]>('GET', '/issues')
@@ -321,13 +337,15 @@ async function initialize() {
 onMounted(initialize)
 onShow(() => { if (ready.value && offline.value) void initialize() })
 onHide(() => {
-  if (sending.value) cancelChat()
+  workspace.cancelAll()
 })
 
 async function saveInitial() {
   current.value = await request<Issue>('POST', '/issues', form)
   if (user.value && form.support_style) user.value.support_style = form.support_style
-  conversation.reset()
+  await refreshWorkspace()
+  const first = conversations.value.find(c => c.issue_id === current.value?.id)
+  if (first) await activateConversation(first, false)
   screen.value = 'space'
   tab.value = 'now'
   if (user.value) {
@@ -436,7 +454,7 @@ async function saveEditor() {
 async function reloadVersion() {
   if (!current.value) return
   await guarded(async () => {
-    current.value = await request('GET', '/issues/current');
+    current.value = await request('GET', `/issues/${current.value!.id}`);
     editorVersion.value = current.value!.version;
     notify('已读取最新版本，你的编辑内容仍保留，请核对后再保存')
   })
@@ -463,17 +481,19 @@ function requestId() {
 }
 
 async function sendChat() {
-  if (sending.value || !draft.value.trim() || !current.value) return
+  if (sending.value || !draft.value.trim() || !activeConversation.value || readOnlyConversation.value) return
   if (!user.value?.ai_consent) {
     modal.value = 'ai';
     return
   }
   operations.clear('ai')
-  await conversation.send(current.value.id)
+  const id = activeConversation.value.id
+  await workspace.get(id).send(id)
+  if (user.value) await guarded(refreshWorkspace)
 }
 
 function cancelChat() {
-  conversation.cancel()
+  workspace.active.value.cancel()
 }
 
 async function consentAI() {
@@ -499,9 +519,15 @@ function confirm(title: string, content: string) {
 async function toggleSaveChat() {
   if (!user.value) return
   const save = !user.value.save_chat
-  if (!save && !await confirm('关闭聊天保存', '已保存的完整聊天记录也会被清除，决策卡和反馈会保留')) return
+  if (!save && !await confirm('关闭聊天保存', '已保存的聊天和会话总结也会被清除；你确认的长期记忆、决策卡和反馈会保留，可分别管理')) return
   await guarded(async () => {
     user.value = await request('PUT', '/me', {save_chat: save});
+    workspace.cancelAll()
+    if (!save) for (const session of Object.values(workspace.sessions)) {
+      session.messages.value = []; session.summary.value = null; session.summaryDraft.value = null;
+      session.suggestion.value = null; session.insight.value = null; session.olderCursor.value = null
+    }
+    await refreshWorkspace()
     notify(save ? '之后的聊天会保存到你的账号' : '已关闭，并清除已保存的聊天记录')
   })
 }
@@ -517,15 +543,15 @@ async function setSupportStyle(support_style: string) {
   await guarded(async () => {
     user.value = await request('PUT', '/me', {support_style});
     modal.value = '';
-    notify('已保存你此刻希望获得的支持')
+    notify('已保存新会话的默认回应方式')
   })
 }
 
 async function setChatMode(mode: SupportMode) {
-  if (busy.value || sending.value) return
+  if (busy.value || sending.value || !activeConversation.value) return
   if (mode === selectedMode.value) { modePickerOpen.value = false; return }
   await guarded(async () => {
-    user.value = await request<User>('PUT', '/me', {support_style: mode})
+    changedConversation(await request<Conversation>('PUT', `/conversations/${activeConversation.value!.id}`, { version: activeConversation.value!.version, support_style: mode }))
     modePickerOpen.value = false
     starterHint.value = ''
   }, 'data')
@@ -554,11 +580,10 @@ async function toggleAIConsent() {
     modal.value = 'ai';
     return
   }
-  if (sending.value) cancelChat()
+  workspace.cancelAll()
   await guarded(async () => {
     user.value = await request('PUT', '/me', {ai_consent: false})
-    suggestion.value = null
-    insight.value = null
+    for (const session of Object.values(workspace.sessions)) { session.suggestion.value = null; session.insight.value = null; session.summaryDraft.value = null }
     notify('已关闭 AI 对话；卡片和反馈仍可使用')
   })
 }
@@ -567,17 +592,89 @@ async function endIssue() {
   if (!current.value || !await confirm('结束这件事', '已经确认的卡片与进展会留在历史里，之后可以开始一个新问题')) return
   await guarded(async () => {
     await request('POST', `/issues/${current.value!.id}/end`)
-    conversation.reset();
-    current.value = null
-    Object.assign(form, newOnboarding())
-    screen.value = 'onboard'
+    for (const c of conversations.value.filter(c => c.issue_id === current.value?.id)) workspace.get(c.id).cancel()
+    await loadCurrent()
+    tab.value = 'now'
   })
 }
 
 async function showHistory() {
   await guarded(async () => {
-    archives.value = await request('GET', '/issues');
-    modal.value = 'history'
+    await refreshWorkspace(); drawer.value = 'list'
+  })
+}
+
+async function refreshWorkspace() {
+  async function all<T extends { id: string }>(path: string): Promise<T[]> {
+    const items = new Map<string, T>()
+    for (let offset = 0; ; offset += 100) {
+      const page = await request<T[]>('GET', `${path}${path.includes('?') ? '&' : '?'}limit=100&offset=${offset}`)
+      for (const item of page) items.set(item.id, item)
+      if (page.length < 100) return [...items.values()]
+    }
+  }
+  const [issues, live, archived] = await Promise.all([
+    all<Issue>('/issues'), all<Conversation>('/conversations'), all<Conversation>('/conversations?archived=true'),
+  ])
+  archives.value = issues; conversations.value = [...live, ...archived]
+}
+function changedConversation(item: Conversation) {
+  const index = conversations.value.findIndex(c => c.id === item.id)
+  if (index < 0) conversations.value.unshift(item); else conversations.value[index] = item
+  if (item.archived_at) workspace.get(item.id).cancel()
+}
+async function activateConversation(item: Conversation, navigate = true) {
+  const session = workspace.get(item.id)
+  const issue = await request<Issue>('GET', `/issues/${item.issue_id}`)
+  if (!session.loaded.value) {
+    const page = await request<{ items: ChatMessage[]; next_cursor: string | null }>('GET', `/conversations/${item.id}/messages`)
+    session.messages.value = page.items; session.olderCursor.value = page.next_cursor; session.summary.value = item.summary
+    const last = page.items[page.items.length - 1]
+    session.suggestion.value = last?.payload?.suggestion || null; session.insight.value = last?.payload?.insight || null
+    session.loaded.value = true
+  }
+  current.value = issue; workspace.select(item.id)
+  if (user.value) { try { uni.setStorageSync(selectedConversationKey(user.value.id), item.id) } catch { /* A presentation preference may stay in memory. */ } }
+  if (!openedIds.value.includes(item.id)) openedIds.value.push(item.id)
+  modePickerOpen.value = false; starterHint.value = ''; operations.clear('ai')
+  if (navigate) { drawer.value = ''; tab.value = 'chat'; await nextTick(); uni.pageScrollTo({ scrollTop: 0, duration: 0 }) }
+}
+async function selectConversation(item: Conversation) { await guarded(() => activateConversation(item)) }
+async function selectExploration(issue: Issue) {
+  await guarded(async () => {
+    current.value = await request('GET', `/issues/${issue.id}`)
+    const first = conversations.value.find(c => c.issue_id === issue.id && !c.archived_at) || conversations.value.find(c => c.issue_id === issue.id)
+    if (first) await activateConversation(first, false)
+    else workspace.activeId.value = ''
+    tab.value = 'now'; drawer.value = ''
+  })
+}
+async function resumeExploration() { if (!current.value) return; await guarded(async () => { current.value = await request('POST', `/issues/${current.value!.id}/resume`); await refreshWorkspace(); notify('探索已恢复') }) }
+function beginAnotherExploration() { drawer.value = ''; Object.assign(form, newOnboarding()); beginOnboarding() }
+async function loadOlderMessages() {
+  const id = workspace.activeId.value, session = workspace.get(id)
+  if (!session.olderCursor.value) return
+  await guarded(async () => { const page = await request<{ items: ChatMessage[]; next_cursor: string | null }>('GET', `/conversations/${id}/messages?before=${session.olderCursor.value}`); session.messages.value.unshift(...page.items); session.olderCursor.value = page.next_cursor })
+}
+async function generateSummary() {
+  if (!activeConversation.value || readOnlyConversation.value) return
+  if (!user.value?.ai_consent) { notify('请先在「我的」中允许 AI 数据处理'); return }
+  const id = activeConversation.value.id
+  await workspace.get(id).send(id, 'summary')
+}
+function reviewSummary(summary: ConversationSummary | null) {
+  workspace.active.value.summary.value = summary; workspace.active.value.summaryDraft.value = null; workspace.active.value.cancel()
+}
+async function recoverReply() {
+  const id = workspace.activeId.value, session = workspace.get(id)
+  if (!session.lastRequestId.value) return
+  await guarded(async () => {
+    const status = await request<{ status: string; recoverable: boolean }>('GET', `/requests/${session.lastRequestId.value}`)
+    if (status.status === 'pending') { notify('请求仍在处理中，请稍后再查看'); return }
+    if (status.recoverable) {
+      const page = await request<{ items: ChatMessage[]; next_cursor: string | null }>('GET', `/conversations/${id}/messages`)
+      session.messages.value = page.items; session.olderCursor.value = page.next_cursor; session.error.value = ''; notify('已读取保存的回复，输入草稿仍保留')
+    } else notify('没有可恢复的已保存回复；不会自动再次调用模型')
   })
 }
 
@@ -601,7 +698,7 @@ async function deleteAccount() {
     await request('DELETE', '/me');
     if (demoCredential.value?.userId === id) forgetDemo()
     if (id) {
-      try { uni.removeStorageSync(draftKeyFor(id)); uni.removeStorageSync(pauseKeyFor(id)) }
+      try { uni.removeStorageSync(draftKeyFor(id)); uni.removeStorageSync(pauseKeyFor(id)); uni.removeStorageSync(selectedConversationKey(id)) }
       catch { /* A local storage failure must not keep a deleted account signed in. */ }
     }
     if (id) await localAvatars.clear(id);
@@ -636,7 +733,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         <image :src="activeTheme.image" mode="aspectFill"/><view class="theme-atmosphere-wash"/>
       </view>
       <view v-if="screen === 'space'" class="topbar">
-        <button class="icon-button" aria-label="回看历史记录" hover-class="pressed" :hover-start-time="0"
+        <button class="icon-button" aria-label="打开会话与探索" hover-class="pressed" :hover-start-time="0"
                 :hover-stay-time="70" @click="showHistory">
           <image class="topbar-glyph" :src="iconSources.menu.ink" mode="aspectFit" aria-hidden="true" />
         </button>
@@ -766,15 +863,20 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <text class="body-copy">{{ entry.text }}</text>
             </view>
           </view>
-          <button class="text-button end-link" @click="endIssue" hover-class="pressed" :hover-start-time="0"
+          <button v-if="current.ended_at" class="secondary" @click="resumeExploration">恢复这个探索</button>
+          <button v-else class="text-button end-link" @click="endIssue" hover-class="pressed" :hover-start-time="0"
                   :hover-stay-time="70">结束这件事，给新的方向留空间
           </button>
         </view>
 
         <view v-else-if="current && tab === 'chat'" class="chat-content" :style="{ '--composer-height': `${composerHeight}px` }">
           <text class="eyebrow">LET'S THINK TOGETHER</text>
-          <text class="chat-title">{{ chatEntry.heading }}</text>
-          <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="operations.clear('ai')"><SvgIcon name="close" :size="18" /></button></view>
+          <text class="chat-title">{{ activeConversation?.title || chatEntry.heading }}</text>
+          <scroll-view v-if="windows.length > 1" scroll-x class="conversation-windows"><button v-for="item in windows" :key="item.id" :class="{ active: item.id === activeConversation?.id }" :disabled="busy" @click="selectConversation(item)">{{ runningIds.includes(item.id) ? '◌ ' : '' }}{{ item.title }}</button></scroll-view>
+          <view class="chat-workspace-tools"><button @click="showHistory">会话与探索</button><button :disabled="!activeConversation" @click="drawer = 'summary'">整理当前会话</button><button :disabled="!activeConversation" @click="drawer = 'details'">关联与设置</button></view>
+          <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="workspace.active.value.error.value = ''; operations.clear('ai')"><SvgIcon name="close" :size="18" /></button><button v-if="workspace.active.value.lastRequestId.value" class="text-button" :disabled="busy" @click="recoverReply">查看这条请求的结果</button></view>
+          <text class="chat-context-note">{{ workspace.active.value.summary.value ? '已接续审阅后的总结 · ' : '' }}{{ user?.use_memory ? '长期记忆已启用 · ' : '' }}{{ activeConversation?.linked_issue_ids.length ? `引用 ${activeConversation.linked_issue_ids.length} 个关联探索 · ` : '' }}每段会话保留自己的上下文</text>
+          <view v-if="readOnlyConversation" class="notice"><text>{{ current.ended_at ? '所属探索已结束，恢复探索后可以继续' : '会话已归档，可以在会话面板恢复' }}</text><button v-if="current.ended_at" class="text-button" @click="resumeExploration">恢复探索</button></view>
           <text v-if="config.ai_mode === 'demo'" class="demo-chat-note">本地演示 · 以下回复为固定示例，不调用模型</text>
           <view class="context-pill">
             <view class="live-dot"/>
@@ -822,7 +924,8 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             </view>
             <text v-if="starterHint" class="chat-starter-hint">{{ starterHint }}</text>
           </view>
-          <view v-for="(message, index) in messages" :id="'message-' + index" :key="index" class="message-row" :class="message.role">
+          <button v-if="workspace.active.value.olderCursor.value" class="text-button" :disabled="busy" @click="loadOlderMessages">加载更早的消息</button>
+          <view v-for="(message, index) in messages" :id="'message-' + index" :key="message.id || index" class="message-row" :class="message.role">
             <CompanionAvatar v-if="message.role === 'assistant'" :size="38"
                              :state="speakingIndex === index ? 'speaking' : (index === messages.length - 1 ? 'idle' : 'rest')" />
             <image v-else class="chat-avatar"
@@ -833,7 +936,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <text class="message-bubble">{{ message.content }}</text>
             </view>
           </view>
-          <view v-if="sending" class="message-row user">
+          <view v-if="sending && !generatingSummary" class="message-row user">
             <image class="chat-avatar" :src="userAvatar || '/static/avatar-user.png'" mode="aspectFill"
                    aria-label="你的头像"/>
             <view class="message-content">
@@ -844,7 +947,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <CompanionAvatar :size="38" state="thinking" :interactive="false"/>
             <view class="thinking-copy">
               <text class="message-name">AGENCY OS</text>
-              <text>正在回应，随时可以停止</text>
+              <text>{{ generatingSummary ? '正在整理会话，随时可以停止' : '正在回应，随时可以停止' }}</text>
             </view>
           </view>
           <view v-if="suggestion" class="proposal-card">
@@ -866,10 +969,10 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <text class="chat-disclosure">
             {{ user?.save_chat ? '已开启聊天保存，可在「我的」中关闭并清除' : '完整聊天默认不保存 · 确认的卡片会留下' }}
           </text>
-          <view class="composer"><textarea v-model="draft" class="chat-input" :adjust-position="false" @linechange="measureComposer" @input="starterHint = ''"
-                                           :cursor-spacing="24" :disabled="sending" maxlength="2000" :auto-height="true"
+          <view class="composer"><textarea v-model="draft" class="chat-input" :disabled="readOnlyConversation" :adjust-position="false" @linechange="measureComposer" @input="starterHint = ''"
+                                           :cursor-spacing="24" maxlength="2000" :auto-height="true"
                                            placeholder="想到什么，就从哪里说起……"/>
-            <button class="send-button" :disabled="!sending && !draft.trim()"
+            <button class="send-button" :disabled="!sending && (!draft.trim() || readOnlyConversation || !activeConversation)"
                     :aria-label="sending ? '停止回复' : '发送消息'" @click="sending ? cancelChat() : sendChat()"
                     hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
               <SvgIcon :name="sending ? 'stop' : 'arrow-up'" light :size="21"/>
@@ -934,7 +1037,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                     :hover-start-time="0" :hover-stay-time="70">
               <view>
                 <text class="setting-title">保存完整聊天</text>
-                <text class="setting-description">关闭时也会清除已保存的聊天</text>
+                <text class="setting-description">关闭时清除聊天和总结；长期记忆单独管理</text>
               </view>
               <view class="toggle" :class="{ on: user?.save_chat }">
                 <view/>
@@ -957,9 +1060,9 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <button class="setting-row" @click="modal = 'support'" hover-class="pressed" :hover-start-time="0"
                     :hover-stay-time="70">
               <view>
-                <text class="setting-title">此刻希望获得的帮助</text>
+                <text class="setting-title">新会话的默认回应方式</text>
                 <text class="setting-description">
-                  {{ supportStyles.find(item => item.id === selectedMode)?.title }}
+                  {{ supportStyles.find(item => item.id === canonicalSupportStyle(user?.support_style))?.title }}
                 </text>
               </view>
               <SvgIcon name="chevron" :size="17"/>
@@ -967,6 +1070,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </view>
           <view class="settings-group">
             <text class="group-label">我的记录</text>
+            <button class="setting-row" @click="drawer = 'memories'"><view><text class="setting-title">整理长期记忆</text><text class="setting-description">{{ user?.use_memory ? '已启用 · 可编辑、停用、合并或删除' : '尚未用于回复 · 由你确认和管理' }}</text></view><SvgIcon name="chevron" :size="17" /></button>
             <button class="setting-row" @click="showHistory" hover-class="pressed" :hover-start-time="0"
                     :hover-stay-time="70">
               <text class="setting-title">回看走过的路</text>
@@ -1014,7 +1118,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <view class="modal-handle"/>
           <view class="modal-heading">
             <text class="section-title">{{
-                modal === 'edit' ? '这张卡片，由你确认' : modal === 'experiment' ? '先试一点，由你决定' : modal === 'feedback' ? '最近，有什么变化？' : modal === 'ai' ? '开始之前，先告诉你' : modal === 'history' ? '走过的路' : modal === 'appearance' ? '选择舒服的光线' : modal === 'support' ? '此刻，希望怎样被支持' : '用户协议与隐私政策'
+                modal === 'edit' ? '这张卡片，由你确认' : modal === 'experiment' ? '先试一点，由你决定' : modal === 'feedback' ? '最近，有什么变化？' : modal === 'ai' ? '开始之前，先告诉你' : modal === 'appearance' ? '选择舒服的光线' : modal === 'support' ? '此刻，希望怎样被支持' : '用户协议与隐私政策'
               }}
             </text>
             <button class="icon-button" :disabled="busy" aria-label="关闭面板" @click="modal = ''" hover-class="pressed"
@@ -1068,7 +1172,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             </template>
             <template v-else-if="modal === 'ai'">
               <text class="body-copy">{{
-                  config.ai_mode === 'demo' ? '当前为本地演示，回复来自固定示例，不会向 DeepSeek 发送内容，启用真实 AI 后，下述处理说明适用' : '为了回应你，我们会将当前决策卡、你选择的困扰与生活背景、支持偏好、最近的反馈、本次输入和有限的会话上下文发送给 DeepSeek 处理'
+                  config.ai_mode === 'demo' ? '当前为本地演示，回复来自固定示例，不会向 DeepSeek 发送内容，启用真实 AI 后，下述处理说明适用' : '为了回应你，我们会将当前探索卡片、背景与反馈、本次输入、有限的当前会话、已审阅总结、你明确关联的探索卡片，以及已启用且范围匹配的长期记忆发送给 DeepSeek 处理。整理总结由你点击触发，也使用对话额度'
                 }}
               </text>
               <text class="body-copy">AI
@@ -1082,18 +1186,6 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <button class="text-button wide" @click="modal = ''" hover-class="pressed" :hover-start-time="0"
                       :hover-stay-time="70">暂时不用 AI，先整理卡片
               </button>
-            </template>
-            <template v-else-if="modal === 'history'">
-              <text v-if="!archives.length" class="muted">还没有记录</text>
-              <view v-for="entry in archives" :key="entry.id" class="archive-card">
-                <text class="muted small">{{ prettyDate(entry.updated_at) }} · {{
-                    entry.ended_at ? '已结束' : '正在跟进'
-                  }}
-                </text>
-                <text class="card-title">{{ entry.title || '一次还未命名的探索' }}</text>
-                <text class="body-copy">{{ entry.card.next_step || '还在探索方向' }}</text>
-                <text v-for="line in entry.card.confirmed" :key="line" class="card-line">{{ line }}</text>
-              </view>
             </template>
             <template v-else-if="modal === 'appearance'">
               <text class="page-description">换一种氛围，继续做你自己</text>
@@ -1134,7 +1226,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               </text>
               <text class="field-label">登录和保存</text>
               <text class="body-copy">
-                保存当前问题、你确认的决策卡和反馈，完整聊天默认不保存，开启后只保存之后的对话；关闭会清除已保存的完整聊天，你可以修改记录，也可以删除账号与个人数据
+                保存探索、会话名称、你确认的决策卡和反馈。完整聊天默认不保存，开启后只保存之后的对话和你确认的会话总结；关闭会清除聊天与总结。长期记忆只有明确确认后才保存，使用开关独立，支持编辑、停用、合并和删除；删除记忆不改写历史聊天原文
               </text>
               <text class="field-label">AI 与数据服务</text>
               <text class="body-copy">AI 对话在你单独同意后调用 DeepSeek，部署版本使用 Supabase 托管
@@ -1154,6 +1246,12 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <view v-if="modal === 'appearance'" class="appearance-footer"><ActionButton :arrow="false" :disabled="busy" @click="modal = ''">完成</ActionButton></view>
         </view>
       </view>
+      <ConversationDrawer v-if="drawer && user" :view="drawer" :conversations="conversations" :active="activeConversation" :issues="archives" :user="user"
+                          :summary="workspace.active.value.summary.value" :summary-draft="workspace.active.value.summaryDraft.value"
+                          :generating="sending" :running="runningIds" :error="chatError || error" :request="request"
+                          @close="drawer = ''" @view-changed="drawer = $event" @select="selectConversation" @refresh="guarded(refreshWorkspace)"
+                          @create-issue="beginAnotherExploration" @select-issue="selectExploration" @generate="generateSummary" @reviewed="reviewSummary"
+                          @changed="changedConversation" @user-changed="user = $event" @context-changed="workspace.cancelAll()" />
       <view v-if="toast" class="toast">{{ toast }}</view>
     </view>
   </view>

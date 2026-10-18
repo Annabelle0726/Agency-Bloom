@@ -1,9 +1,9 @@
 import { ref } from 'vue'
-import type { ChatMessage, ChatResponse, Suggestion, Insight } from './domain'
+import type { ChatMessage, ChatResponse, Suggestion, Insight, ConversationSummary } from './domain'
 import { ApiError } from './http'
 
-interface ChatBody { request_id: string; message: string; history: ChatMessage[]; insight_feedback: { possibility: string; reaction: 'dismissed' }[] }
-interface Options {
+interface ChatBody { request_id: string; message: string; history: { role: 'user' | 'assistant'; content: string }[]; insight_feedback: { possibility: string; reaction: 'dismissed' }[]; task?: 'chat' | 'summary'; session_summary?: ConversationSummary | null }
+export interface ChatOptions {
   post: (issueId: string, body: ChatBody) => { promise: Promise<ChatResponse>; cancel: () => void }
   cancelRemote: (id: string) => Promise<unknown>
   requestId: () => string
@@ -13,12 +13,15 @@ interface Options {
 
 // Page-independent, in-memory state: tab changes keep context without persisting
 // unconsented full transcripts or automatically retrying a paid request
-export function createChatSession(options: Options) {
+export function createChatSession(options: ChatOptions) {
   const messages = ref<ChatMessage[]>([])
   const draft = ref(''), pendingText = ref(''), sending = ref(false)
   const suggestion = ref<Suggestion | null>(null)
   const insight = ref<Insight | null>(null)
   const insightReaction = ref<'' | 'interested' | 'experiment'>('')
+  const summary = ref<ConversationSummary | null>(null), summaryDraft = ref<ConversationSummary | null>(null)
+  const error = ref(''), sendingTask = ref<'chat' | 'summary'>('chat'), lastRequestId = ref('')
+  const loaded = ref(false), olderCursor = ref<string | null>(null)
   let insightFeedback: ChatBody['insight_feedback'] = []
   let activeId = '', abort: (() => void) | null = null, cancelSent = false
   function cancel() {
@@ -31,25 +34,30 @@ export function createChatSession(options: Options) {
     cancel()
     activeId = ''; abort = null; sending.value = false; pendingText.value = ''
     draft.value = ''; messages.value = []; suggestion.value = null; insight.value = null; insightReaction.value = ''; insightFeedback = []
+    summary.value = null; summaryDraft.value = null; error.value = ''; loaded.value = false; olderCursor.value = null; lastRequestId.value = ''
   }
-  async function send(issueId: string) {
-    if (sending.value || !draft.value.trim()) return
-    const original = draft.value, text = original.trim(), id = options.requestId()
+  async function send(issueId: string, task: 'chat' | 'summary' = 'chat') {
+    if (sending.value || (task === 'chat' && !draft.value.trim())) return
+    const original = draft.value, text = task === 'summary' ? '请整理当前会话，保留未解决的问题' : original.trim(), id = options.requestId()
     activeId = id; cancelSent = false; sending.value = true; pendingText.value = text
-    suggestion.value = null
+    sendingTask.value = task; error.value = ''; lastRequestId.value = id
+    if (task === 'chat') suggestion.value = null
     try {
-      const operation = options.post(issueId, { request_id: id, message: text, history: messages.value.slice(-8), insight_feedback: [...insightFeedback] })
+      const operation = options.post(issueId, { request_id: id, message: text,
+        history: messages.value.slice(task === 'summary' ? -80 : -8).map(({ role, content }) => ({ role, content })),
+        insight_feedback: [...insightFeedback], task, session_summary: summary.value })
       abort = operation.cancel
       const response = await operation.promise
       if (activeId !== id || cancelSent) return
-      messages.value.push({ role: 'user', content: text }, { role: 'assistant', content: response.reply })
+      if (task === 'summary') { summaryDraft.value = response.summary ?? null; return }
+      messages.value.push({ role: 'user', content: text }, { role: 'assistant', content: response.reply, payload: { suggestion: response.suggestion, insight: response.insight, request_id: id } })
       suggestion.value = response.suggestion ?? null
       insight.value = response.insight ?? null; insightReaction.value = ''
       if (draft.value === original) draft.value = ''
     } catch (err) {
       if (activeId !== id) return
       if (err instanceof ApiError && err.cancelled) options.onCancelled(err.message)
-      else options.onError(err instanceof Error ? err.message : '回复没有完成，输入仍然保留')
+      else { error.value = err instanceof Error ? err.message : '回复没有完成，输入仍然保留'; options.onError(error.value) }
     } finally {
       if (activeId === id) {
         activeId = ''; abort = null; sending.value = false; pendingText.value = ''
@@ -71,5 +79,6 @@ export function createChatSession(options: Options) {
     draft.value = combined; insightReaction.value = action
     return null
   }
-  return { messages, draft, pendingText, sending, suggestion, insight, insightReaction, reactToInsight, send, cancel, reset }
+  return { messages, draft, pendingText, sending, sendingTask, suggestion, insight, insightReaction, summary, summaryDraft,
+    error, lastRequestId, loaded, olderCursor, reactToInsight, send, cancel, reset }
 }

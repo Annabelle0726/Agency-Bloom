@@ -8,7 +8,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 import httpx
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from . import ai
 from .config import Settings
+from .conversations import cancel_pending, context_for, register_routes
 from .local_schema import upgrade_local
 from .models import (
     AIRequest,
@@ -27,6 +28,7 @@ from .models import (
     Base,
     Budget,
     Consent,
+    Conversation,
     Feedback,
     Issue,
     Message,
@@ -63,6 +65,7 @@ def user_view(user):
         "ai_consent": user.ai_consent,
         "theme": user.theme,
         "support_style": user.support_style,
+        "use_memory": user.use_memory,
         "created_at": user.created_at,
     }
 
@@ -175,11 +178,13 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
     def dev_resume_credential(db, user):
         raw = secrets.token_urlsafe(32)
         # Separate namespace: this credential cannot be used as a normal API session.
-        db.add(AuthSession(
-            token_hash=digest("dev-resume:" + raw),
-            user_id=user.id,
-            expires_at=(datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
-        ))
+        db.add(
+            AuthSession(
+                token_hash=digest("dev-resume:" + raw),
+                user_id=user.id,
+                expires_at=(datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+            )
+        )
         return raw
 
     def sign_in(db, user, remember_dev=False):
@@ -283,6 +288,8 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
     def preferences(
         body: Preferences, user: User = Depends(authenticated), db: Session = Depends(db_dependency)
     ):
+        db.execute(update(User).where(User.id == user.id).values(use_memory=User.use_memory))
+        db.refresh(user)
         values = body.model_dump(exclude_unset=True, exclude_none=True)
         if "ai_consent" in values and values["ai_consent"] != user.ai_consent:
             db.add(
@@ -296,6 +303,14 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         if values.get("save_chat") is False:
             ids = select(Issue.id).where(Issue.user_id == user.id)
             db.execute(delete(Message).where(Message.issue_id.in_(ids)))
+            db.execute(
+                update(Conversation)
+                .where(Conversation.user_id == user.id)
+                .values(summary=None, version=Conversation.version + 1)
+            )
+            cancel_pending(db, user.id)
+        if "use_memory" in values and values["use_memory"] != user.use_memory:
+            cancel_pending(db, user.id)
         if values.get("ai_consent") is False:
             db.execute(
                 update(AIRequest)
@@ -330,18 +345,29 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
 
     @app.get("/api/issues/current")
     def current(user: User = Depends(authenticated), db: Session = Depends(db_dependency)):
-        item = db.scalar(select(Issue).where(Issue.user_id == user.id, Issue.ended_at.is_(None)))
+        item = db.scalar(
+            select(Issue)
+            .where(Issue.user_id == user.id, Issue.ended_at.is_(None))
+            .order_by(Issue.updated_at.desc(), Issue.id)
+            .limit(1)
+        )
         return issue_view(db, item) if item else None
 
     @app.get("/api/issues")
-    def issue_list(user: User = Depends(authenticated), db: Session = Depends(db_dependency)):
+    def issue_list(
+        user: User = Depends(authenticated),
+        db: Session = Depends(db_dependency),
+        offset: int = Query(0, ge=0),
+        limit: int = Query(50, ge=1, le=100),
+    ):
         return [
             issue_view(db, row)
             for row in db.scalars(
                 select(Issue)
                 .where(Issue.user_id == user.id)
-                .order_by(Issue.created_at.desc())
-                .limit(50)
+                .order_by(Issue.updated_at.desc(), Issue.id)
+                .offset(offset)
+                .limit(limit)
             )
         ]
 
@@ -371,11 +397,17 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         )
         db.add(item)
         user.support_style = body.support_style
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-            raise HTTPException(409, "你已经有一个正在跟进的问题，先回到它或将它结束") from None
+        db.flush()
+        db.add(
+            Conversation(
+                id=item.id,
+                user_id=user.id,
+                issue_id=item.id,
+                title="开始探索",
+                support_style=body.support_style,
+            )
+        )
+        db.commit()
         return issue_view(db, item)
 
     @app.get("/api/issues/{issue_id}")
@@ -421,6 +453,22 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
     ):
         item = owned(db, user, issue_id)
         item.ended_at = now()
+        item.updated_at = now()
+        conversation_ids = select(Conversation.id).where(Conversation.issue_id == item.id)
+        db.execute(
+            update(AIRequest)
+            .where(AIRequest.conversation_id.in_(conversation_ids), AIRequest.status == "pending")
+            .values(status="cancelled")
+        )
+        db.commit()
+        return issue_view(db, item)
+
+    @app.post("/api/issues/{issue_id}/resume")
+    def resume_issue(
+        issue_id: str, user: User = Depends(authenticated), db: Session = Depends(db_dependency)
+    ):
+        item = owned(db, user, issue_id)
+        item.ended_at = None
         item.updated_at = now()
         db.commit()
         return issue_view(db, item)
@@ -491,8 +539,24 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         user: User = Depends(authenticated),
         db: Session = Depends(db_dependency),
     ):
+        return await run_chat(issue_id, body, request, user, db)
+
+    async def run_chat(issue_id, body, request, user, db, conversation=None):
+        # Serialize admission with consent/context edits, then refresh authenticated data.
+        # A stale dependency read must never authorize a newly submitted provider call.
+        locked = db.execute(
+            update(User).where(User.id == user.id).values(use_memory=User.use_memory)
+        )
+        if locked.rowcount != 1:
+            raise HTTPException(401, "登录已失效")
+        db.refresh(user)
         item = owned(db, user, issue_id)
+        db.refresh(item)
         active(item)
+        if conversation:
+            db.refresh(conversation)
+            if conversation.archived_at:
+                raise HTTPException(409, "这段会话已归档，请先恢复")
         if not user.ai_consent:
             raise HTTPException(403, "请先阅读并同意 AI 数据处理说明")
         user_id = user.id
@@ -507,15 +571,27 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         )
         if count >= settings.daily_chat_limit:
             raise HTTPException(429, "今天的对话额度已用完，已保存的卡片仍可查看和修改")
+        context = None
+        history = None
+        if conversation:
+            if db.scalar(
+                select(AIRequest.id)
+                .where(AIRequest.conversation_id == conversation.id, AIRequest.status == "pending")
+                .limit(1)
+            ):
+                raise HTTPException(409, "这段会话有一条回复正在生成")
+            history, context = context_for(db, user, conversation, body)
         prompt = ai.messages_for(
             item.card,
             issue_view(db, item)["feedback"][:5],
             body,
-            user.support_style,
+            conversation.support_style if conversation else user.support_style,
             item.life_contexts,
             item.concerns,
             current_issue={"title": item.title, "stage": item.stage},
             exploration=item.exploration,
+            conversation_context=context,
+            history=history,
         )
         reserved = ai.reservation_micro(settings, prompt)
         insert = sqlite_insert if sqlite else pg_insert
@@ -542,7 +618,24 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         if count >= settings.daily_chat_limit:
             db.rollback()
             raise HTTPException(429, "今天的对话额度已用完，卡片仍可继续使用")
-        db.add(AIRequest(id=key, user_id=user_id, month=month, cost_micro=reserved))
+        # The budget row lock also serializes admission of requests per conversation.
+        if conversation and db.scalar(
+            select(AIRequest.id)
+            .where(AIRequest.conversation_id == conversation.id, AIRequest.status == "pending")
+            .limit(1)
+        ):
+            db.rollback()
+            raise HTTPException(409, "这段会话有一条回复正在生成")
+        db.add(
+            AIRequest(
+                id=key,
+                user_id=user_id,
+                month=month,
+                cost_micro=reserved,
+                kind=body.task,
+                conversation_id=conversation.id if conversation else None,
+            )
+        )
         try:
             db.commit()
         except IntegrityError:
@@ -559,14 +652,21 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             generation = await task
             result, actual_cost = generation.output, generation.cost_micro
             with sessions.begin() as done:
+                done.execute(
+                    update(User).where(User.id == user_id).values(use_memory=User.use_memory)
+                )
                 record = done.get(AIRequest, key)
                 live_user, live_issue = done.get(User, user_id), done.get(Issue, issue_id)
+                live_conversation = (
+                    done.get(Conversation, conversation.id) if conversation else None
+                )
                 if (
                     record.status != "pending"
                     or not live_user
                     or not live_user.ai_consent
                     or not live_issue
                     or live_issue.ended_at
+                    or (conversation and (not live_conversation or live_conversation.archived_at))
                 ):
                     raise asyncio.CancelledError()
                 done.execute(
@@ -576,10 +676,41 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                 )
                 record.cost_micro = max(0, actual_cost)
                 record.usage = generation.usage
-                record.status = "completed"
-                if live_user.save_chat:
-                    done.add(Message(issue_id=issue_id, role="user", content=body.message))
-                    done.add(Message(issue_id=issue_id, role="assistant", content=result.reply))
+                transitioned = done.execute(
+                    update(AIRequest)
+                    .where(AIRequest.id == key, AIRequest.status == "pending")
+                    .values(status="completed")
+                )
+                if transitioned.rowcount != 1:
+                    raise asyncio.CancelledError()
+                if live_conversation:
+                    live_conversation.updated_at = now()
+                if live_user.save_chat and body.task == "chat":
+                    target_id = conversation.id if conversation else issue_id
+                    done.add(
+                        Message(
+                            issue_id=issue_id,
+                            conversation_id=target_id,
+                            role="user",
+                            content=body.message,
+                        )
+                    )
+                    done.flush()
+                    done.add(
+                        Message(
+                            issue_id=issue_id,
+                            conversation_id=target_id,
+                            role="assistant",
+                            content=result.reply,
+                            payload={
+                                "suggestion": result.suggestion.model_dump()
+                                if result.suggestion
+                                else None,
+                                "insight": result.insight.model_dump() if result.insight else None,
+                                "request_id": str(body.request_id),
+                            },
+                        )
+                    )
             return result.model_dump() | {"mode": settings.ai_mode, "usage": generation.usage}
         except asyncio.CancelledError:
             logging.getLogger("agency.ai").info("generation_cancelled")
@@ -612,6 +743,25 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                     record.status = "failed"
             raise HTTPException(502, "这次回复没有完成，你的输入还在，稍后可手动重试") from None
 
+    @app.get("/api/requests/{request_id}")
+    def request_status(
+        request_id: str, user: User = Depends(authenticated), db: Session = Depends(db_dependency)
+    ):
+        record = db.get(AIRequest, digest(f"{user.id}:{request_id}"))
+        if not record or record.user_id != user.id:
+            raise HTTPException(404, "没有找到这条请求")
+        return {
+            "status": record.status,
+            "conversation_id": record.conversation_id,
+            "recoverable": bool(
+                user.save_chat
+                and record.conversation_id
+                and record.kind == "chat"
+                and record.status == "completed"
+            ),
+        }
+
+    register_routes(app, authenticated, db_dependency, owned, run_chat)
     return app
 
 

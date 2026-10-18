@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import JSON, Boolean, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -25,6 +25,7 @@ class User(Base):
     ai_consent: Mapped[bool] = mapped_column(Boolean, default=False)
     theme: Mapped[str] = mapped_column(String(16), default="light")
     support_style: Mapped[str] = mapped_column(String(20), default="clarify")
+    use_memory: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[str] = mapped_column(String(40), default=now)
 
 
@@ -60,15 +61,48 @@ class Issue(Base):
     created_at: Mapped[str] = mapped_column(String(40), default=now)
     updated_at: Mapped[str] = mapped_column(String(40), default=now)
     ended_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
-    __table_args__ = (
-        Index(
-            "one_active_issue_per_user",
-            "user_id",
-            unique=True,
-            sqlite_where=text("ended_at IS NULL"),
-            postgresql_where=text("ended_at IS NULL"),
-        ),
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    issue_id: Mapped[str] = mapped_column(ForeignKey("issues.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(120), default="新会话")
+    support_style: Mapped[str] = mapped_column(String(20), default="discover")
+    summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+    updated_at: Mapped[str] = mapped_column(String(40), default=now)
+    archived_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
+
+class ConversationLink(Base):
+    __tablename__ = "conversation_links"
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"), primary_key=True
     )
+    issue_id: Mapped[str] = mapped_column(
+        ForeignKey("issues.id", ondelete="CASCADE"), primary_key=True
+    )
+
+
+class Memory(Base):
+    __tablename__ = "memories"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    issue_id: Mapped[str | None] = mapped_column(
+        ForeignKey("issues.id", ondelete="CASCADE"), nullable=True
+    )
+    source_conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True
+    )
+    content: Mapped[str] = mapped_column(Text)
+    category: Mapped[str] = mapped_column(String(20), default="fact")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+    updated_at: Mapped[str] = mapped_column(String(40), default=now)
 
 
 class Feedback(Base):
@@ -84,6 +118,10 @@ class Message(Base):
     __tablename__ = "messages"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     issue_id: Mapped[str] = mapped_column(ForeignKey("issues.id", ondelete="CASCADE"), index=True)
+    conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     role: Mapped[str] = mapped_column(String(16))
     content: Mapped[str] = mapped_column(Text)
     created_at: Mapped[str] = mapped_column(String(40), default=now)
@@ -102,9 +140,13 @@ class AIRequest(Base):
     user_id: Mapped[str | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True
     )
+    conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     month: Mapped[str] = mapped_column(String(7))
     cost_micro: Mapped[int] = mapped_column(Integer)
     # Usage/pricing metadata only; no prompt, response text, key or private context.
     usage: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="pending")
+    kind: Mapped[str] = mapped_column(String(16), default="chat")
     created_at: Mapped[str] = mapped_column(String(40), default=now)

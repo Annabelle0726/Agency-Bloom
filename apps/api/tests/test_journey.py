@@ -74,16 +74,17 @@ def test_resume_card_and_feedback_but_not_other_users_data(client):
     )
 
 
-def test_only_one_active_issue_and_old_version_cannot_overwrite(client):
+def test_parallel_explorations_and_old_version_cannot_overwrite(client):
     auth = login(client)
     current = issue(client, auth)
-    assert client.post("/api/issues", headers=auth, json={"title": "第二件事"}).status_code == 409
+    second = client.post("/api/issues", headers=auth, json={"title": "第二件事"})
+    assert second.status_code == 201
     path = f"/api/issues/{current['id']}/card"
     body = {"version": 1, "card": current["card"] | {"next_step": "新行动"}}
     assert client.put(path, headers=auth, json=body).status_code == 200
     assert client.put(path, headers=auth, json=body).status_code == 409
     assert client.post(f"/api/issues/{current['id']}/end", headers=auth).status_code == 200
-    assert client.get("/api/issues/current", headers=auth).json() is None
+    assert client.get("/api/issues/current", headers=auth).json()["id"] == second.json()["id"]
     assert client.post("/api/issues", headers=auth, json={"title": "新的方向"}).status_code == 201
 
 

@@ -35,6 +35,9 @@ def test_postgres_migration_blocks_data_api_and_supports_private_journey():
             "budgets",
             "ai_requests",
             "consents",
+            "conversations",
+            "conversation_links",
+            "memories",
         ]
         for table in tables:
             assert db.execute(
@@ -54,7 +57,7 @@ def test_postgres_migration_blocks_data_api_and_supports_private_journey():
         original = issue(client, alice)
         assert client.get(f"/api/issues/{original['id']}", headers=bob).status_code == 404
         assert (
-            client.post("/api/issues", headers=alice, json={"title": "another"}).status_code == 409
+            client.post("/api/issues", headers=alice, json={"title": "another"}).status_code == 201
         )
         client.put("/api/me", headers=alice, json={"ai_consent": True, "save_chat": True})
         body = {"request_id": "b3d789cb-0bc6-4cc4-b248-f74cbbf8fcef", "message": "从哪里开始"}
@@ -66,6 +69,16 @@ def test_postgres_migration_blocks_data_api_and_supports_private_journey():
         assert client.get("/api/me", headers=alice).status_code == 401
         client.delete("/api/me", headers=bob)
     with psycopg.connect(url) as db:
-        for table in ["users", "auth_sessions", "issues", "feedback", "messages", "consents"]:
+        for table in [
+            "users",
+            "auth_sessions",
+            "issues",
+            "feedback",
+            "messages",
+            "consents",
+            "conversations",
+            "conversation_links",
+            "memories",
+        ]:
             assert db.execute(f"SELECT count(*) FROM public.{table}").fetchone()[0] == 0
         assert db.execute("SELECT user_id FROM public.ai_requests").fetchone()[0] is None

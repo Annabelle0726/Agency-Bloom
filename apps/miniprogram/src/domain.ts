@@ -18,8 +18,17 @@ export interface Issue {
   feedback: { id: string; kind: string; text: string; created_at: string }[]
   exploration_intent?: string; actual_question?: string; focus_response?: string
 }
-export interface User { id: string; theme: ThemeId; save_chat: boolean; ai_consent: boolean; support_style: string }
-export interface ChatMessage { role: 'user' | 'assistant'; content: string }
+export interface User { id: string; theme: ThemeId; save_chat: boolean; ai_consent: boolean; support_style: string; use_memory?: boolean }
+export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string } | null }
+export interface ConversationSummary { overview: string; decisions: string[]; open_questions: string[]; next_steps: string[] }
+export interface Conversation {
+  id: string; issue_id: string; title: string; support_style: string; summary: ConversationSummary | null;
+  linked_issue_ids: string[]; version: number; created_at: string; updated_at: string; archived_at: string | null
+}
+export interface Memory {
+  id: string; content: string; category: 'fact' | 'preference' | 'constraint'; issue_id: string | null;
+  source_conversation_id: string | null; enabled: boolean; version: number; updated_at: string
+}
 export interface Experiment { action: string; tests: string; effort: string; stop_rule: string }
 export interface Insight {
   title: '还有一种可能'; observation: string; possibility: string; uncertainty: string
@@ -28,6 +37,7 @@ export interface Insight {
 export interface ChatResponse {
   reply: string; suggestion: Suggestion | null; mode: 'demo' | 'deepseek'
   insight?: Insight | null
+  summary?: ConversationSummary | null
   usage?: { prompt_tokens: number; completion_tokens: number; cost_cny: string; currency: string } | null
 }
 
