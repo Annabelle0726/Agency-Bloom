@@ -1,33 +1,47 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Onboarding } from '../domain'
-import { startingConcernOptions, focusChoicesFor, concernOptions, lifeContexts, supportStyles, newOnboarding, toggleConcern, reflectionFor, reflectionHeading, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle, loginSummaryFor } from '../onboarding'
+import { startingConcernOptions, focusChoicesFor, concernOptions, lifeContexts, supportStyles, newOnboarding, toggleConcern, reflectionFor, reflectionHeading, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle } from '../onboarding'
 import ActionButton from './ActionButton.vue'
 import SelectionCard from './SelectionCard.vue'
 import ProgressIndicator from './ProgressIndicator.vue'
 import SvgIcon from './SvgIcon.vue'
-import WelcomeOpening from './WelcomeOpening.vue'
+import { draftKeyFor, questionStep } from '../entry'
 
-const props = defineProps<{ busy: boolean; error: string; devAuth: boolean; authenticated: boolean; ready: boolean; offline?: boolean; connecting?: boolean; wechatAuth?: boolean }>()
-const emit = defineEmits<{ save: [form: Onboarding, dev: boolean]; privacy: []; retry: []; navigate: [] }>()
+const props = defineProps<{ busy: boolean; error: string; userId: string }>()
+const emit = defineEmits<{ save: [form: Onboarding]; privacy: []; skip: []; navigate: [] }>()
+const draftKey = draftKeyFor(props.userId)
 let cached: ReturnType<typeof restoreDraft> = null
 try {
-  const stored = uni.getStorageSync(DRAFT_KEY)
+  const stored = uni.getStorageSync(draftKey)
   cached = restoreDraft(stored)
-  if (stored && !cached) uni.removeStorageSync(DRAFT_KEY)
+  if (stored && !cached) uni.removeStorageSync(draftKey)
 } catch { /* Storage can be unavailable. */ }
 const form = reactive({ ...newOnboarding(), ...cached?.form })
 if (!form.exploration_intent && form.concerns.length === 1) form.exploration_intent = form.concerns[0]
-const storyKey = 'agency.opening.story.v1'
-let storySeen = props.authenticated
-try { storySeen = storySeen || !!uni.getStorageSync(storyKey) } catch { /* Optional presentation state. */ }
-const step = ref(cached?.step ?? (storySeen ? 0 : -1))
-const accepted = ref(false)
+const step = ref(questionStep(cached?.step))
+const legacyDraft = ref<ReturnType<typeof restoreDraft>>(null)
+if (!cached) {
+  try { legacyDraft.value = restoreDraft(uni.getStorageSync(DRAFT_KEY)) } catch { /* Optional legacy recovery. */ }
+}
+function recoverLegacyDraft() {
+  if (!legacyDraft.value) return
+  Object.assign(form, legacyDraft.value.form)
+  if (!form.exploration_intent && form.concerns.length === 1) form.exploration_intent = form.concerns[0]
+  step.value = questionStep(legacyDraft.value.step)
+  otherOpen.value = !!form.actual_question
+  responseOpen.value = !!form.title || (!!form.focus_response && !focusChoicesFor(form).includes(form.focus_response))
+  detailsOpen.value = !!form.background || form.constraints.length > 0
+  persist()
+  if (draftSaved.value) {
+    try { uni.removeStorageSync(DRAFT_KEY) } catch { /* Keep the original if unavailable. */ }
+    legacyDraft.value = null
+  }
+}
 const otherOpen = ref(!!form.actual_question)
 const responseOpen = ref(!!form.title || (!!form.focus_response && !focusChoicesFor(form).includes(form.focus_response)))
 const detailsOpen = ref(!!form.background || form.constraints.length > 0)
 const focusChoices = computed(() => focusChoicesFor(form))
-const introduction = ref(false)
 const draftInfo = ref(false)
 const localError = ref('')
 const draftSaved = ref(!!cached)
@@ -42,9 +56,6 @@ const reflectionTitle = computed(() => reflectionHeading(form))
 const contextLabels = computed(() => lifeContexts.filter(item => form.life_contexts?.includes(item.id)))
 const support = computed(() => form.support_style ? supportStyles.find(item => item.id === canonicalSupportStyle(form.support_style)) : undefined)
 const branch = computed(() => branchFor(form))
-const loginSummary = computed(() => loginSummaryFor(form))
-// Recheck stale startup failures on entry; local onboarding still never waits for it
-watch(step, value => { if (value === 5 && props.offline && !props.connecting) emit('retry') }, { immediate: true })
 const constraintsText = computed({ get: () => form.constraints.join('\n'), set: value => { form.constraints = value.split('\n').map(v => v.trim()).filter(Boolean).slice(0, 12) } })
 const canContinue = computed(() => step.value === 0 ? form.concerns.length > 0 : step.value === 1 ? !!form.exploration_intent : step.value === 3 ? !!form.support_style : true)
 const headings = [
@@ -59,17 +70,16 @@ const heading = computed(() => headings[step.value] || headings[0])
 function persist() {
   try {
     const draft = saveDraft(form, step.value)
-    uni.setStorageSync(DRAFT_KEY, draft)
-    if (JSON.stringify(uni.getStorageSync(DRAFT_KEY)) !== JSON.stringify(draft)) throw Error('Local write not confirmed')
+    uni.setStorageSync(draftKey, draft)
+    if (JSON.stringify(uni.getStorageSync(draftKey)) !== JSON.stringify(draft)) throw Error('Local write not confirmed')
     draftSaved.value = true; localError.value = ''
   } catch { draftSaved.value = false; localError.value = '本机暂时无法保存草稿，请先不要关闭页面' }
 }
 watch([form, step], persist, { deep: true, flush: 'sync' })
 function go(value: number) {
   if (moving.value || props.busy || value === step.value) return
-  if (step.value === -1 && value === 0) {
-    try { uni.setStorageSync(storyKey, true) } catch { /* Never block exploration. */ }
-  }
+  if (value < 0) { emit('skip'); return }
+  value = questionStep(value)
   emit('navigate')
   direction.value = value < step.value ? 'backward' : 'forward'
   moving.value = true
@@ -105,34 +115,27 @@ function context(id: string) {
   const values = form.life_contexts || []
   form.life_contexts = values.includes(id) ? values.filter(item => item !== id) : [...values, id]
 }
-function submit(dev: boolean) {
-  if (props.busy || (!props.authenticated && !accepted.value)) return
-  emit('save', JSON.parse(JSON.stringify(form)), dev)
+function submit() {
+  if (props.busy) return
+  emit('save', JSON.parse(JSON.stringify(form)))
 }
-function reflectionAction() { if (props.authenticated) submit(false); else go(5) }
-function skipContext() { if (moving.value) return; form.life_contexts = []; go(3) }
 function clearDraft() {
   clearTimeout(navigationTimer)
   moving.value = false
   Object.assign(form, newOnboarding())
-  accepted.value = false
   otherOpen.value = false
   responseOpen.value = false
   detailsOpen.value = false
   draftInfo.value = false
-  step.value = -1
-  try { uni.removeStorageSync(DRAFT_KEY) } catch { /* Reset still works in memory */ }
+  step.value = 0
+  try { uni.removeStorageSync(draftKey) } catch { /* Reset still works in memory */ }
 }
 defineExpose({ clearDraft })
 </script>
 
 <template>
-  <view class="onboarding-flow" :class="{ 'welcome-scene': step === -1, 'login-scene': step === 5, 'guest-scene': step === 6 }">
-    <image v-if="step === 5 || step === 6" class="scene-image wall-image" src="/static/morning-light.jpg" mode="aspectFill" />
-
-    <WelcomeOpening v-if="step === -1" key="welcome" @start="go(0)" @about="introduction = true" />
-
-    <view v-else-if="step < 5" key="flow-shell" class="flow-page">
+  <view class="onboarding-flow">
+    <view key="flow-shell" class="flow-page">
       <view class="flow-chrome">
         <view class="flow-nav"><button class="icon-button flow-back" aria-label="返回上一步" :disabled="busy || moving" hover-class="pressed" :hover-start-time="0" @click="go(step - 1)"><SvgIcon name="back" :size="22" /></button><text class="flow-wordmark">YOUR SPACE</text><button class="icon-button" aria-label="草稿与隐私" hover-class="pressed" :hover-start-time="0" @click="draftInfo = true"><SvgIcon name="more" :size="22" /></button></view>
         <ProgressIndicator :current="step + 1" :total="5" />
@@ -140,6 +143,11 @@ defineExpose({ clearDraft })
       <scroll-view class="flow-scroll" scroll-y :scroll-top="scrollTop" :show-scrollbar="false" @scroll="rememberScroll">
         <view :key="'content-' + step" class="flow-body" :class="'flow-' + direction + '-' + (step % 2)">
           <view class="flow-heading"><text class="eyebrow">{{ heading.label }}</text><text class="flow-title">{{ heading.title }}</text><text class="flow-description">{{ heading.detail }}</text></view>
+          <view v-if="legacyDraft && step === 0" class="legacy-draft">
+            <text>这台设备还有之前的回答，要接着整理吗？</text>
+            <button class="text-button" @click="recoverLegacyDraft">恢复本机草稿</button>
+            <button class="text-button" @click="legacyDraft = null">这次先不使用</button>
+          </view>
           <view v-if="step === 0" class="selection-stack">
             <SelectionCard v-for="item in startingConcernOptions" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" />
             <view v-if="form.concerns.includes('other') || form.actual_question" class="optional-writing">
@@ -194,48 +202,19 @@ defineExpose({ clearDraft })
         </view>
       </scroll-view>
       <view class="flow-footer">
-        <view v-if="localError || (authenticated && step === 4 && error)" class="notice">{{ localError || error }}</view>
+        <view v-if="localError || error" class="notice">{{ localError || error }}</view>
         <ActionButton v-if="step < 4" :disabled="!canContinue" :locked="moving" @click="go(step + 1)">继续</ActionButton>
-        <ActionButton v-else :loading="busy" :locked="moving" @click="reflectionAction">保存这次探索</ActionButton>
-        <view class="flow-footer-detail"><button v-if="step === 2" class="flow-skip" :disabled="moving" @click="skipContext" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">暂时跳过</button><button v-else-if="step === 4 && !authenticated" class="flow-skip" :disabled="moving" @click="go(6)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">暂时不注册</button><button v-else class="draft-link" @click="draftInfo = true" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><SvgIcon name="lock" :size="12" /><text>{{ draftSaved ? '草稿已留在这台设备' : '匿名回答不上传' }}</text></button></view>
+        <ActionButton v-else :loading="busy" :locked="moving" @click="submit">保存这次探索</ActionButton>
+        <view class="flow-footer-detail">
+          <button class="flow-skip" :disabled="busy || moving" @click="emit('skip')" hover-class="pressed">稍后再说，先进入空间</button>
+          <button class="draft-link" @click="draftInfo = true"><SvgIcon name="lock" :size="12" /><text>{{ draftSaved ? '本机草稿已保留' : '回答暂不上传' }}</text></button>
+        </view>
       </view>
     </view>
 
-    <view v-else-if="step === 5" key="login" class="login-content">
-      <button class="login-back" hover-class="pressed" :disabled="moving" @click="go(4)"><SvgIcon name="back" :size="19" /><text>返回整理</text></button>
-      <view class="login-heading"><text class="eyebrow">KEEP YOUR EXPLORATION</text><text class="flow-title">{{ '把这次探索留在这里\n下次回来继续' }}</text><text class="flow-description">留住此刻的线索与好奇，下次不用重新说起</text></view>
-      <view class="login-focus">
-        <view class="login-focus-heading"><SvgIcon name="compass" :size="19" /><text>{{ loginSummary.name ? '你为探索起的名字' : '这次探索的起点' }}</text><text class="login-focus-index">01</text></view>
-        <text class="login-focus-title">{{ loginSummary.name || loginSummary.intent || '从一点好奇开始' }}</text>
-        <text v-if="loginSummary.clue" class="login-focus-clue">{{ loginSummary.clue }}</text>
-        <text v-else-if="loginSummary.name && loginSummary.intent" class="login-focus-intent">{{ loginSummary.intent }}</text>
-        <view class="login-focus-footer"><text v-if="loginSummary.support" class="login-support">{{ loginSummary.support }}</text><view v-if="draftSaved" class="login-draft-state"><view /><text>本机草稿已保留</text></view></view>
-      </view>
-      <view v-if="error || localError" class="notice">{{ error || localError }}</view>
-      <view v-if="connecting || offline" class="login-connection" :class="{ 'is-reconnecting': connecting }"><view class="connection-dot" /><view class="connection-copy"><text>{{ connecting ? '正在重新连接服务' : '暂时无法连接服务' }}</text><text v-if="!connecting">可以继续浏览，连接恢复后再保存</text></view><button class="connection-retry" :disabled="connecting || busy" @click="$emit('retry')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ connecting ? '连接中' : '重试' }}</button></view>
-      <view class="login-actions">
-        <view class="login-consent"><button class="consent-check-target" aria-label="同意用户协议与隐私政策" :aria-pressed="accepted" @click="accepted = !accepted" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><view class="consent-box" :class="{ checked: accepted }"><SvgIcon v-if="accepted" name="check" light :size="13" /></view></button><view class="consent-copy"><text>我已阅读并同意</text><button class="policy-link" @click="$emit('privacy')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">《用户协议》与《隐私政策》</button></view></view>
-        <text v-if="!accepted" class="consent-hint">阅读并勾选后，即可选择登录方式</text>
-        <!-- #ifdef MP-WEIXIN -->
-        <ActionButton kind="wechat" :disabled="!accepted || wechatAuth === false || connecting" :arrow="wechatAuth !== false" :loading="busy" @click="submit(false)">{{ wechatAuth === false ? '微信快捷登录 · 待接入' : '微信快捷登录 / 注册' }}</ActionButton>
-        <text v-if="wechatAuth === false && ready && !offline" class="wechat-setup-note">{{ devAuth ? '微信登录尚未配置，内测可使用下方开发登录' : '微信登录正在准备中，你可以先继续浏览' }}</text>
-        <!-- #endif -->
-        <ActionButton v-if="devAuth" :disabled="!accepted || connecting" :loading="busy" @click="submit(true)">本地开发演示登录</ActionButton>
-        <text v-if="devAuth" class="demo-login-note">开发登录不连接微信，AI 对话仍需另行授权</text>
-        <!-- #ifdef H5 -->
-        <text v-if="!devAuth && ready" class="demo-login-note">请在微信小程序中完成登录</text>
-        <!-- #endif -->
-        <ActionButton kind="ghost" :arrow="false" :locked="moving" @click="go(6)">暂不注册，继续看看</ActionButton>
-      </view>
-      <text class="login-bottom-note">你的想法，值得被认真对待</text>
-    </view>
-
-    <view v-else key="guest" class="guest-content"><text class="eyebrow">YOUR SPACE</text><text class="flow-title">{{ '你好\n这是你的探索起点' }}</text><text class="flow-description">从一点真实的好奇开始</text><view class="reflection-card"><text class="eyebrow">一次可以修改的探索</text><text class="reflection-title">{{ form.title || '先留住这一点好奇' }}</text><text v-if="form.focus_response || form.actual_question || form.background" class="guest-clue">{{ form.focus_response || form.actual_question || form.background }}</text><text class="reflection-copy">{{ form.focus_response || form.actual_question || form.background ? '它不必马上变成答案，我们可以从这里继续探索' : '可以先从一件真实的小事开始，不急着做选择' }}</text><view v-if="support" class="reflection-support"><SvgIcon :name="support.icon" :size="18" /><text>{{ support.title }}</text></view></view><ActionButton :locked="moving" @click="go(5)">登录，留下这次探索</ActionButton><ActionButton kind="ghost" :arrow="false" :locked="moving" @click="go(4)">回到初步整理，继续修改</ActionButton><text class="local-draft-note">{{ draftSaved ? '匿名浏览 · 草稿已留在这台设备' : '匿名浏览 · 本机草稿尚未保存成功' }}</text></view>
-
-    <view v-if="introduction || draftInfo" class="modal-backdrop" @click.self="introduction = false; draftInfo = false">
-      <view class="intro-panel"><view class="modal-handle" /><view class="intro-panel-header"><text class="eyebrow">AGENCY OS</text><button class="icon-button" aria-label="关闭面板" @click="introduction = false; draftInfo = false" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><SvgIcon name="close" :size="21" /></button></view>
-        <template v-if="introduction"><text class="flow-title">{{ '我还想\n按自己的意愿活一活' }}</text><text class="body-copy">Agency OS 从这个朴素的愿望出发</text><text class="body-copy">{{ '现实会划出边界\n但在尚有余地的地方\n我们仍可以辨认自己的意愿，争取选择' }}</text><text class="body-copy">{{ '这里可以陪你理清工作与方向中的困惑\n比较选择，尝试一点改变\n也给休息、犹豫和重新选择留下位置' }}</text><text class="body-copy">{{ '愿每一次向前\n都更靠近你愿意亲自度过的生活' }}</text><text class="body-copy">{{ '你可以先匿名看看，再决定是否登录保存\nAI 对话需要你单独同意，建议由你确认后才会进入决策卡' }}</text><ActionButton :arrow="false" @click="introduction = false">我知道了</ActionButton></template>
-        <template v-else><text class="flow-title">{{ draftSaved ? '草稿已留在这台设备' : '先保留页面里的想法' }}</text><text class="body-copy">{{ draftSaved ? '已核对本机草稿，7 天内可以回来接着探索' : '本机草稿尚未保存，请先不要关闭页面' }}</text><text class="body-copy">{{ '登录保存前，不会上传你的回答\n如果正在使用共用设备，可以随时清除本机草稿' }}</text><ActionButton :arrow="false" @click="draftInfo = false">继续探索</ActionButton><button class="clear-draft" @click="clearDraft" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">清除本机草稿</button></template>
+    <view v-if="draftInfo" class="modal-backdrop" @click.self="draftInfo = false">
+      <view class="intro-panel"><view class="modal-handle" /><view class="intro-panel-header"><text class="eyebrow">AGENCY OS</text><button class="icon-button" aria-label="关闭面板" @click="draftInfo = false" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><SvgIcon name="close" :size="21" /></button></view>
+        <template><text class="flow-title">{{ draftSaved ? '草稿已留在这台设备' : '先保留页面里的想法' }}</text><text class="body-copy">{{ draftSaved ? '已核对本机草稿，7 天内可以回来接着探索' : '本机草稿尚未保存，请先不要关闭页面' }}</text><text class="body-copy">{{ '点击「保存这次探索」前，不会上传你的回答\n如果正在使用共用设备，可以随时清除本机草稿' }}</text><ActionButton :arrow="false" @click="draftInfo = false">继续探索</ActionButton><button class="clear-draft" @click="clearDraft" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">清除本机草稿</button></template>
       </view>
     </view>
   </view>
@@ -248,4 +227,6 @@ defineExpose({ clearDraft })
 .quick-answer::after,.optional-toggle::after { border:0; }
 .optional-toggle { display:block; margin:14px 0 0; padding:12px 0; min-height:44px; text-align:left; color:#52674e; background:transparent; font-size:13px; line-height:1.8; }
 .optional-note { display:block; color:#667180; font-size:12px; line-height:1.8; margin-top:10px; }
+.legacy-draft { padding:16px; margin-bottom:20px; background:#edf0e7; border-radius:16px; font-size:13px; line-height:1.8; }
+.flow-footer-detail { flex-wrap:wrap; gap:4px 12px; }
 </style>

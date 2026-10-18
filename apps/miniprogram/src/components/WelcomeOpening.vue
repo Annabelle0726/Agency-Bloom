@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import ActionButton from './ActionButton.vue'
-const emit = defineEmits<{ start: []; about: [] }>()
+const emit = defineEmits<{ start: [] }>()
 const current = ref(0)
 const reducedMotion = ref(false)
 const revealed = ref<number[]>([])
 const loaded = ref<number[]>([])
 const slides = [
   {
-    scene: 'dawn', label: '01 / 向前的意义', accent: '#934d36',
-    title: ['我们不断向前', '想抵达怎样的生活'],
-    lines: ['学得更多，做得更好', '我们为未来付出很多努力', '也许，可以偶尔问问自己', '这些努力，想带我过上怎样的一天？'],
-    emphasis: '你想靠近的生活，也值得被认真想象',
+    scene: 'mountain-person', label: '01 / 向前的意义', accent: '#934d36',
+    title: ['你是否也曾迷茫', '向前，想抵达哪里？'],
+    lines: ['我们学着努力，也学着成为更好的人', '却很少停下来，问一问自己', '我想让这些努力', '带我过上怎样的一天？'],
+    emphasis: '向前的意义，\n也许藏在你想过的一天里',
     note: '不必现在回答，先把这个问题留给自己',
   },
   {
@@ -38,8 +38,8 @@ const slides = [
   {
     scene: 'meadow', label: '05 / 从这个愿望出发', accent: '#5a602e',
     title: ['我还想', '按自己的意愿活一活'],
-    lines: ['Agency OS 从这个朴素的愿望出发', '陪你理清工作与方向中的困惑', '看见现实条件，也听见自己的感受', '比较选择，尝试一点改变'],
-    emphasis: '更靠近你愿意亲自度过的生活',
+    lines: ['Agency OS 从这个朴素的愿望出发', '现实会划出边界', '但在尚有余地的地方', '我们仍可以辨认意愿，争取选择', '这里陪你理清工作与方向中的困惑', '比较选择，尝试一点改变', '也给休息、犹豫和重新选择留下位置'],
+    emphasis: '愿每一次向前\n都更靠近你愿意亲自度过的生活',
     note: '就从此刻，最想理清的一个问题开始',
   },
 ]
@@ -59,7 +59,7 @@ function touchMove(event: { touches: { clientX: number; clientY: number }[] }) {
 function advance() {
   if (Date.now() < scrollingUntil) return
   if (gestureMoved) { gestureMoved = false; return }
-  next()
+  if (current.value < slides.length - 1) next()
 }
 function reveal(index: number) {
   if (!revealed.value.includes(index)) revealed.value = [...revealed.value, index]
@@ -90,7 +90,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
 </script>
 
 <template>
-  <view class="opening-story" :class="{ 'motion-reduced': reducedMotion }" :style="{ '--story-accent': slides[current].accent }">
+  <view class="opening-story" :class="[{ 'motion-reduced': reducedMotion }, 'scene-' + current]" :style="{ '--story-accent': slides[current].accent }">
     <view class="story-backdrop" aria-hidden="true">
       <image v-for="(slide, index) in slides" :key="slide.scene"
         class="story-scene" :class="{ 'scene-active': current === index && loaded.includes(index) }"
@@ -99,7 +99,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
     </view>
     <view class="story-header">
       <view class="story-brand"><text>AGENCY OS</text><text class="story-brand-note">YOUR LIFE, YOUR WAY</text></view>
-      <button class="story-skip" hover-class="pressed" @click="emit('start')">跳过开场</button>
+      <button class="story-skip" hover-class="pressed" @click="emit('start')">直接登录</button>
     </view>
     <view class="story-stage" @click="advance">
         <scroll-view :key="slide.scene" class="story-scroll" scroll-y :show-scrollbar="false"
@@ -116,8 +116,8 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
             <view class="story-body">
               <text v-for="(line, lineIndex) in slide.lines" :key="line" class="story-body-line reveal-line"
                 :style="{ animationDelay: (360 + lineIndex * 160) + 'ms' }">{{ line }}</text>
-              <text class="story-closing story-emphasis reveal-line" :style="{ animationDelay: '1120ms' }">{{ slide.emphasis }}</text>
             </view>
+            <text class="story-closing reveal-line" :style="{ animationDelay: (440 + slide.lines.length * 160) + 'ms' }">{{ slide.emphasis }}</text>
           </view>
         </scroll-view>
     </view>
@@ -130,9 +130,8 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
         </button>
         <text class="story-count">{{ current + 1 }} / {{ slides.length }}</text>
       </view>
-      <text class="story-note">{{ slides[current].note }}</text>
-      <ActionButton kind="secondary" @click="next">{{ current === slides.length - 1 ? '开始我的探索' : '继续读' }}</ActionButton>
-      <button class="story-about" hover-class="pressed" @click="emit('about')">先了解 Agency OS</button>
+      <text v-if="current === slides.length - 1" class="story-note">{{ slides[current].note }}</text>
+      <ActionButton v-if="current === slides.length - 1" kind="secondary" @click="next">开始我的探索</ActionButton>
     </view>
   </view>
 </template>
@@ -185,5 +184,33 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
   .story-label { margin-bottom:12px; }
   .story-body { margin-top:17px; line-height:1.9; }
   .story-closing { margin-top:13px; }
+}
+
+/* Each scene is a composition: headline, breathing room, then a quiet aside. */
+.story-wash { background:linear-gradient(180deg,rgba(250,248,241,.32),rgba(250,248,241,.34) 42%,rgba(250,248,241,.08) 62%,rgba(15,26,27,.50)); }
+.story-page { display:flex; flex-direction:column; padding-top:30px; padding-bottom:22px; }
+.story-title { font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:30px; font-weight:400; line-height:1.65; letter-spacing:1px; }
+.story-emphasis { font-weight:400; }
+.story-body { font-family:var(--font-heading); font-size:14px; line-height:2.15; margin-top:22px; }
+.story-body-line:last-child { color:var(--story-accent); }
+.story-closing { align-self:flex-end; max-width:86%; margin-top:auto; padding-top:40px; white-space:pre-line; text-align:right; font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:19px; font-weight:400; line-height:1.8; letter-spacing:1px; color:#fffaf1; text-shadow:0 2px 12px rgba(14,28,32,.6); }
+.scene-0 .story-closing { max-width:70%; font-size:18px; }
+.scene-1 .story-page { padding-top:48px; }
+.scene-2 .story-title { font-size:27px; }
+.scene-3 .story-body { margin-left:24px; }
+.scene-4 .story-body { font-size:13px; line-height:1.95; margin-top:16px; }
+.scene-4 .story-closing { padding-top:24px; font-size:17px; }
+.story-footer { padding-bottom:calc(20px + env(safe-area-inset-bottom)); }
+@media(max-width:360px) {
+  .story-title { font-size:26px; }
+  .scene-2 .story-title { font-size:24px; }
+  .story-body { font-size:13px; }
+}
+@media(max-height:720px) {
+  .story-page,.scene-1 .story-page { padding-top:16px; padding-bottom:12px; }
+  .story-body { margin-top:14px; line-height:1.9; }
+  .story-closing { padding-top:24px; }
+  .scene-4 .story-body { font-size:12px; line-height:1.85; }
+  .story-footer { padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
 }
 </style>

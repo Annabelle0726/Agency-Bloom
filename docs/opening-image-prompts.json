@@ -20,6 +20,12 @@
     {
       "name": "meadow",
       "prompt": "Use case: photorealistic-natural. Asset: premium contemplative mobile app onboarding full-screen background, portrait 9:16. Quiet cinematic editorial photography, tactile natural light, restrained color, realistic not fantasy, subtle fine grain. Composition: upper 65% airy very pale low-detail negative space for dark Chinese text to be added separately; scene details concentrated in bottom third and right edge; lower edge can be darker. No people, words, lettering, watermark, logos or UI. Open meadow with delicate grasses and small white wildflowers across bottom quarter, distant low rolling hills, huge soft ivory-blue morning sky occupying upper two thirds, warm sunrise grazing grass. Feeling: an ordinary day you would choose to live. Soft green and golden cream, natural understated beauty."
+    },
+    {
+      "name": "mountain-person",
+      "mode": "reference-guided generation",
+      "file": "apps/miniprogram/src/static/opening-mountain-person.jpg",
+      "prompt": "Use case: photorealistic-natural. Create a new clean full-bleed portrait 9:16 photographic background for Agency OS, using ONLY the landscape scene inside the LEFT phone in the reference as visual inspiration. Remove all UI, all typography, all phone frames and the entire right phone. A lone adult seen from behind, sitting quietly on a rocky ridge in the lower-left quarter, looking across layers of misty mountains towards a small warm sunrise. The person is contemplative and grounded, wearing a charcoal casual jacket, never posing, positioned around x22%, y77%, occupying about 20% of image height so the landscape stays vast. Upper 55% is spacious pale ivory-peach dawn sky with subtle blue-grey clouds, very low visual complexity and suitable for dark Chinese typography placed later. Horizon near 55%, atmospheric valley in the middle, darker rocks along the bottom. Bottom right has open quiet darker mountain scenery for a small pale quote placed later. Cinematic natural editorial photography, fine texture, realistic gentle light, calm and hopeful without melodrama. No text, no lettering, no logos, no UI, no border, no watermark. Preserve the emotional feeling of the reference, output a single coherent scenic photograph."
     }
   ]
 }

@@ -2,12 +2,14 @@
 import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
 import {onHide, onReady, onShow} from '@dcloudio/uni-app'
 import {makePreview, mergeSuggestion, experimentProposal} from '../../domain'
-import {newOnboarding, DRAFT_KEY, supportStyles, canonicalSupportStyle} from '../../onboarding'
+import {newOnboarding, supportStyles, canonicalSupportStyle} from '../../onboarding'
 import type {SupportMode} from '../../onboarding'
 import {chatEntryFor, draftChangeFor} from '../../chat-entry'
 import OnboardingFlow from '../../components/OnboardingFlow.vue'
-import FirstArrival from '../../components/FirstArrival.vue'
-import { createArrivalGate } from '../../arrival'
+import WelcomeOpening from '../../components/WelcomeOpening.vue'
+import AuthWelcome from '../../components/AuthWelcome.vue'
+import { OPENING_KEY, initialScreen, signedInScreen, draftKeyFor, pauseKeyFor } from '../../entry'
+import type { EntryScreen } from '../../entry'
 import ActionButton from '../../components/ActionButton.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import SvgIcon from '../../components/SvgIcon.vue'
@@ -70,14 +72,20 @@ async function removeAvatar() {
 const current = ref<Issue | null>(null)
 const config = ref<{ dev_auth: boolean; wechat_auth?: boolean; ai_mode: string }>({dev_auth: false, ai_mode: 'demo'})
 const ready = ref(false)
-const screen = ref<'onboard' | 'arrival' | 'space'>('onboard')
-const arrivalGate = createArrivalGate({
-  read: key => uni.getStorageSync(key),
-  write: (key, value) => uni.setStorageSync(key, value),
-  remove: key => uni.removeStorageSync(key),
-})
-function enterSpace() {
-  if (user.value) arrivalGate.complete(user.value.id)
+const screen = ref<EntryScreen>(initialScreen(!!token.value, !!uni.getStorageSync(OPENING_KEY)))
+function finishOpening() {
+  try { uni.setStorageSync(OPENING_KEY, true) } catch { /* Presentation state is optional. */ }
+  screen.value = 'auth'
+}
+function beginOnboarding() {
+  if (!user.value) { screen.value = 'auth'; return }
+  try { uni.removeStorageSync(pauseKeyFor(user.value.id)) } catch { /* Continue in memory. */ }
+  operations.clear('auth')
+  screen.value = 'onboard'
+}
+function pauseOnboarding() {
+  if (busy.value || !user.value) return
+  try { uni.setStorageSync(pauseKeyFor(user.value.id), true) } catch { /* Continue in memory. */ }
   screen.value = 'space'
   tab.value = 'now'
   void nextTick(() => uni.pageScrollTo({ scrollTop: 0, duration: 0 }))
@@ -227,7 +235,7 @@ function clearSession() {
   pendingText.value = '';
   archives.value = []
   Object.assign(form, newOnboarding())
-  screen.value = 'onboard';
+  screen.value = 'auth';
   tab.value = 'now';
   modal.value = ''
   uni.removeStorageSync('agency.session')
@@ -256,10 +264,13 @@ async function loadCurrent() {
   if (next?.id !== current.value?.id) conversation.reset()
   current.value = next
   if (current.value) {
-    screen.value = user.value ? arrivalGate.restore(user.value.id) : 'space'
+    screen.value = 'space'
     messages.value = await request<ChatMessage[]>('GET', `/issues/${current.value.id}/messages`)
   } else {
-    screen.value = 'onboard'
+    // A returning account may have only ended explorations. It still lands at home.
+    archives.value = await request<Issue[]>('GET', '/issues')
+    const paused = !!user.value && !!uni.getStorageSync(pauseKeyFor(user.value.id))
+    screen.value = signedInScreen(false, archives.value.length > 0, paused)
   }
 }
 
@@ -292,18 +303,27 @@ async function saveInitial() {
   current.value = await request<Issue>('POST', '/issues', form)
   if (user.value && form.support_style) user.value.support_style = form.support_style
   conversation.reset()
-  screen.value = user.value ? arrivalGate.afterSave(user.value.id) : 'space'
+  screen.value = 'space'
   tab.value = 'now'
-  uni.removeStorageSync(DRAFT_KEY)
-  if (screen.value === 'space') notify('这件事，已经为你留下了')
-  else toast.value = ''
+  if (user.value) {
+    try {
+      uni.removeStorageSync(draftKeyFor(user.value.id))
+      uni.removeStorageSync(pauseKeyFor(user.value.id))
+    } catch { /* The saved server record is authoritative. */ }
+  }
+  notify('这件事，已经为你留下了')
   void nextTick(() => uni.pageScrollTo({ scrollTop: 0, duration: 0 }))
 }
 
-async function authenticateForm(draftForm: Onboarding, dev = false) {
+async function saveQuestions(draftForm: Onboarding) {
+  if (!user.value || screen.value !== 'onboard') return
   Object.assign(form, draftForm)
+  await guarded(saveInitial, 'auth')
+}
+
+async function authenticate(dev = false) {
   if (user.value) {
-    await guarded(saveInitial, 'auth');
+    await guarded(loadCurrent, 'auth')
     return
   }
   await guarded(async () => {
@@ -327,19 +347,14 @@ async function authenticateForm(draftForm: Onboarding, dev = false) {
     token.value = result.token;
     user.value = result.user;
     uni.setStorageSync('agency.session', result.token)
-    const existing = await request<Issue | null>('GET', '/issues/current')
-    if (existing) {
-      await loadCurrent();
-      uni.removeStorageSync(DRAFT_KEY);
-      notify('欢迎回来，接着上次的进展')
-    } else if (form.exploration_intent || form.concerns.length || form.title.trim()) await saveInitial()
-    else {
-      screen.value = 'onboard'
-    }
+    await loadCurrent()
+    if (screen.value === 'space') notify('欢迎回来，按自己的节奏继续')
+
   }, 'auth')
 }
 
 async function selectTab(nextTab: typeof tab.value) {
+  if (nextTab === 'chat' && !current.value) { beginOnboarding(); return }
   if (tab.value === nextTab) return
   error.value = '';
   if (nextTab !== 'chat') modePickerOpen.value = false
@@ -536,7 +551,10 @@ async function deleteAccount() {
   await guarded(async () => {
     const id = user.value?.id;
     await request('DELETE', '/me');
-    if (id) arrivalGate.forget(id)
+    if (id) {
+      try { uni.removeStorageSync(draftKeyFor(id)); uni.removeStorageSync(pauseKeyFor(id)) }
+      catch { /* A local storage failure must not keep a deleted account signed in. */ }
+    }
     if (id) await localAvatars.clear(id);
     clearSession();
     notify('你的个人记录已删除')
@@ -584,14 +602,24 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         </button>
       </view>
 
-      <OnboardingFlow v-if="screen === 'onboard'" :busy="busy" :error="authError" :dev-auth="config.dev_auth" :wechat-auth="config.wechat_auth" :offline="offline" :connecting="operations.busy.init"
-                      :authenticated="!!user" :ready="ready" @save="authenticateForm" @privacy="modal = 'privacy'"
-                      @retry="initialize" @navigate="operations.clear('auth')"/>
+      <view v-if="screen === 'restore'" class="entry-status">
+        <text class="eyebrow">AGENCY OS</text>
+        <text class="page-title">{{ offline || error ? '连接暂时停了一下' : '正在回到你的空间' }}</text>
+        <text class="body-copy">{{ operations.errors.init || error || '稍等片刻，我们正在恢复上次的进展。' }}</text>
+        <ActionButton v-if="offline || error" :loading="busy || operations.busy.init" @click="initialize">重新连接</ActionButton>
+        <button v-if="offline || error" class="text-button" :disabled="busy" @click="clearSession">返回登录</button>
+      </view>
+      <WelcomeOpening v-else-if="screen === 'opening'" @start="finishOpening" />
+      <AuthWelcome v-else-if="screen === 'auth'" :busy="busy" :error="authError"
+        :dev-auth="config.dev_auth" :wechat-auth="config.wechat_auth" :offline="offline"
+        :connecting="operations.busy.init" :ready="ready" @login="authenticate"
+        @replay="screen = 'opening'" @privacy="modal = 'privacy'" @retry="initialize" />
+      <OnboardingFlow v-else-if="screen === 'onboard' && user" :key="user.id" :user-id="user.id"
+        :busy="busy" :error="authError" @save="saveQuestions" @skip="pauseOnboarding"
+        @privacy="modal = 'privacy'" @navigate="operations.clear('auth')" />
 
-      <FirstArrival v-else-if="screen === 'arrival'" @enter="enterSpace" />
-
-      <template v-else-if="current">
-        <view v-if="tab === 'now'" class="workspace">
+      <template v-else-if="screen === 'space'">
+        <view v-if="current && tab === 'now'" class="workspace">
           <view class="home-heading">
             <template v-if="dark">
               <text class="night-greeting">你好</text>
@@ -722,7 +750,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </button>
         </view>
 
-        <view v-else-if="tab === 'chat'" class="chat-content" :style="{ '--composer-height': `${composerHeight}px` }">
+        <view v-else-if="current && tab === 'chat'" class="chat-content" :style="{ '--composer-height': `${composerHeight}px` }">
           <text class="eyebrow">LET'S THINK TOGETHER</text>
           <text class="chat-title">{{ chatEntry.heading }}</text>
           <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="operations.clear('ai')"><SvgIcon name="close" :size="18" /></button></view>
@@ -826,6 +854,20 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <SvgIcon :name="sending ? 'stop' : 'arrow-up'" light :size="21"/>
             </button>
           </view>
+        </view>
+
+        <view v-else-if="!current && tab !== 'settings'" class="workspace">
+          <view class="home-heading">
+            <text class="page-title">{{ '先在这里\n给自己一点空间' }}</text>
+            <text class="page-description">{{ '不必立刻回答所有问题。\n等你愿意时，我们从一件小事开始。' }}</text>
+          </view>
+          <view class="paper-card">
+            <text class="eyebrow">按自己的节奏</text>
+            <text class="card-title">最近，什么最让你挂心？</text>
+            <text class="body-copy">点选几项就好。之前留在本机的回答，也可以接着整理。</text>
+            <ActionButton :disabled="busy" @click="beginOnboarding">开始或继续探索</ActionButton>
+          </view>
+          <button class="text-button" @click="showHistory">回看走过的路 <SvgIcon name="arrow" :size="17" /></button>
         </view>
 
         <view v-else class="settings-content">
@@ -1065,9 +1107,9 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <text class="body-copy">本 Alpha
                 面向成年人，你保留自己的决定权，可以停止使用、修改记录或删除账号，请只提供有权分享的信息；关键行动和事实由你核实，正式发布前会补齐运营主体与联系渠道
               </text>
-              <text class="field-label">登录前</text>
+              <text class="field-label">回答问题时</text>
               <text class="body-copy">引导草稿保存在当前设备，可在 7
-                天内接续；下次打开时会清除过期草稿，登录并保存前不上传回答，你可以在引导页随时清除本机草稿；不要在共用设备上填写敏感信息
+                天内接续；下次打开时会清除过期草稿，点击「保存这次探索」前不上传回答，你可以在引导页随时清除本机草稿；不要在共用设备上填写敏感信息
               </text>
               <text class="field-label">登录和保存</text>
               <text class="body-copy">
@@ -1094,3 +1136,8 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
     </view>
   </view>
 </template>
+<style scoped>
+.entry-status { padding:calc(var(--capsule-bottom,64px) + 80px) 32px 40px; }
+.entry-status .page-title { margin:24px 0; font-size:28px; }
+.entry-status .action-button { margin-top:28px; }
+</style>
