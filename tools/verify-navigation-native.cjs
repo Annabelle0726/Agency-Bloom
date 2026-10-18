@@ -37,7 +37,7 @@ const errors = []
     let page = await mp.currentPage()
     const nav = await page.$('.journey-nav')
     assert.ok(nav, 'Signed-in navigation is visible')
-    assert.equal((await nav.$$('button')).length, 3)
+    assert.equal((await nav.$$('button')).length, 5)
     const center = await nav.$('[data-tab="chat"] .tab-icon-frame')
     const normal = await nav.$('[data-tab="now"] .tab-icon-frame')
     await mp.screenshot({path:path.join(out,theme+'-nav-debug.png')})
@@ -63,7 +63,7 @@ const errors = []
   assert.deepEqual(errors,[])
   const calls = await mp.evaluate(() => getApp().__navQA.calls)
   assert.equal(calls.some(route => route.includes('/chat')),false)
-  const report={passed:true,themes:['light','dark'],navigation:3,backend_requests:0,model_requests:0,errors}
+  const report={passed:true,themes:['light','dark'],navigation:5,backend_requests:0,model_requests:0,errors}
   await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2))
   console.log(JSON.stringify(report))
 })().catch(e=>{console.error(e.stack);process.exitCode=1}).finally(async()=>{

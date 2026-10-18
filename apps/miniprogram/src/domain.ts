@@ -1,3 +1,5 @@
+import type { ThemeId } from './themes'
+
 export interface Onboarding {
   title: string; concerns: string[]; stage: string; background: string; constraints: string[]
   life_contexts?: string[]; support_style?: string
@@ -16,7 +18,7 @@ export interface Issue {
   feedback: { id: string; kind: string; text: string; created_at: string }[]
   exploration_intent?: string; actual_question?: string; focus_response?: string
 }
-export interface User { id: string; theme: 'light' | 'dark'; save_chat: boolean; ai_consent: boolean; support_style: string }
+export interface User { id: string; theme: ThemeId; save_chat: boolean; ai_consent: boolean; support_style: string }
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }
 export interface Experiment { action: string; tests: string; effort: string; stop_rule: string }
 export interface Insight {

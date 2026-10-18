@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { ThemeDefinition } from '../themes'
 import ActionButton from './ActionButton.vue'
 import SvgIcon from './SvgIcon.vue'
-defineProps<{ busy: boolean; error: string; devAuth: boolean; ready: boolean; offline: boolean; connecting: boolean; wechatAuth?: boolean; hasDemo: boolean }>()
+defineProps<{ theme: ThemeDefinition; busy: boolean; error: string; devAuth: boolean; ready: boolean; offline: boolean; connecting: boolean; wechatAuth?: boolean; hasDemo: boolean }>()
 const emit = defineEmits<{ login: [mode: 'wechat' | 'demo-new' | 'demo-resume']; replay: []; privacy: []; retry: [] }>()
 const accepted = ref(false)
 function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value) emit('login', mode) }
@@ -10,7 +11,7 @@ function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value
 
 <template>
   <view class="auth-welcome">
-    <image class="auth-background" src="/static/morning-light.jpg" mode="aspectFill" aria-hidden="true" />
+    <image class="auth-background" :src="theme.image" mode="aspectFill" aria-hidden="true" />
     <view class="auth-shade" />
     <scroll-view class="auth-scroll" scroll-y :show-scrollbar="false">
       <view class="auth-content">
@@ -45,32 +46,33 @@ function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value
 </template>
 
 <style scoped>
-.auth-welcome { height:var(--app-height,100vh); position:relative; overflow:hidden; background:#f2eee5; color:#344139; }
+.auth-welcome { height:var(--app-height,100vh); position:relative; overflow:hidden; background:var(--bg); color:var(--ink); }
 .auth-background,.auth-shade { position:absolute; inset:0; width:100%; height:100%; }
-.auth-shade { background:linear-gradient(180deg,rgba(250,248,242,.52),rgba(250,248,242,.75) 45%,rgba(250,248,242,.95)); }
+.auth-background { height:510px; }
+.auth-shade { height:540px; background:linear-gradient(180deg,var(--hero-top) 0%,var(--hero-top) 33%,var(--hero-middle) 60%,var(--hero-middle) 69%,var(--bg)); }
 .auth-scroll { height:100%; position:relative; }
 .auth-content { min-height:var(--app-height,100vh); padding:calc(var(--capsule-bottom,64px) + 16px) 30px calc(24px + env(safe-area-inset-bottom)); box-sizing:border-box; display:flex; flex-direction:column; }
 .auth-top { display:flex; align-items:center; justify-content:space-between; font-size:12px; letter-spacing:3px; }
-.auth-top button { padding:12px 0 12px 16px; margin:0; font-size:12px; line-height:1.6; color:#586657; background:transparent; letter-spacing:0; }
+.auth-top button { padding:12px 0 12px 16px; margin:0; font-size:12px; line-height:1.6; color:var(--muted); background:transparent; letter-spacing:0; }
 button::after { border:0; }
-.auth-heading { margin-top:24px; }
-.auth-eyebrow { display:block; font-size:9px; letter-spacing:2px; color:#6c7565; margin-bottom:20px; }
+.auth-heading { margin-top:24px; min-height:260px; }
+.auth-eyebrow { display:block; font-size:9px; letter-spacing:2px; color:var(--muted); margin-bottom:20px; }
 .auth-title { display:block; font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:36px; letter-spacing:2px; line-height:1.6; }
-.auth-subtitle { display:block; white-space:pre-line; font-family:var(--font-heading); margin-top:18px; font-size:16px; line-height:2; color:#57644d; }
-.auth-letter { margin:32px 0 28px; font-family:var(--font-heading); font-size:13px; line-height:2.1; }
+.auth-subtitle { display:block; font-weight:500; text-shadow:0 1px 6px var(--bg); white-space:pre-line; font-family:var(--font-heading); margin-top:18px; font-size:16px; line-height:2; color:var(--ink); }
+.auth-letter { background:var(--surface-glass); border:1px solid var(--paper); border-radius:22px; padding:18px 20px; margin:10px 0 20px; font-family:var(--font-heading); font-size:13px; line-height:2.1; }
 .auth-letter text { display:block; }
 .auth-actions { margin-top:auto; }
 .auth-actions :deep(.action-button) { margin-top:12px; }
-.auth-consent { display:flex; align-items:center; font-size:11px; line-height:1.9; color:#65705f; }
+.auth-consent { display:flex; align-items:center; font-size:11px; line-height:1.9; color:var(--muted); }
 .auth-check { flex-shrink:0; width:44px; height:44px; padding:13px; margin:0 4px 0 -13px; display:flex; align-items:center; justify-content:center; background:transparent; }
 .auth-check view { width:16px; height:16px; border:1px solid #8a947e; border-radius:4px; display:flex; align-items:center; justify-content:center; }
-.auth-check .checked { background:#536b49; border-color:#536b49; }
-.auth-policy { display:inline; padding:0; margin:0 0 0 3px; background:transparent; color:#425a3c; font-size:11px; line-height:1.9; }
-.auth-note { display:block; margin-top:10px; text-align:center; font-size:10px; line-height:1.8; color:#737a6b; }
-.auth-signature { text-align:center; font-size:9px; letter-spacing:3px; color:#89917d; margin-top:24px; }
+.auth-check .checked { background:var(--accent); border-color:var(--accent); }
+.auth-policy { display:inline; padding:0; margin:0 0 0 3px; background:transparent; color:var(--accent); font-size:11px; line-height:1.9; }
+.auth-note { display:block; margin-top:10px; text-align:center; font-size:10px; line-height:1.8; color:var(--muted); }
+.auth-signature { text-align:center; font-size:9px; letter-spacing:3px; color:var(--muted); margin-top:24px; }
 .auth-connection { display:flex; align-items:center; gap:10px; font-size:12px; }
-.auth-connection button { margin:0 0 0 auto; font-size:12px; color:#4c6547; background:transparent; }
+.auth-connection button { margin:0 0 0 auto; font-size:12px; color:var(--accent); background:transparent; }
 @media(max-height:740px) { .auth-heading { margin-top:24px; } .auth-letter { margin:22px 0 28px; } .auth-title { font-size:32px; } .auth-signature { margin-top:24px; } }
-.auth-new-demo { width:100%; text-align:center; background:transparent; color:#536a4e; font-size:12px; line-height:1.7; margin:8px auto 0; min-height:44px; padding:12px; }
-.auth-new-demo[disabled] { color:#8c9586; }
+.auth-new-demo { width:100%; text-align:center; background:transparent; color:var(--accent); font-size:12px; line-height:1.7; margin:8px auto 0; min-height:44px; padding:12px; }
+.auth-new-demo[disabled] { color:var(--muted); }
 </style>

@@ -15,8 +15,9 @@ import EmptyState from '../../components/EmptyState.vue'
 import SvgIcon from '../../components/SvgIcon.vue'
 import CompanionAvatar from '../../components/CompanionAvatar.vue'
 import {iconSources} from '../../icons'
-import {navArtwork} from '../../nav-art'
-import NightCompass from '../../components/NightCompass.vue'
+import {themes, navigationItems, themeForSession, themeStyle, themeNavSvg} from '../../themes'
+import type {ThemeId, SpaceTab} from '../../themes'
+import ThemePreview from '../../components/ThemePreview.vue'
 import type {Card, ChatMessage, Issue, Onboarding, User, Experiment} from '../../domain'
 import {ApiError, createApi} from '../../http'
 import {createOperationState} from '../../operations'
@@ -125,7 +126,7 @@ const keyboardChanged = ({height}: { height: number }) => {
 uni.onKeyboardHeightChange(keyboardChanged)
 onUnmounted(() => uni.offKeyboardHeightChange(keyboardChanged))
 // #endif
-const tab = ref<'now' | 'chat' | 'settings'>('now')
+const tab = ref<SpaceTab>('now')
 const modal = ref<'' | 'privacy' | 'edit' | 'feedback' | 'ai' | 'history' | 'appearance' | 'support' | 'experiment'>('')
 const operations = createOperationState()
 const busy = computed(() => operations.busy.auth || operations.busy.data)
@@ -136,18 +137,26 @@ const offline = computed(() => !!operations.errors.init)
 const toast = ref('')
 const form = reactive<Onboarding>(newOnboarding())
 const preview = computed(() => makePreview(form))
-const dark = computed(() => screen.value === 'space' && !!user.value && user.value.theme === 'dark')
+const activeTheme = computed(() => themeForSession(user.value, screen.value === 'space'))
+const activeThemeStyle = computed(() => themeStyle(activeTheme.value))
+const dark = computed(() => activeTheme.value.dark)
+const applyingTheme = ref<ThemeId | null>(null)
+const navImages = computed(() => Object.fromEntries(navigationItems.map(({ id }) => {
+  const svg = themeNavSvg(activeTheme.value, id, tab.value === id)
+  const bytes = new Uint8Array([...svg].map(char => char.charCodeAt(0)))
+  return [id, 'data:image/svg+xml;base64,' + uni.arrayBufferToBase64(bytes.buffer)]
+})))
 
 // #ifdef MP-WEIXIN
 function syncStatusBar() {
   uni.setNavigationBarColor({
     frontColor: dark.value ? '#ffffff' : '#000000',
-    backgroundColor: dark.value ? '#111827' : '#F6F5F2',
+    backgroundColor: activeTheme.value.palette.bg,
   })
 }
 
 onReady(syncStatusBar)
-watch(dark, syncStatusBar)
+watch(activeTheme, syncStatusBar)
 // #endif
 const card = computed(() => current.value?.card ?? preview.value)
 const conversation = createChatSession({
@@ -497,10 +506,11 @@ async function toggleSaveChat() {
   })
 }
 
-async function setTheme(theme: 'light' | 'dark') {
-  await guarded(async () => {
-    user.value = await request('PUT', '/me', {theme})
-  })
+async function setTheme(theme: ThemeId) {
+  if (!user.value || screen.value !== 'space' || busy.value || applyingTheme.value || user.value.theme === theme) return
+  applyingTheme.value = theme
+  try { await guarded(async () => { user.value = await request('PUT', '/me', {theme}) }) }
+  finally { applyingTheme.value = null }
 }
 
 async function setSupportStyle(support_style: string) {
@@ -600,24 +610,35 @@ async function deleteAccount() {
   })
 }
 
+const todayLabel = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' })
+const greeting = new Date().getHours() < 12 ? '早安，按自己的节奏来' : new Date().getHours() < 18 ? '午后好，给自己一点空间' : '晚上好，今天辛苦了'
+const discoveryPrompts = [
+  { icon: 'compass', label: '辨认意愿', title: '如果少一点比较', question: '如果没有别人的赞许，我依然愿意把时间交给什么？' },
+  { icon: 'paths', label: '看见选择', title: '想要的自由，有什么模样', question: '现在的努力，会让我拥有哪一种具体的选择？为此付出的代价，我还愿意承担吗？' },
+  { icon: 'sun', label: '从体验出发', title: '什么让我想再来一次', question: '最近有没有一个时刻，让我感到投入、舒展，或愿意再经历一次？' },
+]
+async function explorePrompt(question: string) {
+  if (!current.value) { beginOnboarding(); return }
+  await selectTab('chat')
+  await useChatStarter(question)
+}
+
 const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', {month: 'long', day: 'numeric'})
 </script>
 
 <template>
   <view class="preview-stage"
-        :class="{ dark, 'night-space': dark && screen === 'space', 'night-home': dark && screen === 'space' && tab === 'now', 'keyboard-open': keyboardHeight > 0 }"
-        :style="{ '--keyboard-height': `${keyboardHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
+        :class="['theme-' + activeTheme.id, { dark, 'theme-space': screen === 'space', 'theme-home': screen === 'space' && tab === 'now', 'keyboard-open': keyboardHeight > 0 }]"
+        :style="{ ...activeThemeStyle, '--keyboard-height': `${keyboardHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
     <view class="app-shell"
           :class="{ 'with-tabs': screen === 'space', 'chat-page': tab === 'chat' && screen === 'space', 'onboarding-shell': screen !== 'space' }">
-      <image v-if="screen === 'space' && tab === 'now' && !dark" class="home-background" src="/static/morning-light.jpg"
-             mode="aspectFill"/>
-      <view v-if="screen === 'space' && tab === 'now' && dark" class="night-atmosphere" aria-hidden="true">
-        <image src="/static/art/night-water.jpg" mode="aspectFill"/>
+      <view v-if="screen === 'space' && tab === 'now'" class="theme-atmosphere" aria-hidden="true">
+        <image :src="activeTheme.image" mode="aspectFill"/><view class="theme-atmosphere-wash"/>
       </view>
       <view v-if="screen === 'space'" class="topbar">
         <button class="icon-button" aria-label="回看历史记录" hover-class="pressed" :hover-start-time="0"
                 :hover-stay-time="70" @click="showHistory">
-          <SvgIcon name="menu" :size="21"/>
+          <image class="topbar-glyph" :src="iconSources.menu.ink" mode="aspectFit" aria-hidden="true" />
         </button>
         <view class="brand-lockup" aria-label="Agency OS">
           <image class="brand-lockup-symbol"
@@ -627,7 +648,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         </view>
         <button class="icon-button" aria-label="打开我的设置" hover-class="pressed" :hover-start-time="0"
                 :hover-stay-time="70" @click="selectTab('settings')">
-          <SvgIcon name="user" :size="21"/>
+          <image class="topbar-glyph" :src="iconSources.user.ink" mode="aspectFit" aria-hidden="true" />
         </button>
       </view>
       <view v-if="error && !modal && screen === 'space'" class="notice error-notice">
@@ -649,7 +670,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         <button v-if="offline || error" class="text-button" :disabled="busy" @click="clearSession">返回登录</button>
       </view>
       <WelcomeOpening v-else-if="screen === 'opening'" @start="finishOpening" />
-      <AuthWelcome v-else-if="screen === 'auth'" :busy="busy" :error="authError"
+      <AuthWelcome v-else-if="screen === 'auth'" :theme="activeTheme" :busy="busy" :error="authError"
         :dev-auth="config.dev_auth" :has-demo="!!demoCredential" :wechat-auth="config.wechat_auth" :offline="offline"
         :connecting="operations.busy.init" :ready="ready" @login="authenticate"
         @replay="screen = 'opening'" @privacy="modal = 'privacy'" @retry="initialize" />
@@ -658,77 +679,38 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         @privacy="modal = 'privacy'" @navigate="operations.clear('auth')" />
 
       <template v-else-if="screen === 'space'">
-        <view v-if="current && tab === 'now'" class="workspace">
-          <view class="home-heading">
-            <template v-if="dark">
-              <text class="night-greeting">你好</text>
-              <text class="night-welcome">欢迎来到
-                <text class="night-title-accent">你的空间</text>
-              </text>
-              <text class="night-whisper">今晚，不急着解决一切</text>
-            </template>
-            <template v-else>
-              <text class="page-title">{{ '你好\n欢迎来到你的空间' }}</text>
-              <text class="page-description">{{ '按自己的节奏\n慢慢看清真实的自己' }}</text>
-            </template>
+        <view v-if="current && tab === 'now'" class="workspace home-dashboard">
+          <view class="home-heading hero-heading">
+            <text class="hero-eyebrow">{{ greeting }}</text>
+            <text class="hero-title">欢迎回到你的生活</text>
+            <text class="hero-subtitle">{{ '每一次选择\n都可以更靠近自己的意愿' }}</text>
+            <text class="hero-aside">{{ '远处有方向\n此刻也有生活' }}</text>
           </view>
-          <view v-if="dark" class="night-symbol">
-            <NightCompass/>
-          </view>
-          <view class="home-focus">
-            <SvgIcon v-if="!dark" name="compass" :size="21"/>
-            <view class="home-focus-copy">
-              <text class="eyebrow">此刻，先照顾这一件事</text>
-              <text>{{ current.title || '一次还未命名的探索' }}</text>
-            </view>
-          </view>
-          <view class="home-actions">
-            <view class="home-actions-title">
-              <view v-if="dark" class="entry-glint"/>
-              <text class="home-actions-heading">今天，想
-                <text class="home-heading-accent">从哪里开始</text>
-              </text>
-            </view>
-            <button class="home-action" hover-class="home-action-pressed" :hover-start-time="0" :hover-stay-time="70"
-                    @click="selectTab('chat')">
-              <view class="home-entry-icon">
-                <image class="home-entry-glyph" :src="iconSources.chat.ink" mode="aspectFit"/>
-              </view>
-              <view class="home-entry-copy">
-                <text>继续我们刚才的话题</text>
-                <text v-if="dark" class="home-entry-note">从刚才的思绪，轻轻接着说</text>
-              </view>
-              <view class="home-entry-arrow">
-                <image class="home-entry-glyph" :src="iconSources['arrow-diagonal'].ink" mode="aspectFit"/>
-              </view>
+          <button class="home-mission glass-card" data-home="mission" @click="openEditor()" hover-class="pressed" :hover-start-time="0">
+            <view><text class="mission-label">此刻，我在意的</text><text class="mission-title">{{ card.title || current.title || '一次还未命名的探索' }}</text><text class="mission-detail">{{ current.focus_response || '方向可以慢慢清晰，也可以重新选择' }}</text></view>
+            <SvgIcon name="chevron" :size="18" />
+          </button>
+          <view class="home-focus-card glass-card">
+            <view class="focus-card-heading"><text>今日聚焦</text><text>{{ todayLabel }}</text></view>
+            <button class="focus-row" data-home="plan" @click="selectTab('plan')" hover-class="pressed" :hover-start-time="0">
+              <view class="focus-symbol"><SvgIcon name="step" :size="19" /></view>
+              <view class="focus-row-copy"><text>{{ card.next_step || '找到一个愿意尝试的小改变' }}</text><text>{{ card.next_step ? '你已确认的下一步，随时可以调整' : '从时间和精力允许的一步开始' }}</text></view><text class="focus-tag">计划</text>
             </button>
-            <button class="home-action" hover-class="home-action-pressed" :hover-start-time="0" :hover-stay-time="70"
-                    @click="modal = 'feedback'">
-              <view class="home-entry-icon">
-                <image class="home-entry-glyph" :src="iconSources.note.ink" mode="aspectFit"/>
-              </view>
-              <view class="home-entry-copy">
-                <text>记录此刻的想法</text>
-                <text v-if="dark" class="home-entry-note">把一点新的发现，留在这里</text>
-              </view>
-              <view class="home-entry-arrow">
-                <image class="home-entry-glyph" :src="iconSources['arrow-diagonal'].ink" mode="aspectFit"/>
-              </view>
+            <button class="focus-row" data-home="reflect" @click="modal = 'feedback'" hover-class="pressed" :hover-start-time="0">
+              <view class="focus-symbol"><SvgIcon name="note" :size="19" /></view>
+              <view class="focus-row-copy"><text>留意今天的真实感受</text><text>一点发现，或只是想停一停</text></view><text class="focus-tag">记录</text>
             </button>
-            <button class="home-action" hover-class="home-action-pressed" :hover-start-time="0" :hover-stay-time="70"
-                    @click="card.next_step ? openEditor() : selectTab('chat')">
-              <view class="home-entry-icon">
-                <image class="home-entry-glyph" :src="iconSources.step.ink" mode="aspectFit"/>
-              </view>
-              <view class="home-entry-copy">
-                <text>看看接下来可以做什么</text>
-                <text v-if="dark" class="home-entry-note">不求很多，先走一小步</text>
-              </view>
-              <view class="home-entry-arrow">
-                <image class="home-entry-glyph" :src="iconSources['arrow-diagonal'].ink" mode="aspectFit"/>
-              </view>
+            <button class="focus-row" data-home="chat" @click="selectTab('chat')" hover-class="pressed" :hover-start-time="0">
+              <view class="focus-symbol"><SvgIcon name="chat" :size="19" /></view>
+              <view class="focus-row-copy"><text>把挂心的事，慢慢说清楚</text><text>接着上一次，也可以换个话题</text></view><text class="focus-tag">对话</text>
             </button>
           </view>
+          <view class="home-quote"><text class="quote-mark">“</text><view><text>{{ '未来值得争取\n此刻的生活，也值得被照顾' }}</text><text class="quote-signature">— Agency OS</text></view></view>
+        </view>
+
+        <view v-else-if="current && tab === 'plan'" class="workspace plan-content">
+          <view class="section-intro"><text class="eyebrow">ONE SMALL STEP</text><text class="page-title">{{ '为下一步\n留一点空间' }}</text><text class="page-description">这里保留你确认的方向、行动和新的发现</text></view>
+          <view v-if="!card.next_step" class="plan-empty glass-card"><text class="card-title">还没有决定下一步，也没关系</text><text class="body-copy">先写下一件愿意试的事，或和我一起想一想</text><button class="text-button" @click="openEditor()">整理我的卡片 <SvgIcon name="arrow" :size="17" /></button><button class="text-button" @click="selectTab('chat')">一起聊聊 <SvgIcon name="chat" :size="17" /></button></view>
           <view v-if="card.next_step" class="next-card">
             <text class="eyebrow">我愿意尝试的下一步</text>
             <text class="next-title">{{ card.next_step }}</text>
@@ -895,8 +877,17 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </view>
         </view>
 
-        <view v-else-if="!current && tab !== 'settings'" class="workspace">
-          <view class="home-heading">
+        <view v-else-if="tab === 'discover'" class="workspace discover-content">
+          <view class="section-intro"><text class="eyebrow">A DIFFERENT PERSPECTIVE</text><text class="page-title">换个角度，看看生活</text><text class="page-description">有些答案，会从一个新的问题开始</text></view>
+          <button v-for="(prompt, index) in discoveryPrompts" :key="prompt.title" class="discovery-card glass-card" :data-discovery="index" @click="explorePrompt(prompt.question)" hover-class="pressed" :hover-start-time="0">
+            <view class="discovery-heading"><view class="focus-symbol"><SvgIcon :name="prompt.icon" :size="22" /></view><text>{{ prompt.label }}</text><SvgIcon name="arrow-diagonal" :size="18" /></view>
+            <text class="discovery-title">{{ prompt.title }}</text><text class="discovery-question">{{ prompt.question }}</text><text class="discovery-hint">{{ current ? '带着这个问题聊聊' : '先留下线索，再慢慢聊' }}</text>
+          </button>
+          <button class="history-entry glass-card" @click="showHistory" hover-class="pressed"><SvgIcon name="note" :size="21" /><view><text>回看走过的路</text><text>看看哪些想法，正在慢慢改变</text></view><SvgIcon name="chevron" :size="18" /></button>
+        </view>
+
+        <view v-else-if="!current && tab !== 'settings'" class="workspace empty-dashboard" :class="{ 'home-dashboard': tab === 'now' }">
+          <view class="home-heading" :class="{ 'hero-heading': tab === 'now' }">
             <text class="page-title">{{ '先在这里\n给自己一点空间' }}</text>
             <text class="page-description">{{ '不必立刻回答所有问题。\n等你愿意时，我们从一件小事开始。' }}</text>
           </view>
@@ -935,7 +926,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                     :hover-start-time="0" :hover-stay-time="70">
               <view>
                 <text class="setting-title">外观设置</text>
-                <text class="setting-description">{{ dark ? '深夜 · Quiet Night' : '晨雾 · Morning Mist' }}</text>
+                <text class="setting-description">{{ activeTheme.name }} · {{ activeTheme.english }}</text>
               </view>
               <SvgIcon name="chevron" :size="17"/>
             </button>
@@ -1004,14 +995,14 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         </view>
         <view class="tabbar journey-nav" role="navigation" aria-label="主导航">
           <button
-              v-for="item in [{ id: 'now', label: '首页' }, { id: 'chat', label: '对话' }, { id: 'settings', label: '我的' }]"
+              v-for="item in navigationItems"
               :key="item.id" :data-tab="item.id" class="nav-item"
               :class="{ active: tab === item.id, 'nav-conversation': item.id === 'chat' }"
               :aria-label="item.label" :aria-current="tab === item.id ? 'page' : undefined"
               hover-class="nav-pressed" :hover-start-time="0" :hover-stay-time="70"
               @click="selectTab(item.id as typeof tab)">
             <view class="tab-icon-frame">
-              <image class="tab-glyph" :src="navArtwork[item.id as keyof typeof navArtwork][dark ? (tab === item.id ? 'nightActive' : 'night') : (tab === item.id ? 'active' : 'ink')]" mode="aspectFit"/>
+              <image class="tab-glyph" :src="navImages[item.id]" mode="aspectFit"/>
             </view>
             <text class="nav-label">{{ item.label }}</text>
           </button>
@@ -1019,7 +1010,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
       </template>
 
       <view v-if="modal" class="modal-backdrop" @click.self="!busy && (modal = '')">
-        <view class="modal-sheet">
+        <view class="modal-sheet" :class="{ 'appearance-sheet': modal === 'appearance' }" @click.stop>
           <view class="modal-handle"/>
           <view class="modal-heading">
             <text class="section-title">{{
@@ -1031,7 +1022,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <SvgIcon name="close" :size="20"/>
             </button>
           </view>
-          <scroll-view scroll-y class="modal-scroll">
+          <scroll-view scroll-y class="modal-scroll" :class="{ 'appearance-scroll': modal === 'appearance' }">
             <view v-if="error" class="notice error-notice">{{ error }}</view>
             <template v-if="modal === 'edit'">
               <text class="muted small">这些内容只有保存后才会成为下次接续的依据，列表每行一项</text>
@@ -1107,32 +1098,20 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <template v-else-if="modal === 'appearance'">
               <text class="page-description">换一种氛围，继续做你自己</text>
               <view class="theme-grid">
-                <button class="theme-card" data-theme="light" aria-label="使用晨雾主题" :class="{ chosen: !dark }"
-                        :disabled="busy" @click="setTheme('light')" hover-class="pressed" :hover-start-time="0"
-                        :hover-stay-time="70">
-                  <image src="/static/mountain-lake.jpg" mode="aspectFill"/>
-                  <view>
-                    <text>晨雾</text>
-                    <text class="muted small">Morning Mist · 默认</text>
+                <button v-for="theme in themes" :key="theme.id" class="theme-card" :data-theme="theme.id"
+                        :aria-label="'使用' + theme.name + '主题'" :aria-pressed="activeTheme.id === theme.id"
+                        :class="{ chosen: activeTheme.id === theme.id }" :disabled="busy || !!applyingTheme"
+                        @click="setTheme(theme.id)" hover-class="theme-pressed" :hover-start-time="0" :hover-stay-time="70">
+                  <ThemePreview :theme="theme" />
+                  <view class="theme-copy" :style="{ background: theme.palette.paper, color: theme.palette.ink }">
+                    <view class="theme-name-row"><text>{{ theme.name }}</text><view class="theme-swatches"><view v-for="color in [theme.palette.bg, theme.palette.soft, theme.palette.fill]" :key="color" :style="{ background: color }"/></view></view>
+                    <text class="theme-english" :style="{ color: theme.palette.muted }">{{ theme.english }}{{ theme.id === 'light' ? ' · 默认' : '' }}</text>
+                    <text class="theme-detail" :style="{ color: theme.palette.muted }">{{ theme.detail }}</text>
                   </view>
-                  <view v-if="!dark" class="theme-check">
-                    <SvgIcon name="check" light :size="15"/>
-                  </view>
-                </button>
-                <button class="theme-card night-theme" :class="{ chosen: dark }" :disabled="busy"
-                        @click="setTheme('dark')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
-                  <image src="/static/mountain-lake.jpg" mode="aspectFill"/>
-                  <view>
-                    <text>深夜</text>
-                    <text class="muted small">Quiet Night</text>
-                  </view>
-                  <view v-if="dark" class="theme-check">
-                    <SvgIcon name="check" light :size="15"/>
-                  </view>
+                  <view v-if="activeTheme.id === theme.id" class="theme-check"><SvgIcon name="check" light :size="15"/></view>
+                  <view v-if="applyingTheme === theme.id" class="theme-applying">正在应用</view>
                 </button>
               </view>
-              <text class="theme-planned">晨曦、森林、薰衣草、极简 · 计划中</text>
-              <ActionButton :arrow="false" @click="modal = ''">完成</ActionButton>
             </template>
             <template v-else-if="modal === 'support'">
               <button v-for="item in supportStyles" :key="item.id" class="support-setting"
@@ -1172,6 +1151,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <text class="muted small">{{ '内测说明 · 2026-10-16\n正式公开发布前需补齐运营主体和联系方式' }}</text>
             </template>
           </scroll-view>
+          <view v-if="modal === 'appearance'" class="appearance-footer"><ActionButton :arrow="false" :disabled="busy" @click="modal = ''">完成</ActionButton></view>
         </view>
       </view>
       <view v-if="toast" class="toast">{{ toast }}</view>

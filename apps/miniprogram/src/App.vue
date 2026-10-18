@@ -7,6 +7,7 @@
 <style lang="scss" src="./brand.scss"></style>
 <style lang="scss" src="./chat-entry.scss"></style>
 <style lang="scss" src="./bottom-nav.scss"></style>
+<style lang="scss" src="./themes.scss"></style>
 <script setup lang="ts">
 import { onLaunch } from '@dcloudio/uni-app'
 onLaunch(() => {})

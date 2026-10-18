@@ -52,7 +52,7 @@ class WechatLogin(Login):
 class Preferences(StrictModel):
     save_chat: bool | None = None
     ai_consent: bool | None = None
-    theme: Literal["light", "dark"] | None = None
+    theme: Literal["light", "dark", "dawn", "forest", "lavender", "minimal"] | None = None
     support_style: SupportStyle | None = None
 
 
