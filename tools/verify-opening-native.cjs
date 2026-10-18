@@ -6,7 +6,7 @@ const path = require('node:path')
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 const dir = path.resolve(__dirname, '../output/opening')
 const uid = 'opening-qa-user'
-const keys = ['agency.session', 'agency.onboarding.v2', 'agency.opening.story.v1', 'agency.onboarding.v3.' + uid, 'agency.onboarding.paused.v1.' + uid]
+const keys = ['agency.demo.credential.v1', 'agency.session', 'agency.onboarding.v2', 'agency.opening.story.v1', 'agency.onboarding.v3.' + uid, 'agency.onboarding.paused.v1.' + uid]
 let mp, page, mocked = false
 const backups = new Map()
 const exceptions = []
@@ -21,7 +21,7 @@ async function shot(name) { await mp.screenshot({ path: path.join(dir, name + '.
   mp.on('exception', e => exceptions.push(String(e)))
   const storedKeys = (await mp.callWxMethod('getStorageInfoSync')).keys
   for (const key of keys) backups.set(key, { exists: storedKeys.includes(key), value: await mp.callWxMethod('getStorageSync', key) })
-  await mp.evaluate(() => { getApp().__openingQA = { issue: null, calls: [] } })
+  await mp.evaluate(() => { getApp().__openingQA = { issue: null, calls: [], registrations: 0, resumes: 0 } })
   await mp.mockWxMethod('request', function(options) {
     const qa = getApp().__openingQA
     const route = options.url.split('/api')[1] || ''
@@ -30,7 +30,18 @@ async function shot(name) { await mp.screenshot({ path: path.join(dir, name + '.
     const user = { id: 'opening-qa-user', theme: 'light', save_chat: false, ai_consent: false, support_style: 'listen' }
     let data = null, statusCode = 200
     if (route === '/config') data = { dev_auth: true, wechat_auth: false, ai_mode: 'demo' }
-    else if (route === '/auth/dev') data = { token: 'opening-qa-token', user }
+    else if (route === '/auth/dev') {
+      if (options.data.resume_token) {
+        qa.resumes++
+        if (options.data.resume_token !== 'q'.repeat(43)) { statusCode = 401; data = {}; }
+        else data = { token: 'opening-qa-token', user }
+      } else {
+        qa.registrations++
+        data = { token: 'opening-qa-token', resume_token: 'q'.repeat(43), user }
+      }
+    }
+    else if (route === '/auth/logout') data = {}
+    else if (route === '/usage') data = { used_cny: 0, limit_cny: 20, daily_calls: 0, daily_limit: 30, mode: 'demo' }
     else if (route === '/me') data = user
     else if (route === '/issues/current') data = qa.issue
     else if (route === '/issues' && method === 'GET') data = qa.issue ? [qa.issue] : []
@@ -76,6 +87,11 @@ async function shot(name) { await mp.screenshot({ path: path.join(dir, name + '.
   let calls = await mp.evaluate(() => getApp().__openingQA.calls)
   assert.equal(calls.filter(v => v === 'POST /issues').length, 0, 'Login must not create an empty exploration')
   await shot('04-concerns')
+  const choice = (await flow.$$('components\\/SelectionCard'))[0]
+  assert.ok(await choice.$('.selection-art image'), 'Options must have scenic artwork')
+  await (await choice.$('button')).tap(); await wait(250)
+  assert.ok(await choice.$('.selection-card.chosen'), 'Selection has a visible state')
+  await shot('04-concerns-selected')
   await (await flow.$('.flow-skip')).tap(); await wait(400)
   await relaunch()
   assert.ok(await page.$('.workspace'), 'Paused onboarding goes to empty home on return')
@@ -88,14 +104,29 @@ async function shot(name) { await mp.screenshot({ path: path.join(dir, name + '.
   flow = await component('OnboardingFlow')
   assert.ok(await flow.$('.life-contexts'), 'Resume saved question')
   assert.equal((await flow.$$('textarea')).length, 0, 'Context writing stays optional and collapsed')
+  await shot('06-life-context')
   await action(flow)
+  await shot('07-support-style')
   await action(flow)
+  await shot('08-review')
   await action(flow)
   await wait(500); await fresh()
   assert.ok(await page.$('.workspace'), 'Save goes straight home')
   assert.equal(await page.$('components\\/FirstArrival'), null, 'No duplicate manifesto')
   await relaunch()
   assert.ok(await page.$('.workspace'), 'Existing account skips opening and questions')
+  await (await page.$('button[data-tab="settings"]')).tap(); await wait(450)
+  const settings = await page.$('.settings-content')
+  await (await settings.$('.logout-button')).tap(); await wait(450)
+  auth = await component('AuthWelcome')
+  assert.match(await auth.text(), /继续本机演示/)
+  await shot('09-returning-login')
+  await (await auth.$('.auth-check')).tap()
+  await action(auth, 1)
+  await fresh()
+  assert.ok(await page.$('.workspace'), 'Returning demo must bypass registration questions')
+  const counters = await mp.evaluate(() => ({ registrations: getApp().__openingQA.registrations, resumes: getApp().__openingQA.resumes }))
+  assert.deepEqual(counters, { registrations: 1, resumes: 1 })
   calls = await mp.evaluate(() => getApp().__openingQA.calls)
   assert.equal(calls.filter(v => v === 'POST /issues').length, 1)
   assert.equal(calls.some(v => v.includes('/chat')), false)

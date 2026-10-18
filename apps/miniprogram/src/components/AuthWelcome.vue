@@ -2,10 +2,10 @@
 import { ref } from 'vue'
 import ActionButton from './ActionButton.vue'
 import SvgIcon from './SvgIcon.vue'
-defineProps<{ busy: boolean; error: string; devAuth: boolean; ready: boolean; offline: boolean; connecting: boolean; wechatAuth?: boolean }>()
-const emit = defineEmits<{ login: [dev: boolean]; replay: []; privacy: []; retry: [] }>()
+defineProps<{ busy: boolean; error: string; devAuth: boolean; ready: boolean; offline: boolean; connecting: boolean; wechatAuth?: boolean; hasDemo: boolean }>()
+const emit = defineEmits<{ login: [mode: 'wechat' | 'demo-new' | 'demo-resume']; replay: []; privacy: []; retry: [] }>()
 const accepted = ref(false)
-function login(dev: boolean) { if (accepted.value) emit('login', dev) }
+function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value) emit('login', mode) }
 </script>
 
 <template>
@@ -25,15 +25,17 @@ function login(dev: boolean) { if (accepted.value) emit('login', dev) }
             <view><text>我已阅读并同意</text><button class="auth-policy" @click="emit('privacy')">《用户协议》与《隐私政策》</button></view>
           </view>
           <!-- #ifdef MP-WEIXIN -->
-          <ActionButton kind="wechat" :disabled="!accepted || wechatAuth === false || connecting" :loading="busy" @click="login(false)">微信登录 / 注册</ActionButton>
+          <ActionButton kind="wechat" :disabled="!accepted || wechatAuth === false || connecting" :loading="busy" @click="login('wechat')">微信登录 / 注册</ActionButton>
           <text v-if="wechatAuth === false && ready" class="auth-note">微信登录尚未配置，请稍后再来</text>
           <!-- #endif -->
-          <ActionButton v-if="devAuth" kind="secondary" :disabled="!accepted || connecting" :loading="busy" @click="login(true)">本地开发演示登录</ActionButton>
-          <text v-if="devAuth" class="auth-note">开发演示账号 · 不连接微信</text>
+          <ActionButton v-if="devAuth" kind="secondary" :disabled="!accepted || connecting" :loading="busy" @click="login(hasDemo ? 'demo-resume' : 'demo-new')">{{ hasDemo ? '继续本机演示' : '创建演示账号' }}</ActionButton>
+          <text v-if="devAuth" class="auth-note">{{ hasDemo ? '登录之前的演示账号，恢复已有记录' : '首次创建后，本机可在 30 天内重新登录' }}</text>
+          <button v-if="devAuth && hasDemo" class="auth-new-demo" :disabled="!accepted || busy || connecting" @click="login('demo-new')">创建新的演示账号</button>
+          <text v-if="devAuth" class="auth-note">演示账号与微信账号独立 · 不跨设备同步</text>
           <!-- #ifdef H5 -->
           <text v-if="!devAuth && ready" class="auth-note">请在微信小程序中登录，继续你的探索</text>
           <!-- #endif -->
-          <text class="auth-note">首次登录将创建账号；回来时，接着上次的进展。</text>
+          <text v-if="wechatAuth !== false" class="auth-note">首次微信登录将创建账号；回来时，接着上次的进展。</text>
           <text class="auth-note">登录后点选几项即可开始，也可以稍后再答。</text>
         </view>
         <text class="auth-signature">YOUR LIFE, YOUR WAY</text>
@@ -51,11 +53,11 @@ function login(dev: boolean) { if (accepted.value) emit('login', dev) }
 .auth-top { display:flex; align-items:center; justify-content:space-between; font-size:12px; letter-spacing:3px; }
 .auth-top button { padding:12px 0 12px 16px; margin:0; font-size:12px; line-height:1.6; color:#586657; background:transparent; letter-spacing:0; }
 button::after { border:0; }
-.auth-heading { margin-top:48px; }
+.auth-heading { margin-top:24px; }
 .auth-eyebrow { display:block; font-size:9px; letter-spacing:2px; color:#6c7565; margin-bottom:20px; }
 .auth-title { display:block; font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:36px; letter-spacing:2px; line-height:1.6; }
 .auth-subtitle { display:block; white-space:pre-line; font-family:var(--font-heading); margin-top:18px; font-size:16px; line-height:2; color:#57644d; }
-.auth-letter { margin:32px 0 40px; font-family:var(--font-heading); font-size:13px; line-height:2.1; }
+.auth-letter { margin:32px 0 28px; font-family:var(--font-heading); font-size:13px; line-height:2.1; }
 .auth-letter text { display:block; }
 .auth-actions { margin-top:auto; }
 .auth-actions :deep(.action-button) { margin-top:12px; }
@@ -65,8 +67,10 @@ button::after { border:0; }
 .auth-check .checked { background:#536b49; border-color:#536b49; }
 .auth-policy { display:inline; padding:0; margin:0 0 0 3px; background:transparent; color:#425a3c; font-size:11px; line-height:1.9; }
 .auth-note { display:block; margin-top:10px; text-align:center; font-size:10px; line-height:1.8; color:#737a6b; }
-.auth-signature { text-align:center; font-size:9px; letter-spacing:3px; color:#89917d; margin-top:36px; }
+.auth-signature { text-align:center; font-size:9px; letter-spacing:3px; color:#89917d; margin-top:24px; }
 .auth-connection { display:flex; align-items:center; gap:10px; font-size:12px; }
 .auth-connection button { margin:0 0 0 auto; font-size:12px; color:#4c6547; background:transparent; }
 @media(max-height:740px) { .auth-heading { margin-top:24px; } .auth-letter { margin:22px 0 28px; } .auth-title { font-size:32px; } .auth-signature { margin-top:24px; } }
+.auth-new-demo { width:100%; text-align:center; background:transparent; color:#536a4e; font-size:12px; line-height:1.7; margin:8px auto 0; min-height:44px; padding:12px; }
+.auth-new-demo[disabled] { color:#8c9586; }
 </style>

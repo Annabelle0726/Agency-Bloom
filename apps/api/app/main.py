@@ -37,6 +37,7 @@ from .schemas import (
     Card,
     CardUpdate,
     ChatInput,
+    DevLogin,
     FeedbackInput,
     IssueInput,
     Login,
@@ -171,7 +172,17 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         if item.ended_at:
             raise HTTPException(409, "这件事已结束，可以开启一个新的问题")
 
-    def sign_in(db, user):
+    def dev_resume_credential(db, user):
+        raw = secrets.token_urlsafe(32)
+        # Separate namespace: this credential cannot be used as a normal API session.
+        db.add(AuthSession(
+            token_hash=digest("dev-resume:" + raw),
+            user_id=user.id,
+            expires_at=(datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+        ))
+        return raw
+
+    def sign_in(db, user, remember_dev=False):
         db.add(user)
         db.flush()
         db.add(
@@ -187,8 +198,12 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                 expires_at=(datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
             )
         )
+        resume_token = dev_resume_credential(db, user) if remember_dev else None
         db.commit()
-        return {"token": raw, "user": user_view(user)}
+        result = {"token": raw, "user": user_view(user)}
+        if resume_token:
+            result["resume_token"] = resume_token
+        return result
 
     @app.get("/api/health")
     def health():
@@ -204,10 +219,30 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         }
 
     @app.post("/api/auth/dev")
-    def dev_login(body: Login, db: Session = Depends(db_dependency)):
+    def dev_login(body: DevLogin, db: Session = Depends(db_dependency)):
         if not settings.allow_dev_auth or settings.environment != "development":
             raise HTTPException(404)
-        return sign_in(db, User())
+        if body.resume_token:
+            credential = db.get(AuthSession, digest("dev-resume:" + body.resume_token))
+            if credential is None or credential.expires_at <= now():
+                raise HTTPException(401, "本机演示登录已失效")
+            user = db.get(User, credential.user_id)
+            if user is None or user.wechat_id is not None:
+                raise HTTPException(401, "本机演示登录已失效")
+            return sign_in(db, user)
+        return sign_in(db, User(), remember_dev=True)
+
+    @app.post("/api/auth/dev/remember")
+    def remember_dev(
+        body: Login, user: User = Depends(authenticated), db: Session = Depends(db_dependency)
+    ):
+        if not settings.allow_dev_auth or settings.environment != "development":
+            raise HTTPException(404)
+        if user.wechat_id is not None:
+            raise HTTPException(403)
+        credential = dev_resume_credential(db, user)
+        db.commit()
+        return {"resume_token": credential}
 
     @app.post("/api/auth/wechat")
     async def wechat_login(body: WechatLogin, db: Session = Depends(db_dependency)):

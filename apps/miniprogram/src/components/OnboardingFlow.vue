@@ -59,13 +59,38 @@ const branch = computed(() => branchFor(form))
 const constraintsText = computed({ get: () => form.constraints.join('\n'), set: value => { form.constraints = value.split('\n').map(v => v.trim()).filter(Boolean).slice(0, 12) } })
 const canContinue = computed(() => step.value === 0 ? form.concerns.length > 0 : step.value === 1 ? !!form.exploration_intent : step.value === 3 ? !!form.support_style : true)
 const headings = [
-  { label: 'LET’S BEGIN', title: '最近，有什么让你\n感到焦虑、害怕或不安？', detail: '可以多选，也可以只是带着好奇来看看，不用写长段文字' },
+  { label: 'LET’S BEGIN', title: '最近，有什么让你\n感到焦虑、害怕或不安？', detail: '选下最近挂心的事，也可以带着好奇来。可以多选。' },
   { label: 'A FIRST THREAD', title: '我们先从\n一件小事聊起', detail: '点选就好，暂时没有答案也可以继续' },
   { label: 'ABOUT YOU', title: '此刻的生活\n主要围绕什么展开', detail: '点选与你有关的词，也可以直接跳过' },
   { label: 'YOUR STYLE', title: '此刻，你希望\n得到怎样的帮助', detail: '按自己的节奏来，以后也可以改变' },
   { label: 'A BEGINNING', title: '这是一次探索的起点\n而不是对你的定义', detail: '根据固定问题整理，还没有使用 AI' },
 ]
 const heading = computed(() => headings[step.value] || headings[0])
+const scenes = ['water', 'path', 'rest', 'meadow', 'dawn']
+const scene = computed(() => '/static/opening-' + scenes[step.value] + '.jpg')
+const visualChoices: Record<string, { scene: string; tone: string }> = {
+  direction: { scene: 'mountain-person', tone: 'sage' },
+  change: { scene: 'dawn', tone: 'rose' },
+  choices: { scene: 'path', tone: 'sage' },
+  start: { scene: 'water', tone: 'water' },
+  other: { scene: 'rest', tone: 'lilac' },
+  possibility: { scene: 'meadow', tone: 'gold' },
+  unsure: { scene: 'water', tone: 'water' },
+  listen: { scene: 'rest', tone: 'rose' },
+  discover: { scene: 'meadow', tone: 'gold' },
+  compare: { scene: 'path', tone: 'sage' },
+  experiment: { scene: 'dawn', tone: 'water' },
+}
+function visual(id: string) { return visualChoices[id] || visualChoices.unsure }
+const contextIcons: Record<string, string> = {
+  studying: 'note', searching: 'compass', working: 'paths', transition: 'step',
+  freelance: 'sun', business: 'spark', creating: 'note', care: 'user',
+  rest: 'sun', retired: 'sun', other: 'chat',
+}
+const selectedNote = computed(() => step.value === 0
+  ? (form.concerns.length ? '已选 ' + form.concerns.length + ' 项 · 都可以慢慢聊' : '没有标准答案，选接近你的就好')
+  : step.value === 2 ? '身份可以有很多种，也可以暂时不选' : '你的选择，之后仍然可以改变')
+
 
 function persist() {
   try {
@@ -134,7 +159,11 @@ defineExpose({ clearDraft })
 </script>
 
 <template>
-  <view class="onboarding-flow">
+  <view class="onboarding-flow" :class="'question-scene-' + step">
+    <view class="question-backdrop" aria-hidden="true">
+      <image :key="scene" :src="scene" mode="aspectFill" />
+      <view class="question-wash" />
+    </view>
     <view key="flow-shell" class="flow-page">
       <view class="flow-chrome">
         <view class="flow-nav"><button class="icon-button flow-back" aria-label="返回上一步" :disabled="busy || moving" hover-class="pressed" :hover-start-time="0" @click="go(step - 1)"><SvgIcon name="back" :size="22" /></button><text class="flow-wordmark">YOUR SPACE</text><button class="icon-button" aria-label="草稿与隐私" hover-class="pressed" :hover-start-time="0" @click="draftInfo = true"><SvgIcon name="more" :size="22" /></button></view>
@@ -149,7 +178,7 @@ defineExpose({ clearDraft })
             <button class="text-button" @click="legacyDraft = null">这次先不使用</button>
           </view>
           <view v-if="step === 0" class="selection-stack">
-            <SelectionCard v-for="item in startingConcernOptions" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" />
+            <SelectionCard v-for="item in startingConcernOptions" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="'/static/opening-' + visual(item.id).scene + '.jpg'" :tone="visual(item.id).tone" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" />
             <view v-if="form.concerns.includes('other') || form.actual_question" class="optional-writing">
               <button class="optional-toggle" :aria-expanded="otherOpen" @click="otherOpen = !otherOpen" hover-class="pressed">{{ otherOpen ? '收起补充' : '我想补充一句（选填）' }}</button>
               <textarea v-if="otherOpen" v-model="form.actual_question" class="text-area flow-textarea" maxlength="400" placeholder="一句话就好，也可以不写" :auto-height="true" />
@@ -158,14 +187,14 @@ defineExpose({ clearDraft })
           <view v-else-if="step === 1" class="selection-stack">
             <template v-if="selected.length > 1">
               <text class="field-label">先聊哪一个方向？</text>
-              <SelectionCard v-for="item in selected" :key="item.id" :title="item.title" radio :selected="form.exploration_intent === item.id" @select="focus(item.id)" />
+              <SelectionCard v-for="item in selected" :key="item.id" :title="item.title" :artwork="'/static/opening-' + visual(item.id).scene + '.jpg'" :tone="visual(item.id).tone" radio :selected="form.exploration_intent === item.id" @select="focus(item.id)" />
             </template>
             <view v-if="form.exploration_intent" class="exploration-branch">
               <text class="branch-question">{{ branch.question }}</text>
               <text class="flow-description">选一个接近的，也可以不选</text>
               <view class="quick-answers">
-                <button v-for="answer in focusChoices" :key="answer" class="quick-answer" :class="{ chosen: form.focus_response === answer }"
-                  :aria-pressed="form.focus_response === answer" @click="chooseFocus(answer)" hover-class="pressed" :hover-start-time="0">{{ answer }}</button>
+                <button v-for="(answer, answerIndex) in focusChoices" :key="answer" class="quick-answer" :class="{ chosen: form.focus_response === answer }"
+                  :aria-pressed="form.focus_response === answer" @click="chooseFocus(answer)" hover-class="pressed" :hover-start-time="0"><view class="answer-symbol"><SvgIcon :name="['sun', 'paths', 'spark', 'step'][answerIndex % 4]" :size="21" /></view><text>{{ answer }}</text><view class="answer-indicator"><SvgIcon v-if="form.focus_response === answer" name="check" :size="14" /></view></button>
               </view>
               <button class="optional-toggle" :aria-expanded="responseOpen" @click="responseOpen = !responseOpen" hover-class="pressed">{{ responseOpen ? '收起补充' : '我想用自己的话说（选填）' }}</button>
               <view v-if="responseOpen">
@@ -177,14 +206,14 @@ defineExpose({ clearDraft })
             </view>
           </view>
           <view v-else-if="step === 2">
-            <view class="life-contexts"><button v-for="item in lifeContexts" :key="item.id" class="context-chip" :class="{ chosen: form.life_contexts?.includes(item.id) }" :aria-pressed="form.life_contexts?.includes(item.id)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70" @click="context(item.id)">{{ item.title }}</button></view>
+            <view class="life-contexts"><button v-for="item in lifeContexts" :key="item.id" class="context-chip" :class="{ chosen: form.life_contexts?.includes(item.id) }" :aria-pressed="form.life_contexts?.includes(item.id)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70" @click="context(item.id)"><view class="context-symbol"><SvgIcon :name="contextIcons[item.id]" :size="21" /></view><text>{{ item.title }}</text><view class="context-indicator" :class="{ checked: form.life_contexts?.includes(item.id) }"><SvgIcon v-if="form.life_contexts?.includes(item.id)" name="check" :size="12" /></view></button></view>
             <button class="optional-toggle" :aria-expanded="detailsOpen" @click="detailsOpen = !detailsOpen" hover-class="pressed">{{ detailsOpen ? '收起补充' : '有一点经历或现实条件想补充（选填）' }}</button>
             <view v-if="detailsOpen">
               <text class="field-label">愿意补充的经历，选填</text><textarea v-model="form.background" class="text-area flow-textarea" maxlength="400" placeholder="一句话、一件小事就够了" :auto-height="true" />
               <text class="field-label">想照顾到的现实条件，选填</text><textarea v-model="constraintsText" class="text-area flow-textarea" maxlength="1200" placeholder="比如时间、收入或精力，也可以以后聊" :auto-height="true" />
             </view>
           </view>
-          <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
+          <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="'/static/opening-' + visual(item.id).scene + '.jpg'" :tone="visual(item.id).tone" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
           <view v-else class="reflection-summary">
             <view class="reflection-card reflection-record"><view class="reflection-mark"><SvgIcon name="compass" :size="24" /><text>你留下的线索，由你解释</text></view>
               <view v-if="selected.length" class="reflection-context"><text class="muted">这次想关注的方向</text><view class="chips"><text v-for="item in selected" :key="item.id" class="tag">{{ item.title }}</text></view></view>
@@ -202,6 +231,7 @@ defineExpose({ clearDraft })
         </view>
       </scroll-view>
       <view class="flow-footer">
+        <text v-if="step < 4" class="selection-reassurance">{{ selectedNote }}</text>
         <view v-if="localError || error" class="notice">{{ localError || error }}</view>
         <ActionButton v-if="step < 4" :disabled="!canContinue" :locked="moving" @click="go(step + 1)">继续</ActionButton>
         <ActionButton v-else :loading="busy" :locked="moving" @click="submit">保存这次探索</ActionButton>
@@ -229,4 +259,57 @@ defineExpose({ clearDraft })
 .optional-note { display:block; color:#667180; font-size:12px; line-height:1.8; margin-top:10px; }
 .legacy-draft { padding:16px; margin-bottom:20px; background:#edf0e7; border-radius:16px; font-size:13px; line-height:1.8; }
 .flow-footer-detail { flex-wrap:wrap; gap:4px 12px; }
+
+/* The imagery stays behind readable, tactile choices throughout the five steps. */
+.onboarding-flow { isolation:isolate; background:#f0f3e9; }
+.question-backdrop { position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.question-backdrop > image { position:absolute; width:100%; height:100%; opacity:.65; }
+.question-wash { position:absolute; inset:0; background:linear-gradient(180deg,rgba(248,249,242,.28),rgba(246,248,239,.76) 33%,rgba(239,244,232,.9) 75%,#f1f4e9); }
+.question-scene-1 .question-wash { background:linear-gradient(180deg,rgba(248,249,242,.4),rgba(246,248,239,.83) 40%,rgba(239,244,232,.94)); }
+.question-scene-2 .question-wash { background:linear-gradient(180deg,rgba(250,245,235,.25),rgba(250,245,235,.83) 45%,#f8f3e8); }
+.flow-page { position:relative; z-index:1; background:transparent; }
+.flow-chrome { padding-top:calc(var(--capsule-bottom,64px) + 12px); }
+.flow-nav { margin-bottom:15px; }
+.flow-wordmark { color:#62755d; }
+.flow-body { padding-top:25px; }
+.flow-heading { position:relative; padding-bottom:22px; }
+.flow-heading .eyebrow { color:#708362; letter-spacing:2.4px; }
+.flow-heading .flow-title { font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:28px; line-height:1.55; letter-spacing:.7px; color:#334b38; }
+.flow-heading .flow-description { color:#65755d; font-size:13px; line-height:1.9; max-width:95%; margin-top:13px; }
+.selection-stack { gap:13px; }
+.flow-footer { background:rgba(246,248,240,.96); border-top:1px solid rgba(115,137,93,.15); padding-top:10px; box-shadow:0 -8px 30px rgba(71,89,58,.025); }
+.selection-reassurance { display:block; text-align:center; color:#697c5e; font-size:11px; line-height:1.8; margin:0 0 9px; }
+.flow-footer :deep(.action-button) { border-radius:18px; }
+.flow-footer :deep(.action-button.primary) { background:#48664b; }
+.flow-footer :deep(.action-button[disabled]) { background:#e0e7da; color:#8a9882; }
+.flow-footer-detail { justify-content:space-between; }
+.flow-footer .flow-skip { color:#516c48; font-size:12px; }
+.flow-footer .draft-link { font-size:10px; }
+:deep(.progress-track) { height:3px; background:rgba(100,122,77,.16); }
+:deep(.progress-fill) { background:#6c8454; }
+:deep(.progress-count) { color:#647856; }
+.exploration-branch { padding:20px 18px; border:1px solid rgba(255,255,255,.95); border-radius:22px; background:rgba(255,253,247,.8); box-shadow:0 6px 24px rgba(60,79,46,.04); }
+.branch-question { font-family:var(--font-heading); font-size:19px; line-height:1.8; color:#3b523a; }
+.quick-answer { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #e1e7d8; border-radius:16px; background:rgba(255,255,250,.9); }
+.quick-answer > text { flex:1; }
+.answer-symbol { flex-shrink:0; width:39px; height:39px; border-radius:12px; background:#eff1e2; display:flex; align-items:center; justify-content:center; }
+.answer-indicator { flex-shrink:0; width:18px; height:18px; border:1px solid #c0cbae; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.quick-answer.chosen { background:#e4ecd9; border-color:#738d59; }
+.life-contexts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.context-chip { position:relative; display:flex; align-items:center; gap:10px; width:100%; min-height:82px; padding:14px 12px; margin:0; border:1px solid rgba(255,255,255,.95); border-radius:18px; background:rgba(255,253,248,.87); font-size:13px; line-height:1.7; color:#43573d; text-align:left; box-shadow:0 5px 18px rgba(71,79,52,.04); }
+.context-symbol { width:34px; height:38px; border-radius:12px; background:#edf0de; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.context-chip:nth-child(3n+2) .context-symbol { background:#f4e8da; }
+.context-chip:nth-child(3n) .context-symbol { background:#e3eeea; }
+.context-chip.chosen { background:#e6eddb; border-color:#77915e; }
+.context-indicator { position:absolute; top:8px; right:8px; display:flex; align-items:center; justify-content:center; }
+.context-indicator.checked { width:16px; height:16px; border-radius:50%; background:#d2dfc1; }
+.reflection-card { background:rgba(255,254,248,.91); border:1px solid #fffdf7; border-radius:24px; box-shadow:0 10px 35px rgba(65,78,43,.07); }
+.reflection-next { border-top:1px solid rgba(116,134,90,.25); }
+.optional-writing { border-radius:16px; padding:0 12px; background:rgba(255,253,248,.7); }
+@media(max-width:360px) {
+  .flow-heading .flow-title { font-size:25px; }
+  .flow-chrome,.flow-body,.flow-footer { padding-left:20px; padding-right:20px; }
+  .context-chip { font-size:12px; gap:8px; }
+}
+@media(prefers-reduced-motion:reduce) { .question-backdrop > image { transition:none; } }
 </style>

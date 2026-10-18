@@ -41,6 +41,10 @@ class Login(StrictModel):
     privacy_accepted: Literal[True]
 
 
+class DevLogin(Login):
+    resume_token: Annotated[str, StringConstraints(min_length=40, max_length=128)] | None = None
+
+
 class WechatLogin(Login):
     code: Annotated[str, StringConstraints(min_length=1, max_length=256)]
 

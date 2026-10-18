@@ -25,6 +25,21 @@ import {createAvatarStore} from '../../avatar'
 
 const token = ref<string>(uni.getStorageSync('agency.session') || '')
 const user = ref<User | null>(null)
+const DEMO_KEY = 'agency.demo.credential.v1'
+const storedDemo = uni.getStorageSync(DEMO_KEY)
+const demoCredential = ref<{ userId: string; secret: string } | null>(
+  storedDemo && typeof storedDemo.userId === 'string' && typeof storedDemo.secret === 'string'
+    && /^[A-Za-z0-9_-]{40,128}$/.test(storedDemo.secret) ? storedDemo : null
+)
+function rememberDemo(userId: string, secret: string) {
+  demoCredential.value = { userId, secret }
+  try { uni.setStorageSync(DEMO_KEY, demoCredential.value) }
+  catch { notify('已登录，但本机未能记住演示账号，请暂时不要退出') }
+}
+function forgetDemo() {
+  demoCredential.value = null
+  try { uni.removeStorageSync(DEMO_KEY) } catch { /* Server still rejects invalid credentials. */ }
+}
 const localAvatars = createAvatarStore({
   read: key => uni.getStorageSync(key) || '',
   write: (key, path) => path ? uni.setStorageSync(key, path) : uni.removeStorageSync(key),
@@ -321,7 +336,10 @@ async function saveQuestions(draftForm: Onboarding) {
   await guarded(saveInitial, 'auth')
 }
 
-async function authenticate(dev = false) {
+async function authenticate(mode: 'wechat' | 'demo-new' | 'demo-resume' = 'wechat') {
+  const dev = mode !== 'wechat'
+  if (mode === 'demo-new' && demoCredential.value &&
+      !await confirm('创建新的演示账号？', '本机快捷登录将切换到新账号，之后无法从此入口找回旧账号的记录。确定创建吗？')) return
   if (user.value) {
     await guarded(loadCurrent, 'auth')
     return
@@ -332,7 +350,11 @@ async function authenticate(dev = false) {
       operations.clear('init'); ready.value = true
     }
     let path = '/auth/dev'
-    const body: { privacy_accepted: true; code?: string } = {privacy_accepted: true}
+    const body: { privacy_accepted: true; code?: string; resume_token?: string } = {privacy_accepted: true}
+    if (mode === 'demo-resume') {
+      if (!demoCredential.value) throw Error('这台设备还没有可继续的演示账号，请先创建')
+      body.resume_token = demoCredential.value.secret
+    }
     if (!dev) {
       if (config.value.wechat_auth === false) throw Error('微信登录尚未配置，可以先继续浏览')
       path = '/auth/wechat'
@@ -343,7 +365,16 @@ async function authenticate(dev = false) {
       }))
       body.code = login.code
     }
-    const result = await request<{ token: string; user: User }>('POST', path, body)
+    let result: { token: string; user: User; resume_token?: string }
+    try { result = await request('POST', path, body) }
+    catch (err) {
+      if (mode === 'demo-resume' && err instanceof ApiError && err.status === 401) {
+        forgetDemo()
+        throw Error('本机演示登录已过期或账号已删除，请创建新的演示账号')
+      }
+      throw err
+    }
+    if (result.resume_token) rememberDemo(result.user.id, result.resume_token)
     token.value = result.token;
     user.value = result.user;
     uni.setStorageSync('agency.session', result.token)
@@ -541,6 +572,12 @@ async function showHistory() {
 
 async function logOut() {
   await guarded(async () => {
+    if (config.value.dev_auth && user.value && demoCredential.value?.userId !== user.value.id) {
+      try {
+        const result = await request<{ resume_token: string }>('POST', '/auth/dev/remember', { privacy_accepted: true })
+        rememberDemo(user.value.id, result.resume_token)
+      } catch { /* Existing WeChat accounts use their own sign-in path. */ }
+    }
     await request('POST', '/auth/logout');
     clearSession()
   })
@@ -551,6 +588,7 @@ async function deleteAccount() {
   await guarded(async () => {
     const id = user.value?.id;
     await request('DELETE', '/me');
+    if (demoCredential.value?.userId === id) forgetDemo()
     if (id) {
       try { uni.removeStorageSync(draftKeyFor(id)); uni.removeStorageSync(pauseKeyFor(id)) }
       catch { /* A local storage failure must not keep a deleted account signed in. */ }
@@ -611,7 +649,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
       </view>
       <WelcomeOpening v-else-if="screen === 'opening'" @start="finishOpening" />
       <AuthWelcome v-else-if="screen === 'auth'" :busy="busy" :error="authError"
-        :dev-auth="config.dev_auth" :wechat-auth="config.wechat_auth" :offline="offline"
+        :dev-auth="config.dev_auth" :has-demo="!!demoCredential" :wechat-auth="config.wechat_auth" :offline="offline"
         :connecting="operations.busy.init" :ready="ready" @login="authenticate"
         @replay="screen = 'opening'" @privacy="modal = 'privacy'" @retry="initialize" />
       <OnboardingFlow v-else-if="screen === 'onboard' && user" :key="user.id" :user-id="user.id"
@@ -955,7 +993,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               {{ config.ai_mode === 'demo' ? '当前为本地演示，不产生模型费用' : '服务额度用完后，卡片和反馈仍可使用' }}
             </text>
           </view>
-          <button class="secondary" :disabled="busy" @click="logOut" hover-class="pressed" :hover-start-time="0"
+          <button class="secondary logout-button" :disabled="busy" @click="logOut" hover-class="pressed" :hover-start-time="0"
                   :hover-stay-time="70">退出登录
           </button>
           <button class="text-button danger-link" :disabled="busy" @click="deleteAccount" hover-class="pressed"
