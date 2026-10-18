@@ -38,7 +38,7 @@ const slides = [
   {
     scene: 'meadow', label: '05 / 从这个愿望出发', accent: '#5a602e',
     title: ['我还想', '按自己的意愿活一活'],
-    lines: ['Agency OS 从这个朴素的愿望出发', '现实会划出边界', '但在尚有余地的地方', '我们仍可以辨认意愿，争取选择', '这里陪你理清工作与方向中的困惑', '比较选择，尝试一点改变', '也给休息、犹豫和重新选择留下位置'],
+    lines: ['Agency Bloom 从这个朴素的愿望出发', '现实会划出边界', '但在尚有余地的地方', '我们仍可以辨认意愿，争取选择', '这里陪你理清工作与方向中的困惑', '比较选择，尝试一点改变', '也给休息、犹豫和重新选择留下位置'],
     emphasis: '愿每一次向前\n都更靠近你愿意亲自度过的生活',
     note: '就从此刻，最想理清的一个问题开始',
   },
@@ -98,7 +98,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
       <view class="story-wash" />
     </view>
     <view class="story-header">
-      <view class="story-brand"><text>AGENCY OS</text><text class="story-brand-note">YOUR LIFE, YOUR WAY</text></view>
+      <view class="story-brand"><text>AGENCY BLOOM</text><text class="story-brand-note">YOUR LIFE, YOUR WAY</text></view>
       <button class="story-skip" hover-class="pressed" @click="emit('start')">直接登录</button>
     </view>
     <view class="story-stage" @click="advance">

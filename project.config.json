@@ -12,7 +12,15 @@
       "outputPath": ""
     },
     "useCompilerPlugins": false,
-    "compileHotReLoad": false
+    "compileHotReLoad": false,
+    "compileWorklet": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false
   },
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},
@@ -23,5 +31,5 @@
   "appid": "wx0df7435d19ace441",
   "editorSetting": {},
   "miniprogramRoot": "apps/miniprogram/dist/dev/mp-weixin/",
-  "projectname": "Agency OS (development)"
+  "projectname": "Agency Bloom (development)"
 }

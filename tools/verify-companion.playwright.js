@@ -1,4 +1,4 @@
-// Playwright CLI run-code callback. All Agency OS API traffic is intercepted: zero model requests.
+// Playwright CLI run-code callback. All Agency Bloom API traffic is intercepted: zero model requests.
 async (sourcePage) => {
   const context = await sourcePage.context().browser().newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'no-preference' })
   const page = await context.newPage()

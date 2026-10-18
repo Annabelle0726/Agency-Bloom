@@ -1,8 +1,8 @@
-# Agency OS
+# Agency Bloom
 
 [简体中文](README_zh.md)
 
-Agency OS — Your Life. Your Direction. Your Agency.
+Agency Bloom — Your Life. Your Direction. Your Agency.
 
 A mobile-first WeChat Mini Program for understanding your circumstances, clarifying a current concern, comparing possibilities, and choosing a small real-world step. The Alpha follows one current issue and keeps the decision card under the user's control.
 
@@ -13,7 +13,7 @@ Built with Vue 3, TypeScript and uni-app, with a Python/FastAPI API. **WeChat De
 Requirements: Node.js 22+, npm, uv, and WeChat Developer Tools. Run in PowerShell from the repository root:
 
 ```powershell
-cd C:\Projects\AgencyOS
+cd C:\Projects\Agency-Bloom
 npm ci
 npm --prefix apps/miniprogram ci
 uv sync --directory apps/api --frozen
@@ -55,7 +55,7 @@ The operator's --live-once option writes a durable attempt guard before one paid
 
 Natural conversation can return suggestion=null. A useful career proposal appears as a draft and reaches the decision card only after user review and confirmation. Context includes the current card/issue, support preference, up to five recent feedback records and eight recent messages; full chat storage remains opt-in. Budget reservations use peak/cache-miss prices and settle successful calls using token receipts; uncertain failures retain their reservation. Historical usage is preserved.
 
-Chat displays an original gentle sprout avatar for Agency OS and a default user avatar. In My, the user can explicitly select a WeChat avatar or restore the default. The chosen file stays on this device, scoped to the account, and is never included in model requests. SVG sources are retained beside bundled PNGs for reliable native rendering. The real WeChat selection sheet and physical-device keyboard still need manual acceptance.
+Chat displays an original gentle sprout avatar for Agency Bloom and a default user avatar. In My, the user can explicitly select a WeChat avatar or restore the default. The chosen file stays on this device, scoped to the account, and is never included in model requests. SVG sources are retained beside bundled PNGs for reliable native rendering. The real WeChat selection sheet and physical-device keyboard still need manual acceptance.
 
 ## Daily Mini Program development
 
@@ -66,7 +66,7 @@ npm run dev:mp
 This keeps the uni-app compiler running and writes changes to:
 
 ```text
-C:\Projects\AgencyOS\apps\miniprogram\dist\dev\mp-weixin
+C:\Projects\Agency-Bloom\apps\miniprogram\dist\dev\mp-weixin
 ```
 
 Import that directory into WeChat Developer Tools once. It contains its own generated project.config.json. Alternatively, import C:\Projects\AgencyOS: the repository-level project.config.json points its miniprogramRoot at the same development output. Check the actual Mini Program root in Project Details.
@@ -109,7 +109,7 @@ When the installed WeChat WXML/WXSS compilers are available, build:mp also runs 
 
 | Location | Purpose |
 |---|---|
-| C:\Projects\AgencyOS | Source repository and optional development project wrapper |
+| C:\Projects\Agency-Bloom | Source repository and optional development project wrapper |
 | apps/miniprogram/dist/dev/mp-weixin | Watched development output |
 | apps/miniprogram/dist/build/mp-weixin | One-time release output |
 | C:\Software\Tencent\微信web开发者工具 | Installed tools and CLI, never an application output directory |

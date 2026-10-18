@@ -1,8 +1,8 @@
-# Agency OS — Repository Working Guide
+# Agency Bloom — Repository Working Guide
 
 ## Product intent
 
-Agency OS helps adults explore career possibilities, compare choices, and learn from affordable real-world experiments. Preserve the user's decision-making authority. It is not therapy, a generic planner, or an AI relationship substitute.
+Agency Bloom helps adults explore career possibilities, compare choices, and learn from affordable real-world experiments. Preserve the user's decision-making authority. It is not therapy, a generic planner, or an AI relationship substitute.
 
 Use confirmed user information as facts. Keep model assumptions and unverified market information separate. Suggestions and insights are optional; only explicit user confirmation can turn them into saved decision-card content. Do not add automatic career research, unsolicited reminders, or extra model calls.
 

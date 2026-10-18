@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12"
 
 [[package]]
-name = "agency-os-api"
+name = "agency-bloom-api"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

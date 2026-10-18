@@ -1,7 +1,7 @@
 [project]
-name = "agency-os-api"
+name = "agency-bloom-api"
 version = "0.1.0"
-description = "Agency OS private pilot API"
+description = "Agency Bloom private pilot API"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115,<1",

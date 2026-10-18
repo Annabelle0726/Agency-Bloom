@@ -15,7 +15,7 @@ function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value
     <view class="auth-shade" />
     <scroll-view class="auth-scroll" scroll-y :show-scrollbar="false">
       <view class="auth-content">
-        <view class="auth-top"><text>AGENCY OS</text><button :disabled="busy" @click="emit('replay')" hover-class="pressed">重看开场</button></view>
+        <view class="auth-top"><text>AGENCY BLOOM</text><button :disabled="busy" @click="emit('replay')" hover-class="pressed">重看开场</button></view>
         <view class="auth-heading"><text class="auth-eyebrow">A LITTLE SPACE FOR YOURSELF</text><text class="auth-title">给自己一点空间</text><text class="auth-subtitle">{{ '让每一次向前\n都更靠近你愿意亲自度过的生活' }}</text></view>
         <view class="auth-letter"><text>不必先想清楚一切。</text><text>带着困惑，或一点好奇来就好。</text><text>我们可以从一件小事，慢慢聊起。</text></view>
         <view class="auth-actions">

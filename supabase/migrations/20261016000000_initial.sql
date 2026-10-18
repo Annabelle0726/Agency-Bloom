@@ -1,4 +1,4 @@
--- Agency OS initial schema. Apply using Supabase CLI migrations.
+-- Agency Bloom initial schema. Apply using Supabase CLI migrations.
 -- All client access goes through FastAPI; no direct Data API access.
 BEGIN;
 

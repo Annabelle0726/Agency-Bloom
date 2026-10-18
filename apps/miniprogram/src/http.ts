@@ -11,7 +11,7 @@ interface NativeOptions {
 type Transport = (options: NativeOptions) => { abort: () => void }
 interface Diagnostic { kind: ErrorKind; status: number; method: string; route: string }
 export function createApi(transport: Transport, token: () => string, unauthorized: () => void, base: string,
-  diagnostic: (event: Diagnostic) => void = event => { if (import.meta.env.DEV) console.warn('[Agency OS request]', event) }) {
+  diagnostic: (event: Diagnostic) => void = event => { if (import.meta.env.DEV) console.warn('[Agency Bloom request]', event) }) {
   return {
     request<T>(method: NativeOptions['method'], path: string, data?: unknown) {
       let settled = false

@@ -763,11 +763,11 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                 :hover-stay-time="70" @click="showHistory">
           <image class="topbar-glyph" :src="iconSources.menu.ink" mode="aspectFit" aria-hidden="true" />
         </button>
-        <view class="brand-lockup" aria-label="Agency OS">
+        <view class="brand-lockup" aria-label="Agency Bloom">
           <image class="brand-lockup-symbol"
                  :src="dark ? '/static/brand-sprout-night.png' : '/static/brand-sprout.png'"
                  mode="aspectFit" />
-          <text class="space-wordmark">AGENCY OS</text>
+          <text class="space-wordmark">AGENCY BLOOM</text>
         </view>
         <button class="icon-button" aria-label="打开我的设置" hover-class="pressed" :hover-start-time="0"
                 :hover-stay-time="70" @click="selectTab('settings')">
@@ -786,7 +786,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
       </view>
 
       <view v-if="screen === 'restore'" class="entry-status">
-        <text class="eyebrow">AGENCY OS</text>
+        <text class="eyebrow">AGENCY BLOOM</text>
         <text class="page-title">{{ offline || error ? '连接暂时停了一下' : '正在回到你的空间' }}</text>
         <text class="body-copy">{{ operations.errors.init || error || '稍等片刻，我们正在恢复上次的进展。' }}</text>
         <ActionButton v-if="offline || error" :loading="busy || operations.busy.init" @click="initialize">重新连接</ActionButton>
@@ -828,7 +828,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <view class="focus-row-copy"><text>把挂心的事，慢慢说清楚</text><text>接着上一次，也可以换个话题</text></view><text class="focus-tag">对话</text>
             </button>
           </view>
-          <view class="home-quote"><text class="quote-mark">“</text><view><text>{{ '未来值得争取\n此刻的生活，也值得被照顾' }}</text><text class="quote-signature">— Agency OS</text></view></view>
+          <view class="home-quote"><text class="quote-mark">“</text><view><text>{{ '未来值得争取\n此刻的生活，也值得被照顾' }}</text><text class="quote-signature">— Agency Bloom</text></view></view>
         </view>
 
         <view v-else-if="current && tab === 'plan'" class="workspace plan-content">
@@ -959,7 +959,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                    :src="userAvatar || '/static/avatar-user.png'"
                    mode="aspectFill" aria-label="你的头像"/>
             <view class="message-content">
-              <text v-if="message.role === 'assistant'" class="message-name">AGENCY OS</text>
+              <text v-if="message.role === 'assistant'" class="message-name">AGENCY BLOOM</text>
               <text class="message-bubble">{{ message.content }}</text>
               <button v-if="message.role === 'assistant' && (message.payload?.supplied_context || disclosedContext[message.id || `index-${index}`])"
                       class="context-disclosure-toggle" :aria-expanded="!!disclosureOpen[message.id || `index-${index}`]"
@@ -1001,7 +1001,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <view v-if="sending" class="thinking">
             <CompanionAvatar :size="38" state="thinking" :interactive="false"/>
             <view class="thinking-copy">
-              <text class="message-name">AGENCY OS</text>
+              <text class="message-name">AGENCY BLOOM</text>
               <text>{{ generatingSummary ? '正在整理会话，随时可以停止' : '正在回应，随时可以停止' }}</text>
             </view>
           </view>
@@ -1150,7 +1150,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <button class="text-button danger-link" :disabled="busy" @click="deleteAccount" hover-class="pressed"
                   :hover-start-time="0" :hover-stay-time="70">删除账号与全部个人记录
           </button>
-          <text class="version-label">{{ 'AGENCY OS · 0.1.0\n给自己一点空间' }}</text>
+          <text class="version-label">{{ 'AGENCY BLOOM · 0.1.0\n给自己一点空间' }}</text>
         </view>
         <view class="tabbar journey-nav" role="navigation" aria-label="主导航">
           <button

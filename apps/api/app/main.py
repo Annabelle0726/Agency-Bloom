@@ -121,7 +121,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         engine.dispose()
 
     app = FastAPI(
-        title="Agency OS API",
+        title="Agency Bloom API",
         version="0.1.0",
         lifespan=lifespan,
         docs_url="/docs" if settings.environment == "development" else None,

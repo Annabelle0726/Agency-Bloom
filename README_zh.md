@@ -1,8 +1,8 @@
-# Agency OS
+# Agency Bloom
 
 [English](README.md)
 
-Agency OS — Your Life. Your Direction. Your Agency.
+Agency Bloom — Your Life. Your Direction. Your Agency.
 
 给自己一点空间，理清此刻的处境，找到愿意尝试的下一步
 
@@ -13,7 +13,7 @@ Agency OS — Your Life. Your Direction. Your Agency.
 需要 Node.js 22+、npm、uv，以及微信开发者工具。在 PowerShell 中执行：
 
 ```powershell
-cd C:\Projects\AgencyOS
+cd C:\Projects\Agency-Bloom
 npm ci
 npm --prefix apps/miniprogram ci
 uv sync --directory apps/api --frozen
@@ -66,7 +66,7 @@ npm run dev:mp
 该命令持续监听代码，将变更写入：
 
 ```text
-C:\Projects\AgencyOS\apps\miniprogram\dist\dev\mp-weixin
+C:\Projects\Agency-Bloom\apps\miniprogram\dist\dev\mp-weixin
 ```
 
 第一次在微信开发者工具导入该目录即可，目录中有编译器生成的 project.config.json。也可以导入仓库根目录 C:\Projects\AgencyOS，根配置的 miniprogramRoot 同样指向开发产物；在「详情」中核对实际小程序根目录
@@ -101,13 +101,13 @@ npm run build:mp
 npm run wechat:open:build
 ```
 
-正式产物位于 C:\Projects\AgencyOS\apps\miniprogram\dist\build\mp-weixin，也可以手动导入该目录。正式构建执行一次就结束，不监听代码；建议作为独立项目打开，与日常开发区分
+正式产物位于 C:\Projects\Agency-Bloom\apps\miniprogram\dist\build\mp-weixin，也可以手动导入该目录。正式构建执行一次就结束，不监听代码；建议作为独立项目打开，与日常开发区分
 
 本机存在微信 WXML/WXSS 编译器时，build:mp 会继续检查生成产物，捕获 uni-app 构建可能漏掉的原生样式语法错误。没有安装开发者工具的机器会明确跳过这一步；npm run check:mp 强制检查正式产物，npm run check:mp:dev 检查开发产物。工具安装目录不同时设置 WECHAT_DEVTOOLS_HOME。编译器检查仍不能替代模拟器验收
 
 | 目录 | 含义 |
 |---|---|
-| C:\Projects\AgencyOS | 源码仓库，也可作为开发项目入口 |
+| C:\Projects\Agency-Bloom | 源码仓库，也可作为开发项目入口 |
 | apps/miniprogram/dist/dev/mp-weixin | 监听模式输出 |
 | apps/miniprogram/dist/build/mp-weixin | 正式构建输出 |
 | C:\Software\Tencent\微信web开发者工具 | 工具安装目录与 CLI，不能作为应用产物目录 |

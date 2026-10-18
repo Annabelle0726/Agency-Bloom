@@ -66,7 +66,7 @@ No task engine, vector store, extra agent framework or new external service was 
 
 ## Native acceptance
 
-Primary environment: installed WeChat Developer Tools and the official miniprogram-automator SDK, using output/exploration/mp-weixin compiled with VITE_API_BASE_URL=http://127.0.0.1:8002/api. The project is labelled Agency OS Exploration Mock QA, with component hot reload kept disabled. Normal development still uses dist/dev/mp-weixin; release uses dist/build/mp-weixin.
+Primary environment: installed WeChat Developer Tools and the official miniprogram-automator SDK, using output/exploration/mp-weixin compiled with VITE_API_BASE_URL=http://127.0.0.1:8002/api. The project is labelled Agency Bloom Exploration Mock QA, with component hot reload kept disabled. Normal development still uses dist/dev/mp-weixin; release uses dist/build/mp-weixin.
 
 iPhone 12/13 (390 × 844): offline onboarding and online Mock journeys passed. Actual textarea/button interactions covered selection, mainline preservation, draft reload, reflection, unchecked login, explicit AI consent, context reuse, optional Insight, interest, refusal, experiment review and confirmation with rapid repeated taps. Confirmed facts and constraints survived. No runtime exception event was recorded. A final repeat also checks timeout/cancel input recovery, tab state and reopening with no chat retention.
 

@@ -1,6 +1,6 @@
-# Agency OS
+# Agency Bloom
 
-Agency OS supports user-directed exploration of career choices and affordable real-world experiments.
+Agency Bloom supports user-directed exploration of career choices and affordable real-world experiments.
 
 ## Language
 

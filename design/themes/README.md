@@ -1,6 +1,6 @@
-# Agency OS Theme References
+# Agency Bloom Theme References
 
-This folder contains the visual references for the six Agency OS themes. Reference artwork defines each theme's atmosphere; the Mini Program uses compressed derivatives and a matching interface palette.
+This folder contains the visual references for the six Agency Bloom themes. Reference artwork defines each theme's atmosphere; the Mini Program uses compressed derivatives and a matching interface palette.
 
 ## Reference library
 
