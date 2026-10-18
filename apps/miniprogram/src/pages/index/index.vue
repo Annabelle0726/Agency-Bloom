@@ -15,6 +15,7 @@ import EmptyState from '../../components/EmptyState.vue'
 import SvgIcon from '../../components/SvgIcon.vue'
 import CompanionAvatar from '../../components/CompanionAvatar.vue'
 import {iconSources} from '../../icons'
+import {navArtwork} from '../../nav-art'
 import NightCompass from '../../components/NightCompass.vue'
 import type {Card, ChatMessage, Issue, Onboarding, User, Experiment} from '../../domain'
 import {ApiError, createApi} from '../../http'
@@ -1001,15 +1002,18 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </button>
           <text class="version-label">{{ 'AGENCY OS · 0.1.0\n给自己一点空间' }}</text>
         </view>
-        <view class="tabbar">
+        <view class="tabbar journey-nav" role="navigation" aria-label="主导航">
           <button
-              v-for="item in [{ id: 'now', label: '首页', icon: 'home' }, { id: 'chat', label: '对话', icon: 'chat' }, { id: 'settings', label: '我的', icon: 'user' }]"
-              :key="item.id" :data-tab="item.id" :class="{ active: tab === item.id }" hover-class="pressed"
-              :hover-start-time="0" :hover-stay-time="70" @click="selectTab(item.id as typeof tab)">
+              v-for="item in [{ id: 'now', label: '首页' }, { id: 'chat', label: '对话' }, { id: 'settings', label: '我的' }]"
+              :key="item.id" :data-tab="item.id" class="nav-item"
+              :class="{ active: tab === item.id, 'nav-conversation': item.id === 'chat' }"
+              :aria-label="item.label" :aria-current="tab === item.id ? 'page' : undefined"
+              hover-class="nav-pressed" :hover-start-time="0" :hover-stay-time="70"
+              @click="selectTab(item.id as typeof tab)">
             <view class="tab-icon-frame">
-              <image class="tab-glyph" :src="iconSources[item.icon as keyof typeof iconSources].ink" mode="aspectFit"/>
+              <image class="tab-glyph" :src="navArtwork[item.id as keyof typeof navArtwork][dark ? (tab === item.id ? 'nightActive' : 'night') : (tab === item.id ? 'active' : 'ink')]" mode="aspectFit"/>
             </view>
-            <text>{{ item.label }}</text>
+            <text class="nav-label">{{ item.label }}</text>
           </button>
         </view>
       </template>
