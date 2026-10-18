@@ -6,6 +6,7 @@ import ActionButton from './ActionButton.vue'
 import SelectionCard from './SelectionCard.vue'
 import ProgressIndicator from './ProgressIndicator.vue'
 import SvgIcon from './SvgIcon.vue'
+import { choiceArtwork } from '../choice-art'
 import { draftKeyFor, questionStep } from '../entry'
 
 const props = defineProps<{ busy: boolean; error: string; userId: string }>()
@@ -61,35 +62,30 @@ const canContinue = computed(() => step.value === 0 ? form.concerns.length > 0 :
 const headings = [
   { label: 'LET’S BEGIN', title: '最近，有什么让你\n感到焦虑、害怕或不安？', detail: '选下最近挂心的事，也可以带着好奇来。可以多选。' },
   { label: 'A FIRST THREAD', title: '我们先从\n一件小事聊起', detail: '点选就好，暂时没有答案也可以继续' },
-  { label: 'ABOUT YOU', title: '此刻的生活\n主要围绕什么展开', detail: '点选与你有关的词，也可以直接跳过' },
+  { label: 'ABOUT YOU', title: '此刻的生活\n主要围绕什么展开', detail: '点亮与你有关的小球，可以多选，也可以先跳过' },
   { label: 'YOUR STYLE', title: '此刻，你希望\n得到怎样的帮助', detail: '按自己的节奏来，以后也可以改变' },
   { label: 'A BEGINNING', title: '这是一次探索的起点\n而不是对你的定义', detail: '根据固定问题整理，还没有使用 AI' },
 ]
 const heading = computed(() => headings[step.value] || headings[0])
 const scenes = ['water', 'path', 'rest', 'meadow', 'dawn']
 const scene = computed(() => '/static/opening-' + scenes[step.value] + '.jpg')
-const visualChoices: Record<string, { scene: string; tone: string }> = {
-  direction: { scene: 'mountain-person', tone: 'sage' },
-  change: { scene: 'dawn', tone: 'rose' },
-  choices: { scene: 'path', tone: 'sage' },
-  start: { scene: 'water', tone: 'water' },
-  other: { scene: 'rest', tone: 'lilac' },
-  possibility: { scene: 'meadow', tone: 'gold' },
-  unsure: { scene: 'water', tone: 'water' },
-  listen: { scene: 'rest', tone: 'rose' },
-  discover: { scene: 'meadow', tone: 'gold' },
-  compare: { scene: 'path', tone: 'sage' },
-  experiment: { scene: 'dawn', tone: 'water' },
+const visualTones: Record<string, string> = {
+  direction: 'sage', change: 'rose', choices: 'sage', start: 'water',
+  other: 'lilac', possibility: 'gold', unsure: 'water',
+  listen: 'rose', discover: 'gold', compare: 'sage', experiment: 'water',
 }
-function visual(id: string) { return visualChoices[id] || visualChoices.unsure }
+function visual(id: string) {
+  return { artwork: choiceArtwork[id as keyof typeof choiceArtwork] || choiceArtwork.unsure, tone: visualTones[id] || 'sage' }
+}
+function bubbleLabel(id: string, title: string) { return id === 'rest' ? '休整与\n重新出发' : title }
 const contextIcons: Record<string, string> = {
-  studying: 'note', searching: 'compass', working: 'paths', transition: 'step',
-  freelance: 'sun', business: 'spark', creating: 'note', care: 'user',
+  studying: 'note', searching: 'compass', working: 'layers', transition: 'step',
+  freelance: 'sun', business: 'spark', creating: 'note', care: 'home',
   rest: 'sun', retired: 'sun', other: 'chat',
 }
 const selectedNote = computed(() => step.value === 0
   ? (form.concerns.length ? '已选 ' + form.concerns.length + ' 项 · 都可以慢慢聊' : '没有标准答案，选接近你的就好')
-  : step.value === 2 ? '身份可以有很多种，也可以暂时不选' : '你的选择，之后仍然可以改变')
+  : step.value === 2 ? (form.life_contexts?.length ? '已点亮 ' + form.life_contexts.length + ' 个 · 生活可以有很多面' : '点一下选中，再点一下取消') : '你的选择，之后仍然可以改变')
 
 
 function persist() {
@@ -137,6 +133,7 @@ function chooseFocus(answer: string) {
   form.focus_response = form.focus_response === answer ? '' : answer
 }
 function context(id: string) {
+  if (props.busy || moving.value) return
   const values = form.life_contexts || []
   form.life_contexts = values.includes(id) ? values.filter(item => item !== id) : [...values, id]
 }
@@ -178,7 +175,7 @@ defineExpose({ clearDraft })
             <button class="text-button" @click="legacyDraft = null">这次先不使用</button>
           </view>
           <view v-if="step === 0" class="selection-stack">
-            <SelectionCard v-for="item in startingConcernOptions" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="'/static/opening-' + visual(item.id).scene + '.jpg'" :tone="visual(item.id).tone" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" />
+            <SelectionCard v-for="item in startingConcernOptions" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="visual(item.id).artwork" :tone="visual(item.id).tone" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" />
             <view v-if="form.concerns.includes('other') || form.actual_question" class="optional-writing">
               <button class="optional-toggle" :aria-expanded="otherOpen" @click="otherOpen = !otherOpen" hover-class="pressed">{{ otherOpen ? '收起补充' : '我想补充一句（选填）' }}</button>
               <textarea v-if="otherOpen" v-model="form.actual_question" class="text-area flow-textarea" maxlength="400" placeholder="一句话就好，也可以不写" :auto-height="true" />
@@ -187,7 +184,7 @@ defineExpose({ clearDraft })
           <view v-else-if="step === 1" class="selection-stack">
             <template v-if="selected.length > 1">
               <text class="field-label">先聊哪一个方向？</text>
-              <SelectionCard v-for="item in selected" :key="item.id" :title="item.title" :artwork="'/static/opening-' + visual(item.id).scene + '.jpg'" :tone="visual(item.id).tone" radio :selected="form.exploration_intent === item.id" @select="focus(item.id)" />
+              <SelectionCard v-for="item in selected" :key="item.id" :title="item.title" :artwork="visual(item.id).artwork" :tone="visual(item.id).tone" radio :selected="form.exploration_intent === item.id" @select="focus(item.id)" />
             </template>
             <view v-if="form.exploration_intent" class="exploration-branch">
               <text class="branch-question">{{ branch.question }}</text>
@@ -206,14 +203,24 @@ defineExpose({ clearDraft })
             </view>
           </view>
           <view v-else-if="step === 2">
-            <view class="life-contexts"><button v-for="item in lifeContexts" :key="item.id" class="context-chip" :class="{ chosen: form.life_contexts?.includes(item.id) }" :aria-pressed="form.life_contexts?.includes(item.id)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70" @click="context(item.id)"><view class="context-symbol"><SvgIcon :name="contextIcons[item.id]" :size="21" /></view><text>{{ item.title }}</text><view class="context-indicator" :class="{ checked: form.life_contexts?.includes(item.id) }"><SvgIcon v-if="form.life_contexts?.includes(item.id)" name="check" :size="12" /></view></button></view>
+            <view class="life-contexts" aria-label="生活背景，可多选">
+                <button v-for="item in lifeContexts" :key="item.id" class="context-bubble"
+                  :class="[{ chosen: form.life_contexts?.includes(item.id) }, 'bubble-' + item.id]"
+                  :data-context="item.id" :aria-label="item.title" :aria-pressed="!!form.life_contexts?.includes(item.id)"
+                  :disabled="busy || moving" hover-class="bubble-pressed" :hover-start-time="0" :hover-stay-time="90"
+                  @click="context(item.id)">
+                  <view class="bubble-glint" aria-hidden="true" />
+                  <view class="bubble-content"><SvgIcon :name="contextIcons[item.id]" :light="form.life_contexts?.includes(item.id)" :size="26" /><text>{{ bubbleLabel(item.id, item.title) }}</text></view>
+                  <view v-if="form.life_contexts?.includes(item.id)" class="bubble-check"><SvgIcon name="check" light :size="13" /></view>
+                </button>
+            </view>
             <button class="optional-toggle" :aria-expanded="detailsOpen" @click="detailsOpen = !detailsOpen" hover-class="pressed">{{ detailsOpen ? '收起补充' : '有一点经历或现实条件想补充（选填）' }}</button>
             <view v-if="detailsOpen">
               <text class="field-label">愿意补充的经历，选填</text><textarea v-model="form.background" class="text-area flow-textarea" maxlength="400" placeholder="一句话、一件小事就够了" :auto-height="true" />
               <text class="field-label">想照顾到的现实条件，选填</text><textarea v-model="constraintsText" class="text-area flow-textarea" maxlength="1200" placeholder="比如时间、收入或精力，也可以以后聊" :auto-height="true" />
             </view>
           </view>
-          <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="'/static/opening-' + visual(item.id).scene + '.jpg'" :tone="visual(item.id).tone" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
+          <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="visual(item.id).artwork" :tone="visual(item.id).tone" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
           <view v-else class="reflection-summary">
             <view class="reflection-card reflection-record"><view class="reflection-mark"><SvgIcon name="compass" :size="24" /><text>你留下的线索，由你解释</text></view>
               <view v-if="selected.length" class="reflection-context"><text class="muted">这次想关注的方向</text><view class="chips"><text v-for="item in selected" :key="item.id" class="tag">{{ item.title }}</text></view></view>
@@ -295,21 +302,41 @@ defineExpose({ clearDraft })
 .answer-symbol { flex-shrink:0; width:39px; height:39px; border-radius:12px; background:#eff1e2; display:flex; align-items:center; justify-content:center; }
 .answer-indicator { flex-shrink:0; width:18px; height:18px; border:1px solid #c0cbae; border-radius:50%; display:flex; align-items:center; justify-content:center; }
 .quick-answer.chosen { background:#e4ecd9; border-color:#738d59; }
-.life-contexts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-.context-chip { position:relative; display:flex; align-items:center; gap:10px; width:100%; min-height:82px; padding:14px 12px; margin:0; border:1px solid rgba(255,255,255,.95); border-radius:18px; background:rgba(255,253,248,.87); font-size:13px; line-height:1.7; color:#43573d; text-align:left; box-shadow:0 5px 18px rgba(71,79,52,.04); }
-.context-symbol { width:34px; height:38px; border-radius:12px; background:#edf0de; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-.context-chip:nth-child(3n+2) .context-symbol { background:#f4e8da; }
-.context-chip:nth-child(3n) .context-symbol { background:#e3eeea; }
-.context-chip.chosen { background:#e6eddb; border-color:#77915e; }
-.context-indicator { position:absolute; top:8px; right:8px; display:flex; align-items:center; justify-content:center; }
-.context-indicator.checked { width:16px; height:16px; border-radius:50%; background:#d2dfc1; }
+.life-contexts { position:relative; width:100%; height:0; padding-bottom:140%; margin:0 0 10px; }
+.context-bubble { --bubble-tint:#e4ecd9; --bubble-deep:#536e47; position:absolute; z-index:1; display:block; width:30%; height:0; min-height:0; box-sizing:content-box; padding:0 0 30%; margin:0; border-radius:50%; border:1px solid rgba(255,255,255,.95); background:radial-gradient(circle at 30% 22%,#fffef9 0%,var(--bubble-tint) 76%); box-shadow:inset 0 2px 3px rgba(255,255,255,.9),inset -3px -5px 9px rgba(85,111,62,.08),0 6px 14px rgba(73,86,55,.08); color:#40583c; text-align:center; overflow:visible; transition:transform 180ms ease,box-shadow 180ms ease,background 180ms ease; }
+.context-bubble::after { border:0; }
+.bubble-content { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; pointer-events:none; }
+.bubble-content text { display:block; max-width:86px; font-size:12px; line-height:1.5; white-space:pre-line; font-weight:500; }
+.bubble-glint { position:absolute; top:12%; left:20%; width:23%; height:11%; border-radius:50%; background:rgba(255,255,255,.55); transform:rotate(-32deg); pointer-events:none; }
+.bubble-searching,.bubble-business,.bubble-retired { --bubble-tint:#f3e4ce; --bubble-deep:#886843; }
+.bubble-transition,.bubble-care,.bubble-other { --bubble-tint:#dcece8; --bubble-deep:#426e67; }
+.bubble-creating { --bubble-tint:#e8dfee; --bubble-deep:#766381; }
+/* A stable, loosely packed cluster: size is expressive, never a priority ranking. */
+.bubble-studying { left:9.722%; top:1.587%; width:33.889%; padding-bottom:33.889%; }
+.bubble-searching { left:46.389%; top:0.000%; width:25.000%; padding-bottom:25.000%; }
+.bubble-working { left:63.333%; top:16.270%; width:36.667%; padding-bottom:36.667%; }
+.bubble-transition { left:27.222%; top:21.627%; width:32.500%; padding-bottom:32.500%; }
+.bubble-freelance { left:0.000%; top:27.183%; width:27.778%; padding-bottom:27.778%; }
+.bubble-business { left:6.111%; top:47.024%; width:31.667%; padding-bottom:31.667%; }
+.bubble-creating { left:36.667%; top:44.841%; width:36.667%; padding-bottom:36.667%; }
+.bubble-care { left:69.444%; top:47.222%; width:29.167%; padding-bottom:29.167%; }
+.bubble-rest { left:21.667%; top:70.437%; width:34.167%; padding-bottom:34.167%; }
+.bubble-retired { left:56.111%; top:73.413%; width:28.333%; padding-bottom:28.333%; }
+.bubble-other { left:0.000%; top:71.032%; width:23.611%; padding-bottom:23.611%; }
+.context-bubble.chosen { z-index:2; background:radial-gradient(circle at 30% 18%,#91a683,var(--bubble-deep) 78%); color:#fffdf6; border-color:var(--bubble-deep); box-shadow:0 0 0 3px rgba(255,255,255,.84),0 7px 18px rgba(61,86,48,.22),inset 0 2px 5px rgba(255,255,255,.22); animation:bubble-pop 300ms cubic-bezier(.2,.8,.3,1); }
+.context-bubble.chosen .bubble-glint { background:rgba(255,255,255,.22); }
+.bubble-check { position:absolute; top:6px; right:8px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--bubble-deep); border:2px solid #fffdf5; }
+.context-bubble.bubble-pressed { transform:scale(.94); }
+@keyframes bubble-pop { 0% { transform:scale(.94); } 55% { transform:scale(1.065); } 100% { transform:scale(1); } }
+@media(max-width:360px) { .bubble-content text { font-size:11px; max-width:75px; } .bubble-content { gap:5px; } .bubble-check { width:18px; height:18px; top:4px; right:5px; } }
+@media(max-width:330px) { .bubble-content text { font-size:10px; max-width:65px; } }
+@media(prefers-reduced-motion:reduce) { .context-bubble,.context-bubble.chosen { animation:none; transition:none; } }
 .reflection-card { background:rgba(255,254,248,.91); border:1px solid #fffdf7; border-radius:24px; box-shadow:0 10px 35px rgba(65,78,43,.07); }
 .reflection-next { border-top:1px solid rgba(116,134,90,.25); }
 .optional-writing { border-radius:16px; padding:0 12px; background:rgba(255,253,248,.7); }
 @media(max-width:360px) {
   .flow-heading .flow-title { font-size:25px; }
   .flow-chrome,.flow-body,.flow-footer { padding-left:20px; padding-right:20px; }
-  .context-chip { font-size:12px; gap:8px; }
 }
 @media(prefers-reduced-motion:reduce) { .question-backdrop > image { transition:none; } }
 </style>

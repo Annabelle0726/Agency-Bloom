@@ -4,10 +4,9 @@ withDefaults(defineProps<{ title: string; detail?: string; icon?: string; select
 defineEmits<{ select: [] }>()
 </script>
 <template>
-  <button class="selection-card" :class="[{ chosen: selected, detailed: detail, scenic: artwork }, 'tone-' + (tone || 'sage')]" :aria-pressed="selected" hover-class="selection-pressed" :hover-start-time="0" :hover-stay-time="70" @click="$emit('select')">
+  <button class="selection-card" :class="[{ chosen: selected, detailed: detail, illustrated: artwork }, 'tone-' + (tone || 'sage')]" :aria-pressed="selected" hover-class="selection-pressed" :hover-start-time="0" :hover-stay-time="70" @click="$emit('select')">
     <view v-if="artwork" class="selection-art" aria-hidden="true">
-      <image :src="artwork" mode="aspectFill" />
-      <view v-if="icon" class="selection-art-icon"><SvgIcon :name="icon" :size="17" /></view>
+      <image :src="artwork" mode="aspectFit" />
     </view>
     <view v-if="radio && !artwork" class="selection-radio" :class="{ checked: selected }"><view /></view>
     <view class="selection-copy">
@@ -41,21 +40,20 @@ defineEmits<{ select: [] }>()
 .selection-pressed, .selection-card:active { transform:scale(.985); }
 @media (prefers-reduced-motion: reduce) { .selection-card { transition:none; } }
 
-.scenic { --card-accent:#476951; --card-tint:#e8f0e3; position:relative; gap:15px; min-height:104px; border:1px solid rgba(255,255,255,.95); border-radius:21px; padding:13px 15px 13px 12px; background:rgba(255,253,247,.87); box-shadow:0 5px 20px rgba(46,66,53,.045); }
-.scenic.tone-water { --card-accent:#3f6a70; --card-tint:#e3eeed; }
-.scenic.tone-rose { --card-accent:#98624d; --card-tint:#f5e9df; }
-.scenic.tone-gold { --card-accent:#8b702f; --card-tint:#f3eddb; }
-.scenic.tone-lilac { --card-accent:#726783; --card-tint:#ede8f1; }
+.illustrated { --card-accent:#476951; --card-tint:#e8f0e3; position:relative; gap:15px; min-height:104px; border:1px solid rgba(255,255,255,.95); border-radius:21px; padding:13px 15px 13px 12px; background:rgba(255,253,247,.87); box-shadow:0 5px 20px rgba(46,66,53,.045); }
+.illustrated.tone-water { --card-accent:#3f6a70; --card-tint:#e3eeed; }
+.illustrated.tone-rose { --card-accent:#98624d; --card-tint:#f5e9df; }
+.illustrated.tone-gold { --card-accent:#8b702f; --card-tint:#f3eddb; }
+.illustrated.tone-lilac { --card-accent:#726783; --card-tint:#ede8f1; }
 .selection-art { position:relative; width:64px; height:70px; border-radius:15px; flex-shrink:0; background:var(--card-tint); }
-.selection-art > image { width:100%; height:100%; border-radius:15px; }
-.selection-art-icon { position:absolute; right:-5px; bottom:-4px; display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--card-tint); border:2px solid #fffdf7; }
-.scenic .selection-title { color:#304738; font-size:15px; font-weight:500; line-height:1.65; }
-.scenic .selection-detail { color:#6b766a; font-size:12px; line-height:1.7; margin-top:5px; }
-.scenic .selection-check { width:20px; height:20px; border-radius:50%; border:1px solid #b7c4ad; opacity:1; transform:none; background:rgba(255,255,255,.55); }
-.scenic .selection-check :deep(.svg-icon) { opacity:0; }
-.scenic .selection-check.visible { background:var(--card-tint); border-color:var(--card-accent); }
-.scenic .selection-check.visible :deep(.svg-icon) { opacity:1; }
-.scenic.chosen { background:var(--card-tint); border-color:var(--card-accent); box-shadow:0 4px 18px rgba(55,83,61,.09),inset 0 0 0 .5px var(--card-accent); }
-.scenic.chosen .selection-title { color:var(--card-accent); }
-@media(max-width:360px) { .scenic { gap:12px; padding-right:12px; } .selection-art { width:52px; height:62px; } .scenic .selection-title { font-size:14px; } .scenic .selection-detail { font-size:11px; } }
+.selection-art > image { position:absolute; inset:6px; width:calc(100% - 12px); height:calc(100% - 12px); border-radius:0; }
+.illustrated .selection-title { color:#304738; font-size:15px; font-weight:500; line-height:1.65; }
+.illustrated .selection-detail { color:#6b766a; font-size:12px; line-height:1.7; margin-top:5px; }
+.illustrated .selection-check { width:20px; height:20px; border-radius:50%; border:1px solid #b7c4ad; opacity:1; transform:none; background:rgba(255,255,255,.55); }
+.illustrated .selection-check :deep(.svg-icon) { opacity:0; }
+.illustrated .selection-check.visible { background:var(--card-tint); border-color:var(--card-accent); }
+.illustrated .selection-check.visible :deep(.svg-icon) { opacity:1; }
+.illustrated.chosen { background:var(--card-tint); border-color:var(--card-accent); box-shadow:0 4px 18px rgba(55,83,61,.09),inset 0 0 0 .5px var(--card-accent); }
+.illustrated.chosen .selection-title { color:var(--card-accent); }
+@media(max-width:360px) { .illustrated { gap:12px; padding-right:12px; } .selection-art { width:52px; height:62px; } .illustrated .selection-title { font-size:14px; } .illustrated .selection-detail { font-size:11px; } }
 </style>
