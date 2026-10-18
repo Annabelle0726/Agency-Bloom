@@ -146,3 +146,39 @@ it('does not truncate a full user draft or falsely mark a follow-up as prepared'
   expect(h.chat.draft.value).toBe('原'.repeat(2000))
   expect(h.chat.insightReaction.value).toBe('')
 })
+
+const suppliedContext = {
+  memories: [{ id: 'm1', content: '每周最多投入两小时', category: 'constraint' as const }],
+  summary: true, history_count: 2, history_retained: true, linked_explorations: [],
+}
+
+it('stores the supplied context with the reply for later disclosure', async () => {
+  const h = harness()
+  h.chat.draft.value = '最近时间紧张'
+  const pending = h.chat.send('issue')
+  h.resolve({ reply: '这个限制现在还适用吗', suggestion: null, mode: 'deepseek', supplied_context: suppliedContext })
+  await pending
+  expect(h.chat.suppliedContext.value).toEqual(suppliedContext)
+  const reply = h.chat.messages.value[1]
+  expect(reply.payload?.supplied_context).toEqual(suppliedContext)
+})
+
+it('keeps an empty inventory honest when no context was supplied', async () => {
+  const h = harness()
+  h.chat.draft.value = '你好'
+  const pending = h.chat.send('issue')
+  h.resolve({ reply: '今天过得怎么样？', suggestion: null, mode: 'deepseek' })
+  await pending
+  expect(h.chat.suppliedContext.value).toBeNull()
+  expect(h.chat.messages.value[1].payload?.supplied_context).toBeNull()
+})
+
+it('clears the supplied context on session reset', async () => {
+  const h = harness()
+  h.chat.draft.value = '你好'
+  const pending = h.chat.send('issue')
+  h.resolve({ reply: '好', suggestion: null, mode: 'deepseek', supplied_context: suppliedContext })
+  await pending
+  h.chat.reset()
+  expect(h.chat.suppliedContext.value).toBeNull()
+})

@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { ChatMessage, ChatResponse, Suggestion, Insight, ConversationSummary } from './domain'
+import type { ChatMessage, ChatResponse, Suggestion, Insight, ConversationSummary, SuppliedContext } from './domain'
 import { ApiError } from './http'
 
 interface ChatBody { request_id: string; message: string; history: { role: 'user' | 'assistant'; content: string }[]; insight_feedback: { possibility: string; reaction: 'dismissed' }[]; task?: 'chat' | 'summary'; session_summary?: ConversationSummary | null }
@@ -20,6 +20,7 @@ export function createChatSession(options: ChatOptions) {
   const insight = ref<Insight | null>(null)
   const insightReaction = ref<'' | 'interested' | 'experiment'>('')
   const summary = ref<ConversationSummary | null>(null), summaryDraft = ref<ConversationSummary | null>(null)
+  const suppliedContext = ref<SuppliedContext | null>(null)
   const error = ref(''), sendingTask = ref<'chat' | 'summary'>('chat'), lastRequestId = ref('')
   const loaded = ref(false), olderCursor = ref<string | null>(null)
   let insightFeedback: ChatBody['insight_feedback'] = []
@@ -34,7 +35,7 @@ export function createChatSession(options: ChatOptions) {
     cancel()
     activeId = ''; abort = null; sending.value = false; pendingText.value = ''
     draft.value = ''; messages.value = []; suggestion.value = null; insight.value = null; insightReaction.value = ''; insightFeedback = []
-    summary.value = null; summaryDraft.value = null; error.value = ''; loaded.value = false; olderCursor.value = null; lastRequestId.value = ''
+    summary.value = null; summaryDraft.value = null; suppliedContext.value = null; error.value = ''; loaded.value = false; olderCursor.value = null; lastRequestId.value = ''
   }
   async function send(issueId: string, task: 'chat' | 'summary' = 'chat') {
     if (sending.value || (task === 'chat' && !draft.value.trim())) return
@@ -50,7 +51,8 @@ export function createChatSession(options: ChatOptions) {
       const response = await operation.promise
       if (activeId !== id || cancelSent) return
       if (task === 'summary') { summaryDraft.value = response.summary ?? null; return }
-      messages.value.push({ role: 'user', content: text }, { role: 'assistant', content: response.reply, payload: { suggestion: response.suggestion, insight: response.insight, request_id: id } })
+      messages.value.push({ role: 'user', content: text }, { role: 'assistant', content: response.reply, payload: { suggestion: response.suggestion, insight: response.insight, request_id: id, supplied_context: response.supplied_context ?? null } })
+      suppliedContext.value = response.supplied_context ?? null
       suggestion.value = response.suggestion ?? null
       insight.value = response.insight ?? null; insightReaction.value = ''
       if (draft.value === original) draft.value = ''
@@ -80,5 +82,5 @@ export function createChatSession(options: ChatOptions) {
     return null
   }
   return { messages, draft, pendingText, sending, sendingTask, suggestion, insight, insightReaction, summary, summaryDraft,
-    error, lastRequestId, loaded, olderCursor, reactToInsight, send, cancel, reset }
+    suppliedContext, error, lastRequestId, loaded, olderCursor, reactToInsight, send, cancel, reset }
 }

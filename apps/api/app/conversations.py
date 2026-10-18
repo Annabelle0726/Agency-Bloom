@@ -75,7 +75,12 @@ def cancel_pending(db, user_id, conversation_id=None):
 
 
 def context_for(db, user, conversation, body):
-    """Only this conversation's transcript and explicitly selected context reach AI."""
+    """Only this conversation's transcript and explicitly selected context reach AI.
+
+    Returns (history, model_context, supplied_sources). supplied_sources is a
+    factual inventory of what was handed to the model, never a claim about
+    what the model actually used.
+    """
     limit = 80 if body.task == "summary" else 8
     if user.save_chat:
         rows = db.scalars(
@@ -113,7 +118,7 @@ def context_for(db, user, conversation, body):
                 .limit(40)
             )
         ]
-    return history, {
+    model_context = {
         "reviewed_conversation_summary": summary,
         "confirmed_memories": [
             {
@@ -129,6 +134,17 @@ def context_for(db, user, conversation, body):
         ],
         "summary_scope": "已审阅总结及最近最多80条消息" if body.task == "summary" else None,
     }
+    sources = {
+        "memories": [
+            {"id": m["id"], "content": m["content"], "category": m["category"]}
+            for m in memories
+        ],
+        "summary": bool(summary),
+        "history_count": len(history),
+        "history_retained": user.save_chat,
+        "linked_explorations": [{"id": i.id, "title": i.title} for i in related],
+    }
+    return history, model_context, sources
 
 
 def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):

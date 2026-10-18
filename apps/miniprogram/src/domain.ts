@@ -19,7 +19,7 @@ export interface Issue {
   exploration_intent?: string; actual_question?: string; focus_response?: string
 }
 export interface User { id: string; theme: ThemeId; save_chat: boolean; ai_consent: boolean; support_style: string; use_memory?: boolean }
-export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string } | null }
+export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null } | null }
 export interface ConversationSummary { overview: string; decisions: string[]; open_questions: string[]; next_steps: string[] }
 export interface Conversation {
   id: string; issue_id: string; title: string; support_style: string; summary: ConversationSummary | null;
@@ -34,11 +34,19 @@ export interface Insight {
   title: '还有一种可能'; observation: string; possibility: string; uncertainty: string
   evidence: string[]; experiment: Experiment | null
 }
+export interface SuppliedContext {
+  memories: { id: string; content: string; category: 'fact' | 'preference' | 'constraint' }[]
+  summary: boolean
+  history_count: number
+  history_retained: boolean
+  linked_explorations: { id: string; title: string }[]
+}
 export interface ChatResponse {
   reply: string; suggestion: Suggestion | null; mode: 'demo' | 'deepseek'
   insight?: Insight | null
   summary?: ConversationSummary | null
   usage?: { prompt_tokens: number; completion_tokens: number; cost_cny: string; currency: string } | null
+  supplied_context?: SuppliedContext | null
 }
 
 export const concerns = [

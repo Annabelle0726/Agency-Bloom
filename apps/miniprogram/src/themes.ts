@@ -19,8 +19,8 @@ export const themes: ThemeDefinition[] = [
   defineTheme('light', '晨雾', 'Morning Mist', '山间晨光 · 雾蓝与柔白', 'mist', {
     bg: '#f4f6fa', paper: '#ffffff', ink: '#29374b', muted: '#657086', line: '#e1e7f0', accent: '#4d6bc4', fill: '#4c66b9', soft: '#eaf0fc', gold: '#98713d',
   }),
-  defineTheme('dark', '深夜', 'Quiet Night', '月白微光 · 静谧夜蓝', 'night', {
-    bg: '#121e2c', paper: '#1d2b37', ink: '#e9eee5', muted: '#a2afb0', line: '#35454e', accent: '#b9ccc3', fill: '#516e70', soft: '#2a3c43', gold: '#d7c59d',
+  defineTheme('dark', '深夜', 'Quiet Night', '黑色夜幕 · 淡淡璀璨星空', 'night', {
+    bg: '#06090f', paper: '#10151d', ink: '#e8edf4', muted: '#8f9aa8', line: '#232c38', accent: '#c3d3e8', fill: '#42576e', soft: '#141b25', gold: '#d7c59d',
   }, .35),
   defineTheme('dawn', '晨曦', 'First Light', '初升晨光 · 杏金暖白', 'dawn', {
     bg: '#fbf5ed', paper: '#fffdf8', ink: '#503d32', muted: '#7b6858', line: '#e9ddd1', accent: '#916348', fill: '#875a41', soft: '#f4e8da', gold: '#916b38',
@@ -44,7 +44,7 @@ export function themeForSession(user: { theme: string } | null | undefined, inPe
 export function themeStyle(theme: ThemeDefinition): Record<string, string> {
   const p = theme.palette
   const gradients: Record<ThemeId, [string, string]> = {
-    light: ['#9bb4ff', '#66c4eb'], dark: ['#899fbe', '#527e89'],
+    light: ['#9bb4ff', '#66c4eb'], dark: ['#7e93b8', '#3d5a78'],
     dawn: ['#eac59f', '#b97e59'], forest: ['#9fc8a0', '#548e78'],
     lavender: ['#c6b1e3', '#9a7ab5'], minimal: ['#adb8b0', '#6e8479'],
   }

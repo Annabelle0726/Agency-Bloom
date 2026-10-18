@@ -6,7 +6,7 @@
 .drawer-heading .section-title { display:block; margin-top:5px; font-size:22px; }
 .drawer-tabs { display:flex; gap:6px; padding:10px 0; }
 .workspace-drawer > .drawer-tabs { padding:0 20px 12px; border-bottom:1px solid var(--line); }
-.drawer-tabs button, .scope-filters button { background:transparent; color:var(--muted); border:1px solid transparent; padding:7px 10px; font-size:13px; line-height:1.4; border-radius:12px; margin:0; }
+.drawer-tabs button, .scope-filters button { background:transparent; color:var(--muted); border:1px solid transparent; padding:7px 10px; font-size:13px; line-height:1.4; border-radius:8px; margin:0; }
 .drawer-tabs .selected, .scope-filters .selected { background:var(--soft); border-color:var(--line); color:var(--ink); }
 .drawer-body { flex:1; min-height:0; position:relative; overflow:hidden; }
 /* Some Developer Tools render a full-height internal bar despite show-scrollbar=false.
@@ -18,11 +18,11 @@
 .drawer-scroll-indicator > view { position:absolute; width:100%; background:var(--scrollbar-thumb); border-radius:3px; }
 .drawer-scroll .body-copy, .drawer-scroll .muted { display:block; line-height:1.65; }
 .drawer-scroll .primary, .drawer-scroll .secondary { width:100%; margin:12px 0; }
-.drawer-form { padding:14px; background:var(--soft); border:1px solid var(--line); border-radius:16px; margin:10px 0 16px; }
+.drawer-form { padding:14px; background:var(--soft); border:1px solid var(--line); border-radius:8px; margin:10px 0 16px; }
 .scope-picker { display:flex; align-items:center; justify-content:space-between; padding:14px 0; font-size:13px; }
 .scope-filters { white-space:nowrap; width:100%; margin:8px 0 14px; }
 .scope-filters button { display:inline-block; max-width:190px; overflow:hidden; text-overflow:ellipsis; margin-right:5px; }
-.conversation-item { border:1px solid var(--line); border-radius:16px; margin:10px 0; padding:14px; }
+.conversation-item { border:1px solid var(--line); border-radius:8px; margin:10px 0; padding:14px; }
 .conversation-item.active { background:var(--soft); border-color:var(--muted); }
 .conversation-select { display:block; width:100%; background:none; text-align:left; padding:0; margin:0; line-height:1.5; }
 .conversation-title { display:block; font-size:16px; font-weight:600; color:var(--ink); margin-bottom:4px; word-break:break-word; }
@@ -34,7 +34,7 @@
 .empty-heading { display:block; font-size:17px; color:var(--ink); line-height:1.6; }
 .empty-greeting { margin:12px 8px 20px; font-size:14px; white-space:normal; overflow-wrap:anywhere; }
 .drawer-scroll .empty-create { width:auto; display:inline-block; padding:10px 16px; font-size:13px; }
-.exploration-item, .link-choice, .memory-candidate { width:100%; display:block; text-align:left; background:var(--soft); color:var(--ink); padding:14px; border-radius:12px; margin:9px 0; font-size:14px; line-height:1.6; }
+.exploration-item, .link-choice, .memory-candidate { width:100%; display:block; text-align:left; background:var(--soft); color:var(--ink); padding:14px; border-radius:8px; margin:9px 0; font-size:14px; line-height:1.6; }
 .exploration-item text { display:block; }
 .drawer-scroll .field-label { display:block; font-size:13px; font-weight:600; margin:18px 0 8px; }
 .drawer-scroll .text-area { min-height:105px; width:100%; box-sizing:border-box; }
@@ -50,9 +50,9 @@
 .memory-select > text:last-child { flex:1; white-space:pre-wrap; word-break:break-word; }
 .memory-actions button { font-size:12px; background:none; padding:8px 12px 0 0; margin:0; color:var(--muted); }
 .chat-workspace-tools { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 18px; }
-.chat-workspace-tools button { font-size:12px; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:14px; margin:0; padding:7px 12px; line-height:1.5; }
+.chat-workspace-tools button { font-size:12px; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:8px; margin:0; padding:7px 12px; line-height:1.5; }
 .conversation-windows { white-space:nowrap; width:100%; margin:6px 0 16px; }
-.conversation-windows button { display:inline-block; max-width:180px; overflow:hidden; text-overflow:ellipsis; font-size:12px; padding:8px 12px; border-radius:12px; margin:0 6px 0 0; background:var(--paper); color:var(--muted); border:1px solid var(--line); line-height:1.5; }
+.conversation-windows button { display:inline-block; max-width:180px; overflow:hidden; text-overflow:ellipsis; font-size:12px; padding:8px 12px; border-radius:8px; margin:0 6px 0 0; background:var(--paper); color:var(--muted); border:1px solid var(--line); line-height:1.5; }
 .conversation-windows button.active { color:var(--ink); background:var(--soft); }
 .chat-context-note { display:block; color:var(--muted); font-size:12px; line-height:1.6; margin:8px 0; }
 @keyframes drawer-enter { from { transform:translateX(-100%); } to { transform:translateX(0); } }

@@ -40,12 +40,12 @@ defineEmits<{ select: [] }>()
 .selection-pressed, .selection-card:active { transform:scale(.985); }
 @media (prefers-reduced-motion: reduce) { .selection-card { transition:none; } }
 
-.illustrated { --card-accent:#476951; --card-tint:#e8f0e3; position:relative; gap:15px; min-height:104px; border:1px solid rgba(255,255,255,.95); border-radius:21px; padding:13px 15px 13px 12px; background:rgba(255,253,247,.87); box-shadow:0 5px 20px rgba(46,66,53,.045); }
+.illustrated { --card-accent:#476951; --card-tint:#e8f0e3; position:relative; gap:15px; min-height:104px; border:1px solid rgba(255,255,255,.95); border-radius:10px; padding:13px 15px 13px 12px; background:rgba(255,253,247,.87); box-shadow:0 5px 20px rgba(46,66,53,.045); }
 .illustrated.tone-water { --card-accent:#3f6a70; --card-tint:#e3eeed; }
 .illustrated.tone-rose { --card-accent:#98624d; --card-tint:#f5e9df; }
 .illustrated.tone-gold { --card-accent:#8b702f; --card-tint:#f3eddb; }
 .illustrated.tone-lilac { --card-accent:#726783; --card-tint:#ede8f1; }
-.selection-art { position:relative; width:64px; height:70px; border-radius:15px; flex-shrink:0; background:var(--card-tint); }
+.selection-art { position:relative; width:64px; height:70px; border-radius:10px; flex-shrink:0; background:var(--card-tint); }
 .selection-art > image { position:absolute; inset:6px; width:calc(100% - 12px); height:calc(100% - 12px); border-radius:0; }
 .illustrated .selection-title { color:#304738; font-size:15px; font-weight:500; line-height:1.65; }
 .illustrated .selection-detail { color:#6b766a; font-size:12px; line-height:1.7; margin-top:5px; }

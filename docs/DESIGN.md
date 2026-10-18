@@ -1,10 +1,26 @@
 # 视觉与交互实现
 
+## 圆角规范（硬性约束）
+
+所有卡片与容器类组件的 `border-radius` 必须控制在 **6px–10px**，不得使用更大的圆角。此后任何新增或修改的卡片、面板、输入框、按钮、弹层都不得把圆角做到 11px 以上；发现即视为回归，需改回此区间。
+
+当前约定的映射：
+
+| 组件类型 | 圆角 |
+|---|---|
+| 设计令牌 `--radius-card` / `--radius-button`（[tokens.scss](../apps/miniprogram/src/tokens.scss)） | 8px |
+| 主卡片（paper-card、next-card、usage-card、theme-card、glass-card 等） | 8–10px |
+| 选项/按钮/输入（quick-answer、primary、text-area、prompt-button 等） | 6–8px |
+| 底部弹层与抽屉面板（modal-sheet、intro-panel、composer） | 10px（顶部两角） |
+| 圆形元素（头像、单选圈、开关、气泡装饰） | `50%`，不受此限制 |
+
+例外仅限刻意的形状设计（如 `.arch` 拱门、`.plant` 植物剪影等装饰画），它们不是卡片类容器。
+
 以用户提供的 ChatGPT 八屏引导图为参考：山湖暮色启动页、宋体风格标题、深蓝文字、细进度条、描边选项、圆角主按钮、暖色自然光影的登录与首页。业务流程采用用户最新 Alpha 说明：先完成匿名整理，再决定是否登录；主题入口移到登录后的「我的」。
 
 ## 设计令牌与组件
 
-`apps/miniprogram/src/tokens.scss` 定义 Morning Mist 和 Quiet Night 的色彩、字体、圆角与动效。正文为 #29374B，背景 #F7F6F3，次级文字 #667180，低饱和绿强调色 #58725F、按钮底色 #425E4C。正文使用系统中文无衬线字体，标题使用 Songti SC / STSong / Noto Serif CJK SC / SimSun 回退，不下载字体。
+`apps/miniprogram/src/tokens.scss` 定义 Morning Mist 和 Quiet Night 的色彩、字体、圆角与动效。正文为 #29374B，背景 #F7F6F3，次级文字 #667180，低饱和绿强调色 #58725F、按钮底色 #425E4C。正文使用系统中文无衬线字体，标题使用 Songti SC / STSong / Noto Serif CJK SC / SimSun 回退，不下载字体。卡片与容器圆角统一为 6–10px（见顶部圆角规范）。
 
 `ActionButton` 共用主、次、轻量及微信按钮行为；`SelectionCard` 支持多选、单选与说明；`ProgressIndicator`、`LoadingState`、`EmptyState` 提供统一状态。`OnboardingFlow` 保留步骤与输入，固定规则位于 `onboarding.ts`。
 

@@ -18,7 +18,7 @@ import {iconSources} from '../../icons'
 import {themes, navigationItems, themeForSession, themeStyle, themeNavSvg} from '../../themes'
 import type {ThemeId, SpaceTab} from '../../themes'
 import ThemePreview from '../../components/ThemePreview.vue'
-import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary} from '../../domain'
+import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary, SuppliedContext} from '../../domain'
 import {ApiError, createApi} from '../../http'
 import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
@@ -183,6 +183,21 @@ const insight = computed({ get: () => workspace.active.value.insight.value, set:
 const insightReaction = computed(() => workspace.active.value.insightReaction.value)
 const generatingSummary = computed(() => sending.value && workspace.active.value.sendingTask.value === 'summary')
 const readOnlyConversation = computed(() => !!activeConversation.value?.archived_at || !!current.value?.ended_at)
+// Per-reply disclosure: what was actually handed to the model for this turn.
+const disclosedContext = ref<Record<string, SuppliedContext | null>>({})
+const disclosureOpen = ref<Record<string, boolean>>({})
+function contextForMessage(message: ChatMessage, index: number): SuppliedContext | null {
+  const key = message.id || `index-${index}`
+  if (key in disclosedContext.value) return disclosedContext.value[key]
+  return message.role === 'assistant' ? (message.payload?.supplied_context ?? null) : null
+}
+function toggleDisclosure(message: ChatMessage, index: number) {
+  const key = message.id || `index-${index}`
+  if (!(key in disclosedContext.value)) disclosedContext.value[key] = message.payload?.supplied_context ?? null
+  disclosureOpen.value[key] = !disclosureOpen.value[key]
+}
+const memoryCategoryLabels: Record<SuppliedContext['memories'][number]['category'], string> = { fact: '事实', preference: '偏好', constraint: '约束' }
+watch(() => workspace.activeId.value, () => { disclosedContext.value = {}; disclosureOpen.value = {} })
 // Animate only genuinely new assistant replies. Restored history remains still.
 const speakingIndex = ref<number | null>(null)
 let speakingTimer: ReturnType<typeof setTimeout> | undefined
@@ -740,7 +755,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         :style="{ ...activeThemeStyle, '--keyboard-height': `${keyboardHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
     <view class="app-shell"
           :class="{ 'with-tabs': screen === 'space', 'chat-page': tab === 'chat' && screen === 'space', 'onboarding-shell': screen !== 'space' }">
-      <view v-if="screen === 'space' && tab === 'now'" class="theme-atmosphere" aria-hidden="true">
+      <view v-if="screen === 'space'" class="theme-atmosphere" :class="{ 'theme-atmosphere-faint': tab !== 'now' }" aria-hidden="true">
         <image :src="activeTheme.image" mode="aspectFill"/><view class="theme-atmosphere-wash"/>
       </view>
       <view v-if="screen === 'space'" class="topbar">
@@ -946,6 +961,34 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <view class="message-content">
               <text v-if="message.role === 'assistant'" class="message-name">AGENCY OS</text>
               <text class="message-bubble">{{ message.content }}</text>
+              <button v-if="message.role === 'assistant' && (message.payload?.supplied_context || disclosedContext[message.id || `index-${index}`])"
+                      class="context-disclosure-toggle" :aria-expanded="!!disclosureOpen[message.id || `index-${index}`]"
+                      @click="toggleDisclosure(message, index)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+                查看本次提供给 AI 的背景
+                <view class="disclosure-chevron" :class="{ 'is-open': disclosureOpen[message.id || `index-${index}`] }"><SvgIcon name="chevron" :size="13"/></view>
+              </button>
+              <view v-if="disclosureOpen[message.id || `index-${index}`]" class="context-disclosure">
+                <template v-if="contextForMessage(message, index)">
+                  <text class="disclosure-heading">实际传入的背景资料</text>
+                  <view v-if="contextForMessage(message, index)!.memories.length" class="disclosure-section">
+                    <text class="disclosure-label">你确认过的长期记忆</text>
+                    <text v-for="memory in contextForMessage(message, index)!.memories" :key="memory.id" class="disclosure-item">「{{ memory.content }}」 · {{ memoryCategoryLabels[memory.category] || memory.category }}</text>
+                  </view>
+                  <view v-if="contextForMessage(message, index)!.summary" class="disclosure-section">
+                    <text class="disclosure-label">这段会话已审阅的总结</text>
+                  </view>
+                  <view class="disclosure-section">
+                    <text class="disclosure-label">最近消息</text>
+                    <text class="disclosure-item">{{ contextForMessage(message, index)!.history_count }} 条{{ contextForMessage(message, index)!.history_retained ? ' · 来自已保存的聊天' : ' · 来自本次使用，未保存' }}</text>
+                  </view>
+                  <view v-if="contextForMessage(message, index)!.linked_explorations.length" class="disclosure-section">
+                    <text class="disclosure-label">关联探索的卡片</text>
+                    <text v-for="issue in contextForMessage(message, index)!.linked_explorations" :key="issue.id" class="disclosure-item">「{{ issue.title || '未命名探索' }}」的已确认卡片</text>
+                  </view>
+                  <text class="disclosure-note">以上是本次实际提供的内容，不代表回复一定逐条使用</text>
+                </template>
+                <text v-else class="disclosure-note">本次回复没有附带长期记忆、总结或关联探索</text>
+              </view>
             </view>
           </view>
           <view v-if="sending && !generatingSummary" class="message-row user">

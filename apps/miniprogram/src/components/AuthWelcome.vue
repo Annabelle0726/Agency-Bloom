@@ -59,7 +59,7 @@ button::after { border:0; }
 .auth-eyebrow { display:block; font-size:9px; letter-spacing:2px; color:var(--muted); margin-bottom:20px; }
 .auth-title { display:block; font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:36px; letter-spacing:2px; line-height:1.6; }
 .auth-subtitle { display:block; font-weight:500; text-shadow:0 1px 6px var(--bg); white-space:pre-line; font-family:var(--font-heading); margin-top:18px; font-size:16px; line-height:2; color:var(--ink); }
-.auth-letter { background:var(--surface-glass); border:1px solid var(--paper); border-radius:22px; padding:18px 20px; margin:10px 0 20px; font-family:var(--font-heading); font-size:13px; line-height:2.1; }
+.auth-letter { background:var(--surface-glass); border:1px solid var(--paper); border-radius:10px; padding:18px 20px; margin:10px 0 20px; font-family:var(--font-heading); font-size:13px; line-height:2.1; }
 .auth-letter text { display:block; }
 .auth-actions { margin-top:auto; }
 .auth-actions :deep(.action-button) { margin-top:12px; }

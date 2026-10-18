@@ -8,6 +8,10 @@
 .theme-home .app-shell { background:transparent; }
 .theme-atmosphere { position:absolute; top:0; left:0; width:100%; height:500px; overflow:hidden; pointer-events:none; }
 .theme-atmosphere > image { display:block; width:100%; height:100%; opacity:1; }
+/* Non-home tabs keep a faint wash of the theme art: present, never busy. */
+.theme-atmosphere-faint { height:100%; }
+.theme-atmosphere-faint > image { opacity:.16; }
+.theme-atmosphere-faint .theme-atmosphere-wash { background:linear-gradient(180deg,var(--bg) 55%,var(--bg)); }
 .theme-atmosphere-wash { position:absolute; inset:0; background:linear-gradient(180deg,var(--hero-top) 0%,var(--hero-top) 43%,var(--hero-middle) 67%,var(--hero-middle) 77%,var(--bg)); }
 .theme-home .topbar { position:relative; z-index:1; }
 .theme-space .topbar .icon-button { display:flex; align-items:center; justify-content:center; flex:0 0 44px; width:44px; height:44px; padding:0; margin:0; line-height:0; background:var(--surface-glass); }
@@ -19,7 +23,7 @@
 .hero-title { display:block; color:var(--ink); font-family:var(--font-heading); font-size:27px; line-height:1.5; margin:8px 0 12px; }
 .hero-subtitle { display:block; max-width:78%; color:var(--ink); white-space:pre-line; font-size:13px; font-weight:500; line-height:1.9; }
 .hero-aside { position:absolute; right:6px; top:130px; text-shadow:0 1px 6px var(--bg); font-family:'Kaiti SC','STKaiti','KaiTi',serif; color:var(--ink); font-size:17px; line-height:1.8; white-space:pre-line; transform:rotate(-7deg); }
-.glass-card { background:var(--surface-glass); border:1px solid var(--paper); border-radius:24px; box-shadow:0 7px 24px #1d2b3a07; backdrop-filter:blur(14px); }
+.glass-card { background:var(--surface-glass); border:1px solid var(--paper); border-radius:10px; box-shadow:0 7px 24px #1d2b3a07; backdrop-filter:blur(14px); }
 .home-mission { display:flex; align-items:center; gap:12px; width:100%; padding:17px 20px; margin:0 0 14px; text-align:left; }
 .home-mission > view { flex:1; min-width:0; }
 .mission-label { display:block; font-size:11px; color:var(--muted); margin-bottom:6px; }
@@ -36,7 +40,7 @@
 .focus-row-copy > text:first-child { display:block; font-size:13px; line-height:1.65; color:var(--ink); }
 .focus-row-copy > text:last-child { display:block; font-size:10px; line-height:1.7; color:var(--muted); margin-top:3px; }
 .focus-tag { flex-shrink:0; font-size:9px; color:var(--accent); border-radius:8px; padding:3px 7px; background:var(--soft); }
-.home-quote { display:flex; gap:12px; margin-top:14px; padding:16px 20px; border-radius:22px; background:var(--soft); color:var(--accent); }
+.home-quote { display:flex; gap:12px; margin-top:14px; padding:16px 20px; border-radius:10px; background:var(--soft); color:var(--accent); }
 .quote-mark { font-family:Georgia,serif; font-size:43px; line-height:1; opacity:.55; }
 .home-quote > view { flex:1; }
 .home-quote > view > text:first-child { display:block; font-family:var(--font-heading); font-size:13px; line-height:1.8; white-space:pre-line; }
@@ -47,7 +51,7 @@
 .section-intro .page-description { font-size:12px; line-height:1.8; }
 .plan-empty { padding:20px; margin-bottom:23px; }
 .plan-empty .text-button { margin-right:16px; }
-.theme-space .paper-card,.theme-space .next-card,.theme-space .usage-card,.theme-space .archive-card { border:1px solid var(--line); background:var(--paper); border-radius:22px; color:var(--ink); }
+.theme-space .paper-card,.theme-space .next-card,.theme-space .usage-card,.theme-space .archive-card { border:1px solid var(--line); background:var(--paper); border-radius:10px; color:var(--ink); }
 .theme-space .paper-card { box-shadow:var(--shadow); }
 .theme-space .next-card .eyebrow,.theme-space .card-label,.theme-space .group-label { color:var(--accent); }
 .theme-space .live-dot,.theme-space .timeline-dot { background:var(--accent); }
@@ -61,14 +65,14 @@
 .history-entry > view { flex:1; }
 .history-entry text { display:block; font-size:13px; color:var(--ink); line-height:1.7; }
 .history-entry text + text { font-size:10px; color:var(--muted); margin-top:3px; }
-.theme-space .tabbar.journey-nav { --nav-active:var(--accent); --nav-muted:var(--muted); background:var(--nav-glass); border-top:1px solid var(--paper); box-shadow:0 -5px 22px #1d29230a; padding-left:10px; padding-right:10px; border-radius:22px 22px 0 0; }
+.theme-space .tabbar.journey-nav { --nav-active:var(--accent); --nav-muted:var(--muted); background:var(--nav-glass); border-top:1px solid var(--paper); box-shadow:0 -5px 22px #1d29230a; padding-left:10px; padding-right:10px; border-radius:10px 10px 0 0; }
 .theme-space .journey-nav button.nav-item { min-width:44px; font-size:10px; }
 .theme-space .journey-nav button.active .tab-icon-frame { background:transparent; }
 .theme-space .journey-nav .nav-conversation .tab-icon-frame,
 .theme-space .journey-nav button.nav-conversation.active .tab-icon-frame { border-color:var(--bg); background:linear-gradient(140deg,var(--nav-start),var(--button-fill) 53%,var(--nav-end)); box-shadow:0 4px 15px var(--theme-glow),inset 0 1px 2px #ffffff80; }
 .theme-space .journey-nav .nav-conversation .tab-glyph { width:25px; height:25px; }
-.theme-space .modal-sheet { background:var(--paper); border-radius:26px 26px 0 0; }
-.theme-space .theme-card { border-radius:16px; border-color:var(--line); transition:transform 130ms,opacity 130ms; overflow:hidden; }
+.theme-space .modal-sheet { background:var(--paper); border-radius:10px 10px 0 0; }
+.theme-space .theme-card { border-radius:10px; border-color:var(--line); transition:transform 130ms,opacity 130ms; overflow:hidden; }
 .theme-space .theme-card.chosen { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
 .theme-space .theme-card > .theme-copy { padding:10px 11px 12px; }
 .theme-name-row { display:flex; align-items:center; justify-content:space-between; gap:6px; }
@@ -100,5 +104,5 @@
   .focus-tag { padding:3px 5px; }
   .theme-card .theme-detail { font-size:9px; }
 }
-@media(min-width:600px) { .theme-space .tabbar.journey-nav { border-radius:22px 22px 25px 25px; } }
+@media(min-width:600px) { .theme-space .tabbar.journey-nav { border-radius:10px 10px 10px 10px; } }
 @media(prefers-reduced-motion:reduce) { .theme-space .theme-card { transition:none; } .theme-pressed { transform:none; } }

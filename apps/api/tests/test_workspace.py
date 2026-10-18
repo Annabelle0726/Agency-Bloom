@@ -318,7 +318,90 @@ def test_memory_scope_and_deletion_remove_future_context(workspace):
     assert "不愿异地搬家" not in json.dumps(captured[-1], ensure_ascii=False)
 
 
-def test_local_upgrade_preserves_legacy_messages_and_is_idempotent(tmp_path):
+def test_supplied_context_reports_what_was_handed_to_the_model_not_usage(workspace):
+    client, auth, item, captured = workspace
+    conv = conversation(client, auth, item)
+    # No memory use enabled: the inventory must be honestly empty.
+    response = send(client, auth, conv, "你好").json()
+    assert response["supplied_context"]["memories"] == []
+    assert response["supplied_context"]["history_retained"] is True
+    assert response["supplied_context"]["history_count"] == 0
+    assert response["supplied_context"]["summary"] is False
+    client.put("/api/me", headers=auth, json={"use_memory": True})
+    client.post(
+        "/api/memories",
+        headers=auth,
+        json={
+            "content": "每周最多投入两小时",
+            "category": "constraint",
+            "issue_id": item["id"],
+            "confirmed": True,
+        }
+    )
+    send(client, auth, conv, "先说一件事")
+    with_memory = send(client, auth, conv, "最近时间紧张").json()
+    supplied = with_memory["supplied_context"]
+    assert supplied["memories"][0]["content"] == "每周最多投入两小时"
+    assert supplied["memories"][0]["category"] == "constraint"
+    # "你好" + reply, then "先说一件事" + reply: four retained rows are in scope.
+    assert supplied["history_count"] == 4
+    # Scope isolation must be visible in the disclosure too.
+    other_issue = client.post("/api/issues", headers=auth, json={"title": "其他探索"}).json()
+    client.post(
+        "/api/memories",
+        headers=auth,
+        json={"content": "只属于其他探索", "issue_id": other_issue["id"], "confirmed": True},
+    )
+    scoped = send(client, auth, conv, "继续").json()["supplied_context"]
+    assert [m["content"] for m in scoped["memories"]] == ["每周最多投入两小时"]
+
+
+def test_supplied_context_matches_what_the_provider_actually_received(workspace):
+    client, auth, item, captured = workspace
+    conv = conversation(client, auth, item)
+    client.put("/api/me", headers=auth, json={"use_memory": True})
+    client.post(
+        "/api/memories",
+        headers=auth,
+        json={"content": "不愿异地搬家", "confirmed": True},
+    )
+    response = client.post(
+        f"/api/conversations/{conv['id']}/chat",
+        headers=auth,
+        json={"request_id": str(uuid4()), "message": "聊聊搬家"},
+    ).json()
+    prompt = json.loads(captured[-1]["messages"][1]["content"].split("：", 1)[1])
+    disclosed = response["supplied_context"]
+    # The disclosure must be a factual subset of the model payload: same memories.
+    assert disclosed["memories"][0]["content"] == prompt["confirmed_memories"][0]["content"]
+    assert len(disclosed["memories"]) == len(prompt["confirmed_memories"])
+    # The summary flag reflects the reviewed summary handed to the model.
+    assert disclosed["summary"] == (prompt["reviewed_conversation_summary"] is not None)
+
+
+def test_supplied_context_covers_the_system_prompt_rule_for_correcting_outdated_memory(tmp_path):
+    """The prompt must tell the model to verify rather than assert stale memories."""
+    from app import ai
+    from app.schemas import ChatInput
+
+    body = ChatInput(request_id=uuid4(), message="换个话题")
+    messages = ai.messages_for(
+        {"confirmed": []},
+        [],
+        body,
+        "discover",
+        conversation_context={
+            "reviewed_conversation_summary": None,
+            "confirmed_memories": [
+                {"id": "m1", "content": "每周两小时", "category": "constraint", "issue_id": None}
+            ],
+            "explicitly_linked_explorations": [],
+        },
+    )
+    system = messages[0]["content"]
+    assert "现在还适用吗" in system
+    assert "你之前提过" in system
+    assert "仅在确实与当前话题相关时" in system
     from sqlalchemy import create_engine, text
 
     from app.local_schema import upgrade_local

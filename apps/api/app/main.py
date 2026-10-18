@@ -577,6 +577,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             raise HTTPException(429, "今天的对话额度已用完，已保存的卡片仍可查看和修改")
         context = None
         history = None
+        sources = None
         if conversation:
             if db.scalar(
                 select(AIRequest.id)
@@ -584,7 +585,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                 .limit(1)
             ):
                 raise HTTPException(409, "这段会话有一条回复正在生成")
-            history, context = context_for(db, user, conversation, body)
+            history, context, sources = context_for(db, user, conversation, body)
         prompt = ai.messages_for(
             item.card,
             issue_view(db, item)["feedback"][:5],
@@ -716,7 +717,11 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                             },
                         )
                     )
-            return result.model_dump() | {"mode": settings.ai_mode, "usage": generation.usage}
+            return (
+                result.model_dump()
+                | {"mode": settings.ai_mode, "usage": generation.usage}
+                | ({"supplied_context": sources} if sources else {})
+            )
         except asyncio.CancelledError:
             logging.getLogger("agency.ai").info("generation_cancelled")
             task.cancel()
