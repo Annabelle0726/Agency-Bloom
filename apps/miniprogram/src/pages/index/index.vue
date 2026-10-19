@@ -1176,7 +1176,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                       :hover-start-time="0" :hover-stay-time="70" @chooseavatar="chooseAvatar">
                 <image class="profile-avatar" :src="userAvatar || '/static/avatar-user.png'" mode="aspectFill"
                        @error="userAvatar = ''"/>
-                <view class="avatar-edit-badge" aria-hidden="true"><SvgIcon name="camera" :size="12" light/></view>
+                <view class="avatar-edit-badge" aria-hidden="true"><SvgIcon name="camera" :size="10" light/></view>
               </button>
               <!-- #endif -->
               <!-- #ifndef MP-WEIXIN -->
@@ -1185,7 +1185,6 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <!-- #endif -->
               <view>
                 <text class="setting-title">你的对话头像</text>
-                <text class="setting-description">可选，仅保存在这台设备，不发送给 AI</text>
               </view>
             </view>
           </view>

@@ -139,7 +139,7 @@ text { overflow-wrap: anywhere; }
 .message-row.user { flex-direction: row-reverse; }
 .user .message-content { align-items: flex-end; }
 .user .message-bubble { padding: 11px 14px; border-radius: 8px 2px 8px 8px; background: var(--accent-light); max-width: 100%; box-sizing: border-box; }
-.avatar-profile { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
+.avatar-profile { display: flex; align-items: center; gap: 13px; margin-bottom: 0; }
 .profile-avatar { display: block; width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; }
 
 /* The avatar itself is the edit entry: button wrapper with a camera badge. */
@@ -149,24 +149,31 @@ text { overflow-wrap: anywhere; }
   margin: 0; padding: 0;
   border: 0; border-radius: 50%;
   background: transparent;
+  color: inherit;
+  font: inherit; line-height: 1;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  overflow: visible;
   transition: transform 140ms var(--ease-out, ease), opacity 140ms ease;
 }
-.settings-content .avatar-entry::after { content: none; }
+.settings-content .avatar-entry::after { content: none; border: 0; }
+.settings-content .avatar-entry::before { content: none; }
 .settings-content .avatar-entry .profile-avatar { width: 48px; height: 48px; }
 .settings-content .avatar-entry-pressed,
 .settings-content .avatar-entry.avatar-entry-pressed { transform: scale(.96); opacity: .88; }
 .settings-content .avatar-edit-badge {
-  position: absolute; right: -2px; bottom: -2px;
-  width: 22px; height: 22px;
+  position: absolute; right: 0; bottom: 0;
+  width: 18px; height: 18px;
+  box-sizing: border-box;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: var(--button-fill);
-  border: 2px solid var(--paper);
-  box-shadow: 0 2px 6px rgba(10,18,34,.22);
+  border: 1.5px solid var(--paper);
+  box-shadow: 0 1px 3px rgba(10,18,34,.18);
   transition: transform 140ms var(--ease-out, ease);
 }
+.settings-content .avatar-edit-badge .svg-icon { width: 10px; height: 10px; display: flex; align-items: center; justify-content: center; }
+.settings-content .avatar-edit-badge .svg-icon image { display: block; width: 100%; height: 100%; }
 .settings-content .avatar-entry-pressed .avatar-edit-badge { transform: scale(1.12); }
 .settings-content .avatar-entry[disabled] { opacity: .6; }
 .settings-content .avatar-entry[disabled] .avatar-edit-badge { opacity: .5; }
