@@ -782,6 +782,8 @@ async function recoverReply() {
 }
 
 async function logOut() {
+  const approved = await confirm('退出登录', '退出后本机的草稿和开场进度会保留，登录后可以继续')
+  if (!approved) return
   await guarded(async () => {
     if (config.value.dev_auth && user.value && demoCredential.value?.userId !== user.value.id) {
       try {
@@ -1184,7 +1186,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             </view>
             <!-- #ifdef MP-WEIXIN -->
             <button class="avatar-choose secondary" open-type="chooseAvatar" :disabled="avatarBusy"
-                    @chooseavatar="chooseAvatar" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+                    @chooseavatar="chooseAvatar" hover-class="gem-choose-pressed" :hover-start-time="0" :hover-stay-time="70">
               {{ avatarBusy ? '正在保存' : '选择微信头像' }}
             </button>
             <!-- #endif -->
@@ -1256,8 +1258,8 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               {{ config.ai_mode === 'demo' ? '当前为本地演示，不产生模型费用' : '服务额度用完后，卡片和反馈仍可使用' }}
             </text>
           </view>
-          <button class="secondary logout-button" :disabled="busy" @click="logOut" hover-class="pressed" :hover-start-time="0"
-                  :hover-stay-time="70">退出登录
+          <button class="secondary logout-button" :disabled="busy" @click="logOut" hover-class="gem-logout-pressed"
+                  :hover-start-time="0" :hover-stay-time="70">退出登录
           </button>
           <button class="text-button danger-link" :disabled="busy" @click="deleteAccount" hover-class="pressed"
                   :hover-start-time="0" :hover-stay-time="70">删除账号与全部个人记录

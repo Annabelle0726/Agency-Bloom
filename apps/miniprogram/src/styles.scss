@@ -142,6 +142,42 @@ text { overflow-wrap: anywhere; }
 .avatar-profile { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
 .profile-avatar { display: block; width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; }
 .avatar-choose.secondary { min-height: 42px; font-size: 13px; }
+
+/* Settings gem buttons: same gem language, two different moods. */
+@keyframes settings-gem-breathe {
+  0% { box-shadow:0 2px 10px var(--theme-glow),inset 0 1px 1px rgba(255,255,255,.35),inset 0 -2px 3px rgba(10,18,34,.12); }
+  100% { box-shadow:0 2px 10px var(--theme-glow),inset 0 1px 1px rgba(255,255,255,.42),inset 0 -2px 3px rgba(10,18,34,.12); }
+}
+@keyframes settings-gem-ignite {
+  0% { box-shadow:0 2px 10px var(--theme-glow),inset 0 1px 1px rgba(255,255,255,.42),inset 0 -2px 3px rgba(10,18,34,.12); }
+  45% { box-shadow:0 3px 14px var(--nav-gem-glow,rgba(255,255,255,.42)),inset 0 0 8px var(--nav-gem-hi-soft,rgba(255,255,255,.5)),inset 0 1px 1px rgba(255,255,255,.6); }
+  100% { box-shadow:0 2px 10px var(--theme-glow),inset 0 1px 1px rgba(255,255,255,.42),inset 0 -2px 3px rgba(10,18,34,.12); }
+}
+/* Avatar choose: a light, watery glass gem inviting a gentle identity tweak. */
+.settings-content .avatar-choose.secondary {
+  border:1px solid var(--nav-gem-hi-soft,rgba(255,255,255,.5));
+  background:linear-gradient(150deg,var(--nav-gem-hi) 0%,var(--soft) 55%,var(--nav-start) 100%);
+  color:var(--ink);
+  animation:settings-gem-breathe 4.8s ease-in-out infinite alternate;
+  transition:transform 140ms var(--ease-out,ease),box-shadow 140ms ease;
+}
+.gem-choose-pressed { transform:scale(.98); animation:settings-gem-ignite 160ms var(--ease-out,ease) 1; }
+/* Logout: a deeper gem on a solid dark body — white label always readable on it. */
+.settings-content .logout-button {
+  border:1px solid var(--nav-gem-hi-soft,rgba(255,255,255,.5));
+  background:linear-gradient(150deg,var(--nav-gem-hi) 0%,var(--nav-gem-deep) 62%,var(--nav-gem-deep) 100%);
+  color:#ffffff;
+  text-shadow:0 1px 2px rgba(10,18,34,.3);
+  animation:settings-gem-breathe 4.8s ease-in-out infinite alternate;
+  transition:transform 140ms var(--ease-out,ease),box-shadow 140ms ease;
+}
+.settings-content .logout-button[disabled] { color:#ffffff; opacity:.55; animation:none; }
+.settings-content .logout-button::after, .settings-content .avatar-choose.secondary::after { content:none; }
+.gem-logout-pressed { transform:scale(.98); animation:settings-gem-ignite 160ms var(--ease-out,ease) 1; }
+@media (prefers-reduced-motion:reduce) {
+  .settings-content .avatar-choose.secondary, .settings-content .logout-button { animation:none; }
+  .gem-choose-pressed, .gem-logout-pressed { animation:none; }
+}
 .thinking { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 10px; padding-bottom: 20px; }
 .thinking text { margin-left: 5px; }
 .typing-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; animation: breathe 1.2s infinite ease-in-out; }
@@ -150,7 +186,12 @@ text { overflow-wrap: anywhere; }
 @keyframes breathe { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
 .proposal-card { padding: 17px; background: var(--paper); border: 1px dashed var(--line); border-radius: 8px; margin-bottom: 20px; }
 .proposal-card .eyebrow { font-size: 10px; letter-spacing: .5px; }
-.chat-disclosure { display: block; color: var(--muted); font-size: 9px; line-height: 1.7; text-align: center; margin-top: 10px; }
+.chat-disclosure { display: block; color: var(--muted); font-size: 9px; line-height: 1.7; text-align: center; }
+/* Bottom dock: one fixed block holding the footer note and the composer,
+   centered and visually separate from the scrolling conversation above. */
+.composer-dock { position: fixed; bottom: 0; left: 0; right: 0; z-index: 11; padding: 0 16px calc(env(safe-area-inset-bottom) + 6px); background: var(--bg); }
+.composer-dock .chat-disclosure { margin: 6px 0 2px; }
+.keyboard-open .composer-dock { bottom: var(--keyboard-height, 0px); padding-bottom: 6px; }
 .context-disclosure-toggle { display: inline-flex; align-items: center; gap: 5px; margin: 8px 0 0; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); font-size: 10px; line-height: 1.4; text-align: left; }
 .context-disclosure-toggle::after { border: 0; }
 .disclosure-chevron { display: flex; align-items: center; transition: transform 160ms ease; }
@@ -161,7 +202,8 @@ text { overflow-wrap: anywhere; }
 .disclosure-label { display: block; font-size: 9px; color: var(--muted); margin-bottom: 3px; }
 .disclosure-item { display: block; font-size: 11px; line-height: 1.8; }
 .disclosure-note { display: block; font-size: 9px; color: var(--muted); margin-top: 7px; line-height: 1.6; }
-.composer { position: static; width: 100%; display: flex; align-items: flex-end; gap: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 10px; box-sizing: border-box; box-shadow: 0 5px 24px var(--bg); }
+/* The composer lives inside the fixed dock block; the send key stays in thumb reach. */
+.composer { width: 100%; max-width: 448px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 10px; box-sizing: border-box; box-shadow: 0 5px 24px var(--bg); }
 .chat-input { flex: 1; padding: 10px 4px; font-size: 13px; line-height: 1.6; min-height: 41px; max-height: 150px; }
 .send-button { display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--bg); width: 38px; height: 38px; border-radius: 10px; font-size: 23px; flex-shrink: 0; }
 .send-button[disabled] { background: var(--accent); color: var(--bg); }
