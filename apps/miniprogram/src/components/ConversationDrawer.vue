@@ -131,7 +131,7 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
         <view class="drawer-scroll-content">
         <view v-if="notice || error" class="notice">{{ notice || error }}</view>
         <template v-if="view === 'list'">
-          <button class="primary new-conversation" :disabled="busy" @click="openNewConversation()">＋ 新会话</button>
+          <button class="primary new-conversation" :disabled="busy" hover-class="new-conversation-pressed" :hover-start-time="0" :hover-stay-time="70" @click="openNewConversation()">＋ 新会话</button>
           <input v-model="search" class="text-input drawer-search" maxlength="60" placeholder="搜索会话" />
           <view class="drawer-tabs conversation-sections"><button :class="{ selected: !archive && !showExplorations }" @click="archive = false; showExplorations = false">进行中</button><button :class="{ selected: showExplorations }" @click="showExplorations = true">探索</button><button :class="{ selected: archive && !showExplorations }" @click="archive = true; showExplorations = false">已归档</button></view>
           <template v-if="!showExplorations">

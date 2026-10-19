@@ -18,6 +18,40 @@
 .drawer-scroll-indicator > view { position:absolute; width:100%; background:var(--scrollbar-thumb); border-radius:3px; }
 .drawer-scroll .body-copy, .drawer-scroll .muted { display:block; line-height:1.65; }
 .drawer-scroll .primary, .drawer-scroll .secondary { width:100%; margin:12px 0; }
+
+/* New-conversation primary CTA: a calm polished gem, themed via CSS variables. */
+@keyframes cta-breathe {
+  0% { box-shadow:0 3px 14px var(--theme-glow),inset 0 1px 2px var(--nav-gem-hi-soft,rgba(255,255,255,.5)),inset 0 -2px 4px rgba(10,18,34,.32); }
+  100% { box-shadow:0 3px 14px var(--theme-glow),inset 0 1px 2px rgba(255,255,255,.55),inset 0 -2px 4px rgba(10,18,34,.32); }
+}
+@keyframes cta-ignite {
+  0% { box-shadow:0 3px 14px var(--theme-glow),inset 0 1px 2px rgba(255,255,255,.55),inset 0 -2px 4px rgba(10,18,34,.32); }
+  45% { box-shadow:0 4px 20px var(--nav-gem-glow,rgba(255,255,255,.42)),inset 0 0 12px var(--nav-gem-hi-soft,rgba(255,255,255,.5)),inset 0 1px 2px rgba(255,255,255,.8); }
+  100% { box-shadow:0 3px 14px var(--theme-glow),inset 0 1px 2px var(--nav-gem-hi-soft,rgba(255,255,255,.5)),inset 0 -2px 4px rgba(10,18,34,.32); }
+}
+.drawer-scroll .primary.new-conversation {
+  display:flex; align-items:center; justify-content:center;
+  min-height:54px; margin:4px 0 14px;
+  border:1px solid var(--nav-gem-hi-soft,rgba(255,255,255,.5));
+  border-radius:var(--radius-button,8px);
+  background:linear-gradient(150deg,var(--nav-gem-hi) 0%,var(--nav-start) 30%,var(--button-fill) 60%,var(--nav-gem-deep) 100%);
+  color:#fff; font-size:15px; font-weight:500; letter-spacing:.5px;
+  text-shadow:0 1px 2px rgba(10,18,34,.35);
+  box-shadow:0 3px 14px var(--theme-glow),inset 0 1px 2px var(--nav-gem-hi-soft,rgba(255,255,255,.5)),inset 0 -2px 4px rgba(10,18,34,.32);
+  animation:cta-breathe 4.6s ease-in-out infinite alternate;
+  transition:transform 140ms var(--ease-out,ease),box-shadow 140ms ease,border-color 140ms ease;
+}
+.drawer-scroll .primary.new-conversation::after { content:none; }
+.drawer-scroll .primary.new-conversation[disabled] {
+  background:linear-gradient(150deg,var(--nav-gem-hi) 0%,var(--nav-start) 30%,var(--button-fill) 60%,var(--nav-gem-deep) 100%);
+  color:#fff; opacity:.5; animation:none;
+  box-shadow:0 2px 8px rgba(10,18,34,.18),inset 0 1px 1px rgba(255,255,255,.25);
+}
+.new-conversation-pressed { transform:scale(.98); border-color:rgba(255,255,255,.75); animation:cta-ignite 160ms var(--ease-out,ease) 1; }
+@media (prefers-reduced-motion:reduce) {
+  .drawer-scroll .primary.new-conversation { animation:none; }
+  .new-conversation-pressed { animation:none; }
+}
 .drawer-form { padding:14px; background:var(--soft); border:1px solid var(--line); border-radius:8px; margin:10px 0 16px; }
 .drawer-search { margin:10px 0 4px; }
 .scope-picker { display:flex; align-items:center; justify-content:space-between; padding:14px 0; font-size:13px; }
