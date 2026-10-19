@@ -80,13 +80,6 @@ async function chooseAvatar(event: { detail: { avatarUrl?: string } }) {
   }
 }
 
-async function removeAvatar() {
-  const id = user.value?.id
-  if (!id || avatarBusy.value) return
-  await localAvatars.clear(id)
-  userAvatar.value = ''
-}
-
 const current = ref<Issue | null>(null)
 const selectedConversationKey = (userId: string) => `agency.selected-conversation.v1:${userId}`
 const config = ref<{ dev_auth: boolean; wechat_auth?: boolean; ai_mode: string }>({dev_auth: false, ai_mode: 'demo'})
@@ -1187,10 +1180,9 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <!-- #ifdef MP-WEIXIN -->
             <button class="avatar-choose secondary" open-type="chooseAvatar" :disabled="avatarBusy"
                     @chooseavatar="chooseAvatar" hover-class="gem-choose-pressed" :hover-start-time="0" :hover-stay-time="70">
-              {{ avatarBusy ? '正在保存' : '选择微信头像' }}
+              {{ avatarBusy ? '正在保存' : '更改头像' }}
             </button>
             <!-- #endif -->
-            <button v-if="userAvatar" class="text-button" @click="removeAvatar">恢复默认头像</button>
           </view>
           <view class="settings-group">
             <text class="group-label">使用偏好</text>
