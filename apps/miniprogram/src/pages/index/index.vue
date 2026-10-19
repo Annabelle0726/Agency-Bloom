@@ -1167,7 +1167,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
 
         <view v-else class="settings-content">
           <text class="eyebrow">MAKE YOURSELF AT HOME</text>
-          <text class="page-title">{{ '你的空间，\n由你做主' }}</text>
+          <text class="page-title">{{ '你的空间，由你做主' }}</text>
           <view class="settings-group avatar-settings">
             <view class="avatar-profile">
               <!-- #ifdef MP-WEIXIN -->
