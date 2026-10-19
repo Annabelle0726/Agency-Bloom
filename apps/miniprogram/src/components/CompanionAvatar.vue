@@ -6,7 +6,8 @@ const props = withDefaults(defineProps<{
   size?: number
   state?: CompanionMood
   interactive?: boolean
-}>(), { size: 38, state: 'idle', interactive: true })
+  online?: boolean
+}>(), { size: 38, state: 'idle', interactive: true, online: false })
 
 const touched = ref(false)
 let resetTimer: ReturnType<typeof setTimeout> | undefined
@@ -34,6 +35,7 @@ onUnmounted(() => {
     <view class="bot-glow" />
     <image class="bot-image" src="/static/companion-bot.png" mode="aspectFit" />
     <view class="bot-spark" />
+    <view v-if="online" class="bot-online" aria-label="在线" />
   </view>
 </template>
 
@@ -75,6 +77,27 @@ onUnmounted(() => {
   border-radius: 50%;
   background: #b0c9b0;
   opacity: 0;
+}
+.bot-online {
+  position: absolute;
+  z-index: 3;
+  right: -1px;
+  bottom: -1px;
+  width: 24%;
+  height: 24%;
+  min-width: 8px;
+  min-height: 8px;
+  max-width: 10px;
+  max-height: 10px;
+  border-radius: 50%;
+  background: #58a06c;
+  border: 1.5px solid var(--paper, #ffffff);
+  box-shadow: 0 0 4px rgba(88, 160, 108, .45);
+  animation: bot-online-breathe 3.4s ease-in-out infinite;
+}
+@keyframes bot-online-breathe {
+  0%, 100% { box-shadow: 0 0 3px rgba(88, 160, 108, .35); }
+  50% { box-shadow: 0 0 6px rgba(88, 160, 108, .6); }
 }
 .bot-rest .bot-image, .bot-rest .bot-glow { animation: none; }
 .bot-thinking .bot-image { animation: bot-think 1.9s ease-in-out infinite; }
@@ -122,5 +145,6 @@ onUnmounted(() => {
 }
 @media (prefers-reduced-motion: reduce) {
   .bot-image, .bot-glow, .bot-spark { animation: none !important; }
+  .bot-online { animation: none !important; }
 }
 </style>

@@ -1060,7 +1060,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </view>
           <button v-if="workspace.active.value.olderCursor.value" class="text-button" :disabled="busy" @click="loadOlderMessages">加载更早的消息</button>
           <view v-for="(message, index) in messages" :id="'message-' + index" :key="message.id || index" class="message-row" :class="message.role">
-            <CompanionAvatar v-if="message.role === 'assistant'" :size="38"
+            <CompanionAvatar v-if="message.role === 'assistant'" :size="38" online
                              :state="speakingIndex === index ? 'speaking' : (index === messages.length - 1 ? 'idle' : 'rest')" />
             <image v-else class="chat-avatar"
                    :src="userAvatar || '/static/avatar-user.png'"
