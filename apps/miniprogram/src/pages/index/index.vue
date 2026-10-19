@@ -15,7 +15,7 @@ import EmptyState from '../../components/EmptyState.vue'
 import SvgIcon from '../../components/SvgIcon.vue'
 import CompanionAvatar from '../../components/CompanionAvatar.vue'
 import {iconSources} from '../../icons'
-import {themes, navigationItems, themeForSession, themeStyle, themeNavSvg} from '../../themes'
+import {themes, navigationItems, themeForSession, themeStyle, themeNavSvg, resolveTheme, themeByTimeOfDay} from '../../themes'
 import type {ThemeId, SpaceTab} from '../../themes'
 import ThemePreview from '../../components/ThemePreview.vue'
 import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary, SuppliedContext} from '../../domain'
@@ -125,7 +125,17 @@ const offline = computed(() => !!operations.errors.init)
 const toast = ref('')
 const form = reactive<Onboarding>(newOnboarding())
 const preview = computed(() => makePreview(form))
-const activeTheme = computed(() => themeForSession(user.value, screen.value === 'space'))
+const manualThemeKey = (userId: string) => `agency.theme.manual.v1:${userId}`
+function manualThemeChosen(): boolean {
+  const id = user.value?.id
+  if (!id) return true // outside the personal space the fixed default applies
+  try { return !!uni.getStorageSync(manualThemeKey(id)) } catch { return true }
+}
+const activeTheme = computed(() => {
+  if (screen.value !== 'space' || manualThemeChosen()) return themeForSession(user.value, screen.value === 'space')
+  // No manual pick yet: follow the time of day quietly.
+  return resolveTheme(themeByTimeOfDay(new Date().getHours()))
+})
 const activeThemeStyle = computed(() => themeStyle(activeTheme.value))
 const dark = computed(() => activeTheme.value.dark)
 const applyingTheme = ref<ThemeId | null>(null)

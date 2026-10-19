@@ -65,10 +65,10 @@ Keys live only in that file — never in frontend `VITE_` variables. The backend
 ## Themes
 
 <p align="center">
-  <img src="./assets/readme/themes.png" width="100%" alt="Six theme swatches: Morning Mist (default), Quiet Night with a faint-star black sky, First Light, Forest, Lavender, and Minimal.">
+  <img src="./assets/readme/themes.png" width="100%" alt="Six theme swatches: Morning Mist, Quiet Night with a faint-star black sky, Evening Smoke, Forest, Lavender, and Minimal.">
 </p>
 
-Morning Mist is the default outside the authenticated space; Quiet Night (deep black with faint stars), First Light, Forest, Lavender, and Minimal are available after login under **My → Appearance**.
+Morning Mist is the default outside the authenticated space. After login, before any manual pick, the theme follows the day quietly: mist in the early morning, forest through the day, evening smoke toward dusk, and Quiet Night after dark. A manual pick under **My → Appearance** — Quiet Night (deep black with faint stars), Evening Smoke, Forest, Lavender, or Minimal — stops the automatic switching.
 
 ## Alpha features
 
@@ -112,7 +112,7 @@ Environment files, databases, build output, and private Developer Tools settings
 ## Notes and limits
 
 - Real WeChat login requires backend AppID/AppSecret setup ([setup](docs/SETUP.md)); physical-device keyboard occlusion and the real avatar sheet still need manual acceptance.
-- Remote Supabase migrations are prepared but not applied; do not reset existing databases or budget ledgers.
+- Remote Supabase migrations are applied; do not reset existing databases or budget ledgers.
 - Real devices cannot reach a PC backend through their own `127.0.0.1`; release builds need HTTPS plus registered request domains.
 
 More: [product](docs/PRODUCT.md) · [design](docs/DESIGN.md) · [setup](docs/SETUP.md) · [native acceptance evidence](docs/WECHAT_VALIDATION.md)

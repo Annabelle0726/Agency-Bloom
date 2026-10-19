@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { existsSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { themes, navigationItems, resolveTheme, themeForSession, themeStyle, themeNavSvg } from '../src/themes'
+import { themes, navigationItems, resolveTheme, themeForSession, themeStyle, themeNavSvg, themeByTimeOfDay } from '../src/themes'
 
 it('offers six distinct reference images and keeps the original saved theme ids', () => {
   expect(themes.map(theme => theme.id)).toEqual(['light', 'dark', 'dawn', 'forest', 'lavender', 'minimal'])
@@ -22,6 +22,22 @@ it('always uses Morning Mist outside an authenticated personal space', () => {
   expect(themeForSession({ theme: 'dark' }, false).id).toBe('light')
   expect(themeForSession(null, true).id).toBe('light')
   expect(resolveTheme('unknown-old-value').id).toBe('light')
+})
+
+it('maps the day into themes: mist mornings, smoke dusk, quiet nights, forest days', () => {
+  expect(themeByTimeOfDay(5)).toBe('light')
+  expect(themeByTimeOfDay(9)).toBe('light')
+  expect(themeByTimeOfDay(10)).toBe('forest')
+  expect(themeByTimeOfDay(15)).toBe('forest')
+  expect(themeByTimeOfDay(16)).toBe('dawn')
+  expect(themeByTimeOfDay(18)).toBe('dawn')
+  expect(themeByTimeOfDay(19)).toBe('dark')
+  expect(themeByTimeOfDay(23)).toBe('dark')
+  expect(themeByTimeOfDay(0)).toBe('dark')
+  expect(themeByTimeOfDay(4)).toBe('dark')
+  // hour wraps: 24 means midnight, so does 0
+  expect(themeByTimeOfDay(24)).toBe('dark')
+  expect(themeByTimeOfDay(-1)).toBe('dark')
 })
 
 function luminance(hex: string) {

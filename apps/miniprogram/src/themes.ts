@@ -22,7 +22,7 @@ export const themes: ThemeDefinition[] = [
   defineTheme('dark', '深夜', 'Quiet Night', '黑色夜幕 · 淡淡璀璨星空', 'night', {
     bg: '#06090f', paper: '#10151d', ink: '#e8edf4', muted: '#8f9aa8', line: '#232c38', accent: '#c3d3e8', fill: '#42576e', soft: '#141b25', gold: '#d7c59d',
   }, .35),
-  defineTheme('dawn', '晨曦', 'First Light', '初升晨光 · 杏金暖白', 'dawn', {
+  defineTheme('dawn', '暮烟', 'Evening Smoke', '暮色渐染 · 夕照金褐与暖白', 'dawn', {
     bg: '#fbf5ed', paper: '#fffdf8', ink: '#503d32', muted: '#7b6858', line: '#e9ddd1', accent: '#916348', fill: '#875a41', soft: '#f4e8da', gold: '#916b38',
   }, .26),
   defineTheme('forest', '森林', 'Forest', '林间天光 · 苔绿与玉白', 'forest', {
@@ -37,6 +37,17 @@ export const themes: ThemeDefinition[] = [
 ]
 export function resolveTheme(value?: string): ThemeDefinition {
   return themes.find(theme => theme.id === value) || themes[0]
+}
+export function themeByTimeOfDay(hour: number): ThemeId {
+  const h = ((Math.floor(hour) % 24) + 24) % 24
+  // Early morning until mid-morning: morning mist.
+  if (h >= 5 && h < 10) return 'light'
+  // Late afternoon into dusk: the warm evening-smoke palette.
+  if (h >= 16 && h < 19) return 'dawn'
+  // Night: quiet night.
+  if (h >= 19 || h < 5) return 'dark'
+  // The rest of the day: forest.
+  return 'forest'
 }
 export function themeForSession(user: { theme: string } | null | undefined, inPersonalSpace: boolean) {
   return resolveTheme(user && inPersonalSpace ? user.theme : 'light')
