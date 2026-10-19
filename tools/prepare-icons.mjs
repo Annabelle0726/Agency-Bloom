@@ -28,6 +28,7 @@ const icons = {
   menu: '<path d="M4.5 6.5h15M4.5 12h10M4.5 17.5h15"/>',
   lock: '<rect x="5.5" y="10" width="13" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/>',
   moon: '<path d="M20 14A9 9 0 0 1 10 4a9 9 0 1 0 10 10Z"/>',
+  camera: '<path d="M4 8.5h2.8l1.7-2.5h7l1.7 2.5H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.2"/>',
 }
 const sources = {}
 const target = path.resolve('apps/miniprogram/src/static/icons')

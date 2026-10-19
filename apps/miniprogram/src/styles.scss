@@ -141,9 +141,37 @@ text { overflow-wrap: anywhere; }
 .user .message-bubble { padding: 11px 14px; border-radius: 8px 2px 8px 8px; background: var(--accent-light); max-width: 100%; box-sizing: border-box; }
 .avatar-profile { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
 .profile-avatar { display: block; width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; }
-.avatar-choose.secondary { min-height: 42px; font-size: 13px; }
 
-/* Settings gem buttons: same gem language, two different moods. */
+/* The avatar itself is the edit entry: button wrapper with a camera badge. */
+.settings-content .avatar-entry {
+  position: relative;
+  width: 56px; height: 56px;
+  margin: 0; padding: 0;
+  border: 0; border-radius: 50%;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 140ms var(--ease-out, ease), opacity 140ms ease;
+}
+.settings-content .avatar-entry::after { content: none; }
+.settings-content .avatar-entry .profile-avatar { width: 48px; height: 48px; }
+.settings-content .avatar-entry-pressed,
+.settings-content .avatar-entry.avatar-entry-pressed { transform: scale(.96); opacity: .88; }
+.settings-content .avatar-edit-badge {
+  position: absolute; right: -2px; bottom: -2px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--button-fill);
+  border: 2px solid var(--paper);
+  box-shadow: 0 2px 6px rgba(10,18,34,.22);
+  transition: transform 140ms var(--ease-out, ease);
+}
+.settings-content .avatar-entry-pressed .avatar-edit-badge { transform: scale(1.12); }
+.settings-content .avatar-entry[disabled] { opacity: .6; }
+.settings-content .avatar-entry[disabled] .avatar-edit-badge { opacity: .5; }
+
+/* Settings gem buttons: the logout keeps the deep gem language. */
 @keyframes settings-gem-breathe {
   0% { box-shadow:0 2px 10px var(--theme-glow),inset 0 1px 1px rgba(255,255,255,.35),inset 0 -2px 3px rgba(10,18,34,.12); }
   100% { box-shadow:0 2px 10px var(--theme-glow),inset 0 1px 1px rgba(255,255,255,.42),inset 0 -2px 3px rgba(10,18,34,.12); }
@@ -153,15 +181,6 @@ text { overflow-wrap: anywhere; }
   45% { box-shadow:0 3px 14px var(--nav-gem-glow,rgba(255,255,255,.42)),inset 0 0 8px var(--nav-gem-hi-soft,rgba(255,255,255,.5)),inset 0 1px 1px rgba(255,255,255,.6); }
   100% { box-shadow:0 2px 10px var(--theme-glow),inset 0 1px 1px rgba(255,255,255,.42),inset 0 -2px 3px rgba(10,18,34,.12); }
 }
-/* Avatar choose: a light, watery glass gem inviting a gentle identity tweak. */
-.settings-content .avatar-choose.secondary {
-  border:1px solid var(--nav-gem-hi-soft,rgba(255,255,255,.5));
-  background:linear-gradient(150deg,var(--nav-gem-hi) 0%,var(--soft) 55%,var(--nav-start) 100%);
-  color:var(--ink);
-  animation:settings-gem-breathe 4.8s ease-in-out infinite alternate;
-  transition:transform 140ms var(--ease-out,ease),box-shadow 140ms ease;
-}
-.gem-choose-pressed { transform:scale(.98); animation:settings-gem-ignite 160ms var(--ease-out,ease) 1; }
 /* Logout: a deeper gem on a solid dark body — white label always readable on it. */
 .settings-content .logout-button {
   border:1px solid var(--nav-gem-hi-soft,rgba(255,255,255,.5));
@@ -172,11 +191,11 @@ text { overflow-wrap: anywhere; }
   transition:transform 140ms var(--ease-out,ease),box-shadow 140ms ease;
 }
 .settings-content .logout-button[disabled] { color:#ffffff; opacity:.55; animation:none; }
-.settings-content .logout-button::after, .settings-content .avatar-choose.secondary::after { content:none; }
+.settings-content .logout-button::after { content:none; }
 .gem-logout-pressed { transform:scale(.98); animation:settings-gem-ignite 160ms var(--ease-out,ease) 1; }
 @media (prefers-reduced-motion:reduce) {
-  .settings-content .avatar-choose.secondary, .settings-content .logout-button { animation:none; }
-  .gem-choose-pressed, .gem-logout-pressed { animation:none; }
+  .settings-content .logout-button { animation:none; }
+  .gem-logout-pressed, .settings-content .avatar-entry { transition:none; }
 }
 .thinking { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 10px; padding-bottom: 20px; }
 .thinking text { margin-left: 5px; }

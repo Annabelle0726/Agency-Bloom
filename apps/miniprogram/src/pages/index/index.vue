@@ -1170,22 +1170,26 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <text class="page-title">{{ '你的空间，\n由你做主' }}</text>
           <view class="settings-group avatar-settings">
             <view class="avatar-profile">
+              <!-- #ifdef MP-WEIXIN -->
+              <button class="avatar-entry" open-type="chooseAvatar" :disabled="avatarBusy"
+                      :aria-label="avatarBusy ? '正在保存头像' : '更改头像'" hover-class="avatar-entry-pressed"
+                      :hover-start-time="0" :hover-stay-time="70" @chooseavatar="chooseAvatar">
+                <image class="profile-avatar" :src="userAvatar || '/static/avatar-user.png'" mode="aspectFill"
+                       @error="userAvatar = ''"/>
+                <view class="avatar-edit-badge" aria-hidden="true"><SvgIcon name="camera" :size="12" light/></view>
+              </button>
+              <!-- #endif -->
+              <!-- #ifndef MP-WEIXIN -->
               <image class="profile-avatar" :src="userAvatar || '/static/avatar-user.png'" mode="aspectFill"
                      @error="userAvatar = ''"/>
+              <!-- #endif -->
               <view>
                 <text class="setting-title">你的对话头像</text>
                 <text class="setting-description">可选，仅保存在这台设备，不发送给 AI</text>
               </view>
             </view>
-            <!-- #ifdef MP-WEIXIN -->
-            <button class="avatar-choose secondary" open-type="chooseAvatar" :disabled="avatarBusy"
-                    @chooseavatar="chooseAvatar" hover-class="gem-choose-pressed" :hover-start-time="0" :hover-stay-time="70">
-              {{ avatarBusy ? '正在保存' : '更改头像' }}
-            </button>
-            <!-- #endif -->
           </view>
           <view class="settings-group">
-            <text class="group-label">使用偏好</text>
             <button class="setting-row" :disabled="busy" @click="modal = 'appearance'" hover-class="pressed"
                     :hover-start-time="0" :hover-stay-time="70">
               <view>
