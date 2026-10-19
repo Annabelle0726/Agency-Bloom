@@ -69,7 +69,11 @@
 .theme-space .journey-nav button.nav-item { min-width:44px; font-size:10px; }
 .theme-space .journey-nav button.active .tab-icon-frame { background:transparent; }
 .theme-space .journey-nav .nav-conversation .tab-icon-frame,
-.theme-space .journey-nav button.nav-conversation.active .tab-icon-frame { border-color:var(--bg); background:linear-gradient(140deg,var(--nav-start),var(--button-fill) 53%,var(--nav-end)); box-shadow:0 4px 15px var(--theme-glow),inset 0 1px 2px #ffffff80; }
+.theme-space .journey-nav button.nav-conversation.active .tab-icon-frame {
+  border-color:var(--bg);
+  background:linear-gradient(140deg,var(--nav-gem-hi) 0%,var(--nav-start) 24%,var(--button-fill) 52%,var(--nav-gem-deep) 78%,var(--nav-end) 100%);
+  box-shadow:0 6px 22px var(--theme-glow),0 2px 6px rgba(24,36,54,.32),inset 0 2px 3px rgba(255,255,255,.75),inset 0 -3px 6px rgba(13,22,40,.45);
+}
 .theme-space .journey-nav .nav-conversation .tab-glyph { width:25px; height:25px; }
 .theme-space .modal-sheet { background:var(--paper); border-radius:10px 10px 0 0; }
 .theme-space .theme-card { border-radius:10px; border-color:var(--line); transition:transform 130ms,opacity 130ms; overflow:hidden; }

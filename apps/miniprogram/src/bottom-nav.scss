@@ -47,9 +47,7 @@
   transition:transform 150ms ease,box-shadow 150ms ease;
 }
 .journey-nav button.active .tab-icon-frame { background:transparent; }
-.journey-nav .tab-glyph,
-.night-space .journey-nav button .tab-glyph,
-.night-space .journey-nav button.active .tab-glyph {
+.journey-nav .tab-glyph {
   width:24px;
   height:24px;
   filter:none;
@@ -63,29 +61,15 @@
   height:58px;
   border:5px solid #f7f9ff;
   border-radius:50%;
-  background:linear-gradient(140deg,#a2b8ff 3%,#5b81ff 49%,#6bc9f3);
-  box-shadow:0 4px 15px rgba(87,123,237,.25),inset 0 1px 2px rgba(255,255,255,.65);
+  background:linear-gradient(140deg,#e3ecff 0%,#a2b8ff 24%,#5b81ff 52%,#2f4bb3 78%,#6bc9f3 100%);
+  box-shadow:0 6px 22px rgba(87,123,237,.32),0 2px 6px rgba(24,36,54,.32),inset 0 2px 3px rgba(255,255,255,.75),inset 0 -3px 6px rgba(13,22,40,.45);
 }
 .journey-nav button.nav-conversation.active .tab-icon-frame {
-  background:linear-gradient(140deg,#8eacff 3%,#4c72f0 49%,#62bff0);
-  box-shadow:0 4px 19px rgba(87,123,237,.35),inset 0 1px 2px rgba(255,255,255,.65);
+  background:linear-gradient(140deg,#dce7ff 0%,#8eacff 24%,#4c72f0 52%,#2a44c9 78%,#62bff0 100%);
+  box-shadow:0 6px 26px rgba(87,123,237,.42),0 2px 7px rgba(24,36,54,.36),inset 0 2px 3px rgba(255,255,255,.8),inset 0 -3px 6px rgba(13,22,40,.48);
 }
 .journey-nav .nav-conversation .tab-glyph { width:27px; height:27px; }
 .journey-nav button.nav-pressed .tab-icon-frame { transform:scale(.9); }
-.night-space .tabbar.journey-nav {
-  --nav-active:#b6ceff;
-  --nav-muted:#a5b3c7;
-  background:rgba(29,42,58,.96);
-  border-top-color:rgba(189,212,242,.12);
-  box-shadow:0 -8px 28px rgba(7,16,31,.18);
-}
-.night-space .journey-nav .nav-conversation .tab-icon-frame {
-  border-color:#233249;
-  background:linear-gradient(140deg,#849bc5,#536fba 55%,#6295b4);
-}
-.night-space .journey-nav button.nav-conversation.active .tab-icon-frame {
-  background:linear-gradient(140deg,#9db4e0,#627fd0 55%,#71a9c8);
-}
 @media(min-width:600px) {
   .tabbar.journey-nav { bottom:20px; border-radius:10px; }
 }

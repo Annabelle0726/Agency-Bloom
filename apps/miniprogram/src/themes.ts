@@ -48,6 +48,14 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     dawn: ['#eac59f', '#b97e59'], forest: ['#9fc8a0', '#548e78'],
     lavender: ['#c6b1e3', '#9a7ab5'], minimal: ['#adb8b0', '#6e8479'],
   }
+  const gem: Record<ThemeId, { hi: string; deep: string }> = {
+    light: { hi: '#e3ecff', deep: '#2f4bb3' },
+    dark: { hi: '#b9c9e4', deep: '#24405e' },
+    dawn: { hi: '#ffe9cd', deep: '#6f4028' },
+    forest: { hi: '#d5ecd2', deep: '#2c5340' },
+    lavender: { hi: '#eadcf7', deep: '#4f3b68' },
+    minimal: { hi: '#dfe7db', deep: '#374440' },
+  }
   return {
     '--bg': p.bg, '--paper': p.paper, '--ink': p.ink, '--muted': p.muted, '--line': p.line,
     '--accent': p.accent, '--button-fill': p.fill, '--soft': p.soft, '--accent-light': p.soft,
@@ -59,6 +67,7 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     '--surface-glass': p.paper + 'ed', '--nav-glass': p.paper + 'f2',
     '--hero-top': p.bg + 'ee', '--hero-middle': p.bg + '00',
     '--nav-start': gradients[theme.id][0], '--nav-end': gradients[theme.id][1],
+    '--nav-gem-hi': gem[theme.id].hi, '--nav-gem-deep': gem[theme.id].deep,
     '--theme-glow': p.accent + '30', '--radius-card': '24px', '--radius-button': '18px',
   }
 }
