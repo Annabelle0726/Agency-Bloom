@@ -151,9 +151,8 @@
 .chat-title, .settings-content .page-title { font-family:var(--font-heading); font-weight:500; }
 .chat-content, .settings-content { position:relative; animation:pane-enter 160ms var(--ease-out); }
 .chat-title { font-size:28px; }
-/* The chat owns its dock clearance; do not add the shell's tabbar space again */
-.app-shell.chat-page { --composer-bottom:calc(var(--composer-base-offset,80px) + env(safe-area-inset-bottom)); padding-bottom:0; }
-.chat-content { padding-bottom:calc(var(--composer-bottom) + var(--composer-height,62px) + 16px); }
+/* The composer sits in the normal flow; the outer with-tabs shell reserves the dock clearance once. */
+.chat-content { padding-bottom: 16px; }
 .keyboard-open .modal-backdrop { bottom:var(--keyboard-height); }
 .keyboard-open .modal-sheet { max-height:calc(95vh - var(--keyboard-height)); }
 .keyboard-open .modal-scroll { max-height:calc(85vh - var(--keyboard-height) - 75px); }
@@ -176,10 +175,9 @@
 .message-bubble { font-size:14px; }
 .chat-disclosure { font-size:10px; white-space:pre-line; }
 .prompt-button { font-size:13px; padding:14px; border-radius:8px; }
-.composer { max-width:408px; bottom:var(--composer-bottom); border-radius:10px; padding:9px 10px 9px 16px; box-shadow:0 5px 24px #2531480b; }
+.composer { max-width:408px; border-radius:10px; padding:9px 10px 9px 16px; box-shadow:0 5px 24px #2531480b; }
 .chat-input { font-size:14px; }
 .send-button { background:var(--button-fill); color:#fff; width:42px; height:42px; display:flex; align-items:center; justify-content:center; }
-.keyboard-open .app-shell.chat-page { --composer-bottom:calc(var(--keyboard-height) + 8px); }
 .keyboard-open .tabbar { display:none; }
 .settings-content { padding-top:24px; }
 .setting-description { font-size:11px; }
@@ -225,7 +223,6 @@
   .preview-stage { --app-height:calc(100vh - 48px); padding:24px 0; box-sizing:border-box; }
   .app-shell { border-radius:10px; box-shadow:0 8px 45px #25314814; }
   .tabbar { bottom:24px; border-radius:0 0 10px 10px; }
-  .chat-page { --composer-base-offset:104px; }
   .modal-backdrop { padding-bottom:24px; }
   .modal-sheet, .intro-panel { border-radius:10px; }
 }

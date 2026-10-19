@@ -165,8 +165,9 @@
 }
 .chat-content {
   padding-top: 18px;
-  /* Scroll the last starter above the fixed input bar and native bottom tabs. */
-  padding-bottom: calc(var(--composer-bottom) + var(--composer-height,62px) + 50px);
+  /* The composer follows the normal flow; only keep a small gap below it.
+     The outer with-tabs shell reserves the tabbar clearance once. */
+  padding-bottom: 16px;
 }
 .chat-content .chat-title { margin: 8px 0 12px; }
 @media(max-width:350px) {

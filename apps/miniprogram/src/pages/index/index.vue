@@ -110,13 +110,6 @@ function pauseOnboarding() {
   void nextTick(() => uni.pageScrollTo({ scrollTop: 0, duration: 0 }))
 }
 const keyboardHeight = ref(0)
-const composerHeight = ref(62)
-async function measureComposer() {
-  await nextTick()
-  uni.createSelectorQuery().select('.composer').boundingClientRect(rect => {
-    if (rect && !Array.isArray(rect) && typeof rect.height === 'number' && rect.height > 0) composerHeight.value = rect.height
-  }).exec()
-}
 const statusHeight = ref(0)
 const capsuleBottom = ref(0)
 // #ifdef MP-WEIXIN
@@ -895,7 +888,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </button>
         </view>
 
-        <view v-else-if="current && tab === 'chat'" class="chat-content" :style="{ '--composer-height': `${composerHeight}px` }">
+        <view v-else-if="current && tab === 'chat'" class="chat-content">
           <text class="eyebrow">LET'S THINK TOGETHER</text>
           <text class="chat-title">{{ activeConversation?.title || chatEntry.heading }}</text>
           <scroll-view v-if="windows.length > 1" scroll-x class="conversation-windows"><button v-for="item in windows" :key="item.id" :class="{ active: item.id === activeConversation?.id }" :disabled="busy" @click="selectConversation(item)">{{ runningIds.includes(item.id) ? '◌ ' : '' }}{{ item.title }}</button></scroll-view>
@@ -1021,10 +1014,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <view class="insight-actions"><button data-insight="interested" :disabled="sending || busy || insightReaction === 'interested'" @click="reactToInsight('interested')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ insightReaction === 'interested' ? '已带入下一次探索' : '这个角度有意思' }}</button><button data-insight="dismissed" :disabled="sending || busy" @click="reactToInsight('dismissed')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">不太像我</button><button data-insight="experiment" :disabled="sending || busy" @click="reactToInsight('experiment')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">让我试一下 <SvgIcon name="arrow-diagonal" :size="15" /></button></view>
             <text v-if="insightReaction" class="insight-footnote">这只是待探索的角度，尚未写入你的卡片</text>
           </view>
-          <text class="chat-disclosure">
-            {{ user?.save_chat ? '已开启聊天保存，可在「我的」中关闭并清除' : '完整聊天默认不保存 · 确认的卡片会留下' }}
-          </text>
-          <view class="composer"><textarea v-model="draft" class="chat-input" :disabled="readOnlyConversation || !activeConversation" :adjust-position="false" @linechange="measureComposer" @input="starterHint = ''"
+          <view class="composer"><textarea v-model="draft" class="chat-input" :disabled="readOnlyConversation || !activeConversation" :adjust-position="false" @input="starterHint = ''"
                                            :cursor-spacing="24" maxlength="2000" :auto-height="true"
                                            placeholder="想到什么，就从哪里说起……"/>
             <button class="send-button" :disabled="!sending && (!draft.trim() || readOnlyConversation || !activeConversation)"
@@ -1033,6 +1023,9 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <SvgIcon :name="sending ? 'stop' : 'arrow-up'" light :size="21"/>
             </button>
           </view>
+          <text class="chat-disclosure">
+            {{ user?.save_chat ? '已开启聊天保存，可在「我的」中关闭并清除' : '完整聊天默认不保存 · 确认的卡片会留下' }}
+          </text>
         </view>
 
         <view v-else-if="tab === 'discover'" class="workspace discover-content">

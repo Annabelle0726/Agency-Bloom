@@ -72,7 +72,6 @@
 }
 .journey-nav .nav-conversation .tab-glyph { width:27px; height:27px; }
 .journey-nav button.nav-pressed .tab-icon-frame { transform:scale(.9); }
-.app-shell.chat-page { --composer-base-offset:96px; }
 .night-space .tabbar.journey-nav {
   --nav-active:#b6ceff;
   --nav-muted:#a5b3c7;
@@ -89,7 +88,6 @@
 }
 @media(min-width:600px) {
   .tabbar.journey-nav { bottom:20px; border-radius:10px; }
-  .app-shell.chat-page { --composer-base-offset:120px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .journey-nav .tab-icon-frame { transition:none; }
