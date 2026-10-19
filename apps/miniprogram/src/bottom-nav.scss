@@ -1,4 +1,13 @@
 /* Shared signed-in navigation, inspired by the mountain home concept. */
+@keyframes gem-breathe {
+  0% { box-shadow:0 5px 18px var(--theme-glow),0 2px 5px rgba(24,36,54,.28),inset 0 2px 3px var(--nav-gem-hi-soft,rgba(255,255,255,.55)),inset 0 -3px 6px rgba(13,22,40,.42); }
+  100% { box-shadow:0 5px 18px var(--theme-glow),0 2px 5px rgba(24,36,54,.28),inset 0 2px 3px rgba(255,255,255,.6),inset 0 -3px 6px rgba(13,22,40,.42); }
+}
+@keyframes gem-awaken {
+  0% { box-shadow:0 5px 18px var(--theme-glow),0 2px 5px rgba(24,36,54,.28),inset 0 2px 3px rgba(255,255,255,.6),inset 0 -3px 6px rgba(13,22,40,.42); }
+  40% { box-shadow:0 6px 26px var(--nav-gem-glow,rgba(255,255,255,.42)),0 2px 5px rgba(24,36,54,.28),inset 0 0 10px var(--nav-gem-hi-soft,rgba(255,255,255,.55)),inset 0 2px 3px rgba(255,255,255,.85); }
+  100% { box-shadow:0 5px 18px var(--theme-glow),0 2px 5px rgba(24,36,54,.28),inset 0 2px 3px rgba(255,255,255,.6),inset 0 -3px 6px rgba(13,22,40,.42); }
+}
 .tabbar.journey-nav {
   --nav-active:#5277ef;
   --nav-muted:#788395;
@@ -59,20 +68,24 @@
   top:-35px;
   width:58px;
   height:58px;
-  border:5px solid #f7f9ff;
+  border:5px solid rgba(255,255,255,.92);
   border-radius:50%;
-  background:linear-gradient(140deg,#e3ecff 0%,#a2b8ff 24%,#5b81ff 52%,#2f4bb3 78%,#6bc9f3 100%);
-  box-shadow:0 6px 22px rgba(87,123,237,.32),0 2px 6px rgba(24,36,54,.32),inset 0 2px 3px rgba(255,255,255,.75),inset 0 -3px 6px rgba(13,22,40,.45);
+  background:linear-gradient(140deg,var(--nav-gem-hi) 0%,var(--nav-start) 24%,var(--button-fill) 52%,var(--nav-gem-deep) 78%,var(--nav-end) 100%);
+  box-shadow:0 5px 18px var(--theme-glow),0 2px 5px rgba(24,36,54,.28),inset 0 2px 3px var(--nav-gem-hi-soft,rgba(255,255,255,.55)),inset 0 -3px 6px rgba(13,22,40,.42);
+  animation:gem-breathe 4.2s ease-in-out infinite alternate;
+  transition:transform 160ms var(--ease-out, ease),box-shadow 160ms ease;
 }
 .journey-nav button.nav-conversation.active .tab-icon-frame {
-  background:linear-gradient(140deg,#dce7ff 0%,#8eacff 24%,#4c72f0 52%,#2a44c9 78%,#62bff0 100%);
-  box-shadow:0 6px 26px rgba(87,123,237,.42),0 2px 7px rgba(24,36,54,.36),inset 0 2px 3px rgba(255,255,255,.8),inset 0 -3px 6px rgba(13,22,40,.48);
+  background:linear-gradient(140deg,var(--nav-gem-hi) 0%,var(--nav-start) 24%,var(--button-fill) 55%,var(--nav-gem-deep) 80%,var(--nav-end) 100%);
+  animation:gem-awaken 180ms var(--ease-out, ease) 1;
 }
-.journey-nav .nav-conversation .tab-glyph { width:27px; height:27px; }
-.journey-nav button.nav-pressed .tab-icon-frame { transform:scale(.9); }
+.journey-nav button.nav-conversation.active .nav-label { color:var(--nav-active); }
+.journey-nav .nav-conversation .tab-glyph { width:27px; height:27px; filter:drop-shadow(0 0 2px rgba(255,255,255,.45)); }
+.journey-nav button.nav-pressed .tab-icon-frame { transform:scale(.97); animation:gem-awaken 180ms var(--ease-out, ease) 1; }
 @media(min-width:600px) {
   .tabbar.journey-nav { bottom:20px; border-radius:10px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .journey-nav .tab-icon-frame { transition:none; }
+  .journey-nav .nav-conversation .tab-icon-frame { animation:none; }
 }

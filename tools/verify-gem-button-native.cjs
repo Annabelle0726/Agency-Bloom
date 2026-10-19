@@ -62,6 +62,18 @@ let mp, page, mocked = false
     const g = { ...await gem.offset(), ...await gem.size() }
     // circle check: width equals height, keep the shape constraint
     assert.ok(Math.abs(g.width - g.height) <= 1, 'Gem must stay circular in ' + id + ' (' + g.width + 'x' + g.height + ')')
+    assert.strictEqual(g.width, 58, 'Gem keeps its 58px diameter in ' + id)
+    // label stays readable next to the gem before tapping away
+    const label = await page.$('.nav-conversation .nav-label')
+    assert.ok(label, 'Gem label present in ' + id)
+    // press feedback: tap and capture the awaken state mid-animation
+    const chatTab = await page.$('.nav-conversation')
+    await chatTab.tap(); await wait(90)
+    await mp.screenshot({ path: path.join(out, id + '-press.png') })
+    await wait(400)
+    // chat hides the tabbar; the chat header home button returns to the home tab
+    await (await page.$('.chat-header-button')).tap(); await wait(400)
+    assert.ok(await page.$('.journey-nav'), 'Home button restores the tab bar in ' + id)
     results.push({ id, width: g.width, height: g.height })
     await mp.screenshot({ path: path.join(out, id + '-gem.png') })
     console.log('shot ' + id)

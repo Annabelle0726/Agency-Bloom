@@ -56,6 +56,10 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     lavender: { hi: '#eadcf7', deep: '#4f3b68' },
     minimal: { hi: '#dfe7db', deep: '#374440' },
   }
+  const rgba = (hex: string, alpha: number) => {
+    const value = parseInt(hex.slice(1), 16)
+    return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${alpha})`
+  }
   return {
     '--bg': p.bg, '--paper': p.paper, '--ink': p.ink, '--muted': p.muted, '--line': p.line,
     '--accent': p.accent, '--button-fill': p.fill, '--soft': p.soft, '--accent-light': p.soft,
@@ -68,6 +72,7 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     '--hero-top': p.bg + 'ee', '--hero-middle': p.bg + '00',
     '--nav-start': gradients[theme.id][0], '--nav-end': gradients[theme.id][1],
     '--nav-gem-hi': gem[theme.id].hi, '--nav-gem-deep': gem[theme.id].deep,
+    '--nav-gem-hi-soft': rgba(gem[theme.id].hi, .55), '--nav-gem-glow': rgba(gem[theme.id].hi, .42),
     '--theme-glow': p.accent + '30', '--radius-card': '24px', '--radius-button': '18px',
   }
 }
