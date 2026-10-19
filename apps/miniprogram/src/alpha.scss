@@ -148,20 +148,14 @@
 .tabbar button.active .svg-icon { opacity:1; }
 .tab-indicator { position:absolute; top:11px; left:22px; width:calc((100% - 44px) / 3); height:27px; transition:transform 220ms var(--ease-out); pointer-events:none; display:flex; justify-content:center; }
 .tab-indicator > view { width:50px; height:27px; border-radius:10px; background:var(--soft); }
-.chat-title, .settings-content .page-title { font-family:var(--font-heading); font-weight:500; }
+.settings-content .page-title { font-family:var(--font-heading); font-weight:500; }
 .chat-content, .settings-content { position:relative; animation:pane-enter 160ms var(--ease-out); }
-.chat-title { font-size:28px; }
-/* The composer sits in the normal flow; the outer with-tabs shell reserves the dock clearance once. */
-.chat-content { padding-bottom: 16px; }
+/* The composer sits in the normal flow; the chat page has no resident tabbar. */
+.chat-content { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
 .keyboard-open .modal-backdrop { bottom:var(--keyboard-height); }
 .keyboard-open .modal-sheet { max-height:calc(95vh - var(--keyboard-height)); }
 .keyboard-open .modal-scroll { max-height:calc(85vh - var(--keyboard-height) - 75px); }
 .demo-chat-note { display:block; font-size:10px; line-height:1.8; color:var(--muted); margin-bottom:16px; }
-.context-pill { font-size:12px; }
-.chat-mode-scroll { width:100%; margin:16px 0 8px; white-space:nowrap; }
-.chat-modes { display:inline-flex; gap:8px; padding-bottom:5px; }
-.mode-chip { display:inline-flex; align-items:center; min-height:38px; padding:7px 12px; font-size:11px; border:1px solid var(--line); border-radius:8px; color:var(--muted); }
-.mode-chip.selected { color:var(--ink); background:var(--soft); border-color:var(--accent); }
 .welcome-context { display:block; border-left:2px solid var(--line); padding:8px 12px; color:var(--muted); font-size:13px; line-height:1.8; margin-bottom:18px; white-space:pre-wrap; }
 .insight-card { margin:25px 0; padding:20px 18px 10px; border:1px solid var(--line); border-left:2px solid var(--accent); border-radius:8px; background:var(--paper); }
 .insight-heading { display:flex; align-items:center; gap:8px; font-family:var(--font-heading); font-size:20px; color:var(--accent); margin-bottom:16px; }

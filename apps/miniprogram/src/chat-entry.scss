@@ -1,55 +1,113 @@
-/* Chat entry v0.3: a quiet preference control and relevant, editable starters. */
-.chat-preference {
+/* Chat entry v0.4: a quiet header for the conversation itself.
+   Management lives behind the ··· menu; the page belongs to the exchange. */
+.chat-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  gap: 8px;
-  margin: 8px 0;
+  gap: 6px;
+  margin: 0 0 14px;
 }
-.chat-preference-label {
-  flex-shrink: 0;
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-.chat-mode-trigger {
-  flex: 1;
-  width: auto;
-  min-width: 0;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 9px;
-  min-height: 42px;
-  max-width: 100%;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 7px 10px;
-  color: var(--muted);
-  background: transparent;
-  font-size: 12px;
-  line-height: 1.5;
-  text-align: left;
-}
-.chat-mode-title {
-  min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  text-align: right;
-}
-.chat-mode-trigger .chat-mode-chevron {
+.chat-header-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 16px;
-  width: 16px;
-  height: 16px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.chat-header-button.compressed {
+  transform: scale(.92);
+}
+.chat-header-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+}
+.chat-header-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-header-chevron {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: .55;
   transform: rotate(90deg);
 }
-.chat-mode-trigger .chat-mode-chevron.is-open { transform: rotate(-90deg); }
-.chat-mode-trigger[disabled], .chat-mode-choice[disabled] { opacity: .65; }
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.chat-header-running {
+  font-size: 13px;
+  color: var(--accent);
+  padding: 0 4px;
+}
+.chat-menu {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  padding: 5px;
+  margin: 0 0 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .06);
+}
+.chat-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: transparent;
+  text-align: left;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chat-menu-item > text:first-child { flex-shrink: 0; }
+.chat-menu-hint {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-menu-item[disabled] { opacity: .5; }
+.chat-mode-panel {
+  margin-bottom: 14px;
+}
 .chat-mode-panel {
   display: flex;
   flex-direction: column;
@@ -165,14 +223,14 @@
 }
 .chat-content {
   padding-top: 18px;
-  /* The composer follows the normal flow; only keep a small gap below it.
-     The outer with-tabs shell reserves the tabbar clearance once. */
-  padding-bottom: 16px;
+  /* The composer follows the normal flow; the chat page has no resident
+     tabbar, so only the safe-area gap is needed below it. */
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
 }
-.chat-content .chat-title { margin: 8px 0 12px; }
 @media(max-width:350px) {
   .chat-content { padding-left: 18px; padding-right: 18px; }
-  .chat-mode-trigger { padding: 7px 8px; }
+  .chat-header-button { width: 33px; height: 33px; min-height: 33px; }
+  .chat-header-title { height: 33px; min-height: 33px; }
   .chat-welcome .prompt-button { padding: 10px; }
 }
 @media(prefers-reduced-motion:reduce) {

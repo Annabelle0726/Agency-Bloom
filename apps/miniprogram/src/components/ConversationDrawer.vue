@@ -15,10 +15,11 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
   close: []; select: [conversation: Conversation]; refresh: []; createIssue: []; selectIssue: [issue: Issue];
-  generate: []; reviewed: [summary: ConversationSummary | null]; changed: [conversation: Conversation];
+  newChat: []; generate: []; reviewed: [summary: ConversationSummary | null]; changed: [conversation: Conversation];
   userChanged: [user: User]; contextChanged: []; viewChanged: [view: View]; deleted: [id: string]
 }>()
 const busy = ref(false), notice = ref(''), archive = ref(false), filterIssue = ref(''), showExplorations = ref(false)
+const search = ref('')
 const instance = getCurrentInstance()
 const scrollIndicator = ref<{ height: number; top: number } | null>(null)
 let scrollTimer: ReturnType<typeof setTimeout> | undefined
@@ -35,10 +36,8 @@ function onScroll(event: { detail: { scrollTop: number; scrollHeight: number } }
     clearTimeout(scrollTimer); scrollTimer = setTimeout(() => { scrollIndicator.value = null }, 800)
   }).exec()
 }
-const title = ref(''), newIssueIndex = ref(0), newForm = ref(false)
 const activeIssues = computed(() => props.issues.filter(i => !i.ended_at))
-const issueNames = computed(() => activeIssues.value.map(i => i.title || '未命名探索'))
-const visible = computed(() => props.conversations.filter(c => Boolean(c.archived_at) === archive.value && (!filterIssue.value || c.issue_id === filterIssue.value)))
+const visible = computed(() => props.conversations.filter(c => Boolean(c.archived_at) === archive.value && (!filterIssue.value || c.issue_id === filterIssue.value) && (!search.value.trim() || c.title.toLowerCase().includes(search.value.trim().toLowerCase()))))
 const edited = reactive({ overview: '', decisions: '', open_questions: '', next_steps: '' })
 const summaryFields = [{ key: 'decisions', label: '已经决定的' }, { key: 'open_questions', label: '还没弄清的' }, { key: 'next_steps', label: '接下来可做的' }] as const
 const detailTitle = ref(props.active?.title || ''), linked = ref<string[]>([...(props.active?.linked_issue_ids || [])])
@@ -62,15 +61,8 @@ watch(() => [props.view, props.user?.use_memory], () => {
 function loadMemories() { return run(async () => { memories.value = await props.request('GET', '/memories'); selected.value = [] }) }
 function openNewConversation() {
   if (!activeIssues.value.length) { emit('createIssue'); return }
-  newIssueIndex.value = Math.max(0, activeIssues.value.findIndex(i => i.id === greetingIssue.value?.id))
-  title.value = ''; newForm.value = true; archive.value = false; showExplorations.value = false
+  emit('newChat')
 }
-function chooseIssue(event: { detail: { value: string | number } }) { newIssueIndex.value = Number(event.detail.value) }
-async function create() { await run(async () => {
-  const issue = activeIssues.value[newIssueIndex.value]; if (!issue) throw Error('请先开始一个探索')
-  const item = await props.request<Conversation>('POST', '/conversations', { issue_id: issue.id, title: title.value.trim() || '新会话', support_style: props.user?.support_style || 'discover' })
-  emit('changed', item); emit('select', item); newForm.value = false
-}) }
 async function archiveConversation(item: Conversation) {
   if (!item.archived_at && !await confirm('归档这段会话？', '会话会移入归档列表，所属探索继续保留。未开启聊天保存时，原文只在本次使用中可见')) return
   await run(async () => { const updated = await props.request<Conversation>('PUT', `/conversations/${item.id}`, { version: item.version, archived: !item.archived_at }); emit('changed', updated); emit('refresh') })
@@ -139,17 +131,13 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
         <view class="drawer-scroll-content">
         <view v-if="notice || error" class="notice">{{ notice || error }}</view>
         <template v-if="view === 'list'">
-          <button class="primary new-conversation" :disabled="busy" @click="newForm ? newForm = false : openNewConversation()">＋ 新会话</button>
-          <view v-if="newForm" class="drawer-form">
-            <input v-model="title" class="text-input" maxlength="120" placeholder="这次想聊什么（可稍后命名）" />
-            <picker :range="issueNames" :value="newIssueIndex" @change="chooseIssue"><view class="scope-picker">所属探索：{{ issueNames[newIssueIndex] || '先开始一个探索' }} <SvgIcon name="chevron" :size="14" /></view></picker>
-            <button class="primary" :disabled="busy || !activeIssues.length" @click="create">开始这段会话</button>
-          </view>
+          <button class="primary new-conversation" :disabled="busy" @click="openNewConversation()">＋ 新会话</button>
+          <input v-model="search" class="text-input drawer-search" maxlength="60" placeholder="搜索会话" />
           <view class="drawer-tabs conversation-sections"><button :class="{ selected: !archive && !showExplorations }" @click="archive = false; showExplorations = false">进行中</button><button :class="{ selected: showExplorations }" @click="showExplorations = true">探索</button><button :class="{ selected: archive && !showExplorations }" @click="archive = true; showExplorations = false">已归档</button></view>
           <template v-if="!showExplorations">
             <scroll-view scroll-x enhanced :show-scrollbar="false" class="scope-filters"><button :class="{ selected: !filterIssue }" @click="filterIssue = ''">全部探索</button><button v-for="issue in issues" :key="issue.id" :class="{ selected: filterIssue === issue.id }" @click="filterIssue = issue.id">{{ issue.title || '未命名探索' }}</button></scroll-view>
-            <view v-if="!visible.length && !newForm" class="drawer-empty">
-              <text class="empty-heading">{{ archive ? '还没有归档的会话' : '留一点空间，聊聊现在' }}</text>
+            <view v-if="!visible.length" class="drawer-empty">
+              <text class="empty-heading">{{ archive ? '还没有归档的会话' : search.trim() ? '没有匹配的会话' : '留一点空间，聊聊现在' }}</text>
               <text class="muted empty-greeting">{{ archive ? '归档后的会话会留在这里，随时可以恢复' : greeting }}</text>
               <button class="secondary empty-create" :disabled="busy" @click="openNewConversation">＋ 从一段新会话开始</button>
             </view>

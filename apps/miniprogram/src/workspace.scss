@@ -19,6 +19,7 @@
 .drawer-scroll .body-copy, .drawer-scroll .muted { display:block; line-height:1.65; }
 .drawer-scroll .primary, .drawer-scroll .secondary { width:100%; margin:12px 0; }
 .drawer-form { padding:14px; background:var(--soft); border:1px solid var(--line); border-radius:8px; margin:10px 0 16px; }
+.drawer-search { margin:10px 0 4px; }
 .scope-picker { display:flex; align-items:center; justify-content:space-between; padding:14px 0; font-size:13px; }
 .scope-filters { white-space:nowrap; width:100%; margin:8px 0 14px; }
 .scope-filters button { display:inline-block; max-width:190px; overflow:hidden; text-overflow:ellipsis; margin-right:5px; }
@@ -49,11 +50,5 @@
 .memory-select { display:flex; gap:10px; width:100%; padding:0 0 8px; background:none; text-align:left; font-size:14px; line-height:1.65; color:var(--ink); }
 .memory-select > text:last-child { flex:1; white-space:pre-wrap; word-break:break-word; }
 .memory-actions button { font-size:12px; background:none; padding:8px 12px 0 0; margin:0; color:var(--muted); }
-.chat-workspace-tools { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 18px; }
-.chat-workspace-tools button { font-size:12px; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:8px; margin:0; padding:7px 12px; line-height:1.5; }
-.conversation-windows { white-space:nowrap; width:100%; margin:6px 0 16px; }
-.conversation-windows button { display:inline-block; max-width:180px; overflow:hidden; text-overflow:ellipsis; font-size:12px; padding:8px 12px; border-radius:8px; margin:0 6px 0 0; background:var(--paper); color:var(--muted); border:1px solid var(--line); line-height:1.5; }
-.conversation-windows button.active { color:var(--ink); background:var(--soft); }
-.chat-context-note { display:block; color:var(--muted); font-size:12px; line-height:1.6; margin:8px 0; }
 @keyframes drawer-enter { from { transform:translateX(-100%); } to { transform:translateX(0); } }
 @media (prefers-reduced-motion:reduce) { .workspace-drawer { animation:none; } }

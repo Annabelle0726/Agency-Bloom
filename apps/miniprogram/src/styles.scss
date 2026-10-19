@@ -117,14 +117,13 @@ text { overflow-wrap: anywhere; }
 .timeline-dot { width: 7px; height: 7px; margin-top: 7px; border: 1px solid var(--accent); border-radius: 50%; flex-shrink: 0; }
 .end-link { display: block; text-align: center; margin: 30px auto 5px; color: var(--muted); font-size: 10px; }
 .with-tabs { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+.chat-page.with-tabs { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
 .tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 10; display: flex; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 24px calc(12px + env(safe-area-inset-bottom)); }
 .tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
 .tabbar button.active { color: var(--accent); }
 .tab-icon { font-size: 23px; line-height: 25px; }
 .chat-content { padding: 25px 24px 16px; }
-.chat-title { display: block; font-size: 26px; margin: 13px 0 18px; }
-.context-pill { display: flex; align-items: center; gap: 9px; background: var(--soft); padding: 10px 13px; border-radius: 8px; font-size: 11px; color: var(--muted); }
-.context-pill text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-header-name { font-family: var(--font-heading); }
 .chat-welcome { margin: 32px 0 28px; }
 .assistant-mark { font-family: Georgia, serif; font-size: 26px; letter-spacing: -3px; color: var(--accent); }
 .chat-welcome .body-copy { font-size: 14px; margin: 14px 0 25px; }

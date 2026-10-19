@@ -163,6 +163,11 @@ const workspace = createChatWorkspace({
 })
 const conversations = ref<Conversation[]>([])
 const activeConversation = computed(() => conversations.value.find(c => c.id === workspace.activeId.value) || null)
+// A local draft shell: not persisted until the first send creates the real conversation.
+const DRAFT_PREFIX = 'draft:'
+const isDraftKey = (id: string) => id.startsWith(DRAFT_PREFIX)
+const isDrafting = computed(() => isDraftKey(workspace.activeId.value))
+let draftSequence = 0
 const drawer = ref<'' | 'list' | 'summary' | 'memories' | 'details'>('')
 const openedIds = ref<string[]>([])
 const windows = computed(() => openedIds.value.map(id => conversations.value.find(c => c.id === id)).filter((c): c is Conversation => !!c))
@@ -220,6 +225,61 @@ const welcomeContext = computed(() => current.value?.focus_response || current.v
 const chatEntry = computed(() => chatEntryFor(selectedMode.value, current.value || {}))
 const modePickerOpen = ref(false)
 const starterHint = ref('')
+// Chat-header menu: management actions live behind ···, not as resident buttons.
+const chatMenuOpen = ref(false)
+function closeChatMenu() { chatMenuOpen.value = false }
+function openChatMenu() { if (!chatMenuOpen.value) chatMenuOpen.value = true }
+// New ChatGPT-style draft shell: a clean welcome page that stays local until
+// the first real send, so abandoned opens never create empty conversations.
+const newChatStarters = [
+  '我想聊聊最近困扰我的事',
+  '帮我比较几个选择',
+  '给我一个没想过的新角度',
+]
+function startNewChat() {
+  if (!current.value || current.value.ended_at) return
+  // Drop empty draft shells so repeated "new chat" taps don't accumulate.
+  for (const key of Object.keys(workspace.sessions)) {
+    if (isDraftKey(key) && !workspace.sessions[key].messages.value.length && !workspace.sessions[key].draft.value.trim()) {
+      workspace.remove(key)
+      openedIds.value = openedIds.value.filter(id => id !== key)
+    }
+  }
+  const key = `${DRAFT_PREFIX}${Date.now()}-${++draftSequence}`
+  workspace.get(key)
+  workspace.activeId.value = key
+  if (!openedIds.value.includes(key)) openedIds.value.push(key)
+  modePickerOpen.value = false; starterHint.value = ''; chatMenuOpen.value = false
+  drawer.value = ''; tab.value = 'chat'
+  void nextTick(() => uni.pageScrollTo({ scrollTop: 0, duration: 0 }))
+}
+function chatMenuAction(action: 'preference' | 'summary' | 'details' | 'archive') {
+  chatMenuOpen.value = false
+  if (action === 'preference') { modePickerOpen.value = true; return }
+  if (action === 'summary') { drawer.value = 'summary'; return }
+  if (action === 'details') { drawer.value = 'details'; return }
+  if (activeConversation.value && !readOnlyConversation.value) void archiveFromChat()
+}
+async function archiveFromChat() {
+  const item = activeConversation.value
+  if (!item) return
+  const approved = await new Promise<boolean>(resolve => uni.showModal({
+    title: '归档这段会话？',
+    content: '会话会移入归档列表，所属探索继续保留。未开启聊天保存时，原文只在本次使用中可见',
+    confirmText: '归档',
+    cancelText: '再想想',
+    success: result => resolve(result.confirm),
+    fail: () => resolve(false),
+  }))
+  if (!approved) return
+  await guarded(async () => {
+    const updated = await request<Conversation>('PUT', `/conversations/${item.id}`, { version: item.version, archived: true })
+    changedConversation(updated)
+    await refreshWorkspace()
+  })
+}
+const chatStarters = computed(() => chatEntry.value.starters.slice(0, 2))
+watch(() => tab.value, closeChatMenu)
 
 function reactToInsight(action: 'interested' | 'dismissed' | 'experiment') {
   if (busy.value || sending.value || !insight.value || !current.value) return
@@ -312,8 +372,10 @@ async function loadCurrent() {
   await refreshWorkspace()
   if (current.value) {
     screen.value = 'space'
+    // A draft shell survives restarts in memory only; never restore it from storage.
     const savedId = user.value ? uni.getStorageSync(selectedConversationKey(user.value.id)) : ''
-    const selected = conversations.value.find(c => c.id === (workspace.activeId.value || savedId)) || conversations.value.find(c => c.issue_id === current.value?.id && !c.archived_at)
+    const restoreId = isDraftKey(workspace.activeId.value) ? '' : workspace.activeId.value
+    const selected = conversations.value.find(c => c.id === (restoreId || savedId)) || conversations.value.find(c => c.issue_id === current.value?.id && !c.archived_at)
     if (selected) await activateConversation(selected, false)
   } else {
     // A returning account may have only ended explorations. It still lands at home.
@@ -431,6 +493,7 @@ async function selectTab(nextTab: typeof tab.value) {
   if (nextTab === 'settings') await guarded(async () => {
     usage.value = await request('GET', '/usage')
   })
+  if (nextTab === 'chat' && !activeConversation.value && !isDrafting.value && current.value && !current.value.ended_at) startNewChat()
 }
 
 function openEditor(proposal = false) {
@@ -489,14 +552,34 @@ function requestId() {
 }
 
 async function sendChat() {
-  if (sending.value || !draft.value.trim() || !activeConversation.value || readOnlyConversation.value) return
+  if (sending.value || !draft.value.trim() || readOnlyConversation.value) return
+  if (!current.value) return
+  if (!activeConversation.value && !isDrafting.value) return
   if (!user.value?.ai_consent) {
     modal.value = 'ai';
     return
   }
   operations.clear('ai')
-  const id = activeConversation.value.id
-  await workspace.get(id).send(id)
+  // A draft shell becomes a real conversation only on the first send.
+  let conversationId = activeConversation.value?.id
+  if (!conversationId) {
+    const draftKey = workspace.activeId.value
+    try {
+      const created = await request<Conversation>('POST', '/conversations', {
+        issue_id: current.value.id,
+        title: draft.value.trim().slice(0, 30) || '新会话',
+        support_style: canonicalSupportStyle(selectedMode.value),
+      })
+      conversationId = created.id
+      conversations.value.unshift(created)
+      workspace.promote(draftKey, created.id)
+      if (user.value) { try { uni.setStorageSync(selectedConversationKey(user.value.id), created.id) } catch { /* A presentation preference may stay in memory. */ } }
+    } catch (err) {
+      if (err instanceof ApiError && ['network', 'timeout'].includes(err.kind)) notify('暂时无法连接服务，你的输入仍保留在输入框')
+      throw err
+    }
+  }
+  await workspace.get(conversationId).send(conversationId)
   if (user.value) await guarded(refreshWorkspace)
 }
 
@@ -640,6 +723,7 @@ async function deletedConversation(id: string) {
     if (user.value) { try { uni.removeStorageSync(selectedConversationKey(user.value.id)) } catch { /* Missing IDs are ignored on restore. */ } }
     const next = conversations.value.find(item => !item.archived_at && item.issue_id === current.value?.id)
     if (next) await guarded(() => activateConversation(next, false))
+    else if (current.value && !current.value.ended_at) startNewChat()
   }
 }
 async function activateConversation(item: Conversation, navigate = true) {
@@ -655,7 +739,7 @@ async function activateConversation(item: Conversation, navigate = true) {
   current.value = issue; workspace.select(item.id)
   if (user.value) { try { uni.setStorageSync(selectedConversationKey(user.value.id), item.id) } catch { /* A presentation preference may stay in memory. */ } }
   if (!openedIds.value.includes(item.id)) openedIds.value.push(item.id)
-  modePickerOpen.value = false; starterHint.value = ''; operations.clear('ai')
+  modePickerOpen.value = false; starterHint.value = ''; chatMenuOpen.value = false; operations.clear('ai')
   if (navigate) { drawer.value = ''; tab.value = 'chat'; await nextTick(); uni.pageScrollTo({ scrollTop: 0, duration: 0 }) }
 }
 async function selectConversation(item: Conversation) { await guarded(() => activateConversation(item)) }
@@ -751,7 +835,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
       <view v-if="screen === 'space'" class="theme-atmosphere" :class="{ 'theme-atmosphere-faint': tab !== 'now' }" aria-hidden="true">
         <image :src="activeTheme.image" mode="aspectFill"/><view class="theme-atmosphere-wash"/>
       </view>
-      <view v-if="screen === 'space'" class="topbar">
+      <view v-if="screen === 'space' && tab !== 'chat'" class="topbar">
         <button class="icon-button" aria-label="打开会话与探索" hover-class="pressed" :hover-start-time="0"
                 :hover-stay-time="70" @click="showHistory">
           <image class="topbar-glyph" :src="iconSources.menu.ink" mode="aspectFit" aria-hidden="true" />
@@ -889,33 +973,47 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
         </view>
 
         <view v-else-if="current && tab === 'chat'" class="chat-content">
-          <text class="eyebrow">LET'S THINK TOGETHER</text>
-          <text class="chat-title">{{ activeConversation?.title || chatEntry.heading }}</text>
-          <scroll-view v-if="windows.length > 1" scroll-x class="conversation-windows"><button v-for="item in windows" :key="item.id" :class="{ active: item.id === activeConversation?.id }" :disabled="busy" @click="selectConversation(item)">{{ runningIds.includes(item.id) ? '◌ ' : '' }}{{ item.title }}</button></scroll-view>
-          <view class="chat-workspace-tools"><button @click="showHistory">会话与探索</button><button :disabled="!activeConversation" @click="drawer = 'summary'">整理当前会话</button><button :disabled="!activeConversation" @click="drawer = 'details'">关联与设置</button></view>
-          <view v-if="!activeConversation" class="notice"><text>当前探索还没有进行中的会话</text><button class="text-button" @click="showHistory">从一段新会话开始</button></view>
-          <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="workspace.active.value.error.value = ''; operations.clear('ai')"><SvgIcon name="close" :size="18" /></button><button v-if="workspace.active.value.lastRequestId.value" class="text-button" :disabled="busy" @click="recoverReply">查看这条请求的结果</button></view>
-          <text class="chat-context-note">{{ workspace.active.value.summary.value ? '已接续审阅后的总结 · ' : '' }}{{ user?.use_memory ? '长期记忆已启用 · ' : '' }}{{ activeConversation?.linked_issue_ids.length ? `引用 ${activeConversation.linked_issue_ids.length} 个关联探索 · ` : '' }}每段会话保留自己的上下文</text>
-          <view v-if="readOnlyConversation" class="notice"><text>{{ current.ended_at ? '所属探索已结束，恢复探索后可以继续' : '会话已归档，可以在会话面板恢复' }}</text><button v-if="current.ended_at" class="text-button" @click="resumeExploration">恢复探索</button></view>
-          <text v-if="config.ai_mode === 'demo'" class="demo-chat-note">本地演示 · 以下回复为固定示例，不调用模型</text>
-          <view class="context-pill">
-            <view class="live-dot"/>
-            <text>{{ current.title || '一次还未命名的探索' }}</text>
+          <view class="chat-header">
+            <button class="chat-header-button" aria-label="打开会话列表" hover-class="pressed" :hover-start-time="0"
+                    :hover-stay-time="70" @click="showHistory">
+              <SvgIcon name="back" :size="20"/>
+            </button>
+            <button class="chat-header-title" :disabled="busy" aria-label="打开会话列表" hover-class="pressed"
+                    :hover-start-time="0" :hover-stay-time="70" @click="showHistory">
+              <text class="chat-header-name">{{ isDrafting ? '新会话' : activeConversation?.title || chatEntry.heading }}</text>
+              <view class="chat-header-chevron"><SvgIcon name="chevron" :size="13"/></view>
+            </button>
+            <view class="chat-header-right">
+              <view v-if="runningIds.length" class="chat-header-running" aria-label="有回复正在生成">◌</view>
+              <button class="chat-header-button" :aria-expanded="chatMenuOpen" aria-haspopup="menu"
+                      aria-label="会话管理" hover-class="pressed" :hover-start-time="0"
+                      :hover-stay-time="70" @click="chatMenuOpen ? closeChatMenu() : openChatMenu()">
+                <SvgIcon name="more" :size="20"/>
+              </button>
+            </view>
           </view>
-          <view class="chat-preference">
-            <text class="chat-preference-label">希望我怎样回应？</text>
-            <button class="chat-mode-trigger" :aria-expanded="modePickerOpen" :disabled="busy || sending"
-                    @click="modePickerOpen = !modePickerOpen" hover-class="pressed"
-                    :hover-start-time="0" :hover-stay-time="70">
-              <text class="chat-mode-title">{{ supportStyles.find(item => item.id === selectedMode)?.title }}</text>
-              <view class="chat-mode-chevron" :class="{ 'is-open': modePickerOpen }" aria-hidden="true"><SvgIcon name="chevron" :size="16" /></view>
+          <view v-if="chatMenuOpen" class="chat-menu" role="menu">
+            <button class="chat-menu-item" role="menuitem" :disabled="busy || sending || (!activeConversation && !isDrafting)" @click="chatMenuAction('preference')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+              <text>回应偏好</text><text class="chat-menu-hint">{{ supportStyles.find(item => item.id === selectedMode)?.title }}</text>
+            </button>
+            <button class="chat-menu-item" role="menuitem" :disabled="busy || !activeConversation" @click="chatMenuAction('summary')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+              <text>整理当前会话</text><text class="chat-menu-hint">生成总结草稿</text>
+            </button>
+            <button class="chat-menu-item" role="menuitem" :disabled="busy || !activeConversation" @click="chatMenuAction('details')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+              <text>关联与设置</text><text class="chat-menu-hint">重命名 · 关联探索</text>
+            </button>
+            <button class="chat-menu-item" role="menuitem" :disabled="busy || !activeConversation || readOnlyConversation" @click="chatMenuAction('archive')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+              <text>归档会话</text><text class="chat-menu-hint">移入归档，探索保留</text>
             </button>
           </view>
+          <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="workspace.active.value.error.value = ''; operations.clear('ai')"><SvgIcon name="close" :size="18" /></button><button v-if="workspace.active.value.lastRequestId.value" class="text-button" :disabled="busy" @click="recoverReply">查看这条请求的结果</button></view>
+          <view v-if="readOnlyConversation" class="notice"><text>{{ current.ended_at ? '所属探索已结束，恢复探索后可以继续' : '会话已归档，可以在会话面板恢复' }}</text><button v-if="current.ended_at" class="text-button" @click="resumeExploration">恢复探索</button></view>
+          <text v-if="config.ai_mode === 'demo'" class="demo-chat-note">本地演示 · 以下回复为固定示例，不调用模型</text>
           <view v-if="modePickerOpen" class="chat-mode-panel">
             <text class="chat-mode-panel-caption">只是回应偏好，随时可以更改</text>
             <button v-for="mode in supportStyles" :key="mode.id" class="chat-mode-choice"
                     :class="{ chosen: selectedMode === mode.id }" :data-mode="mode.id"
-                    :disabled="busy || sending" @click="setChatMode(mode.id as SupportMode)"
+                    :disabled="busy || sending" @click="setChatMode(mode.id as SupportMode); modePickerOpen = false"
                     hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
               <view class="chat-mode-copy">
                 <text class="chat-mode-name">{{ mode.title }}</text>
@@ -924,7 +1022,28 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <SvgIcon v-if="selectedMode === mode.id" name="check" :size="17" />
             </button>
           </view>
-          <view v-if="!messages.length && activeConversation" class="chat-welcome">
+          <view v-if="!messages.length && isDrafting" class="chat-welcome">
+            <view class="chat-welcome-intro">
+              <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" /></view>
+              <text class="body-copy">想说什么，就从哪里说起。发送后这段对话才会被创建。</text>
+            </view>
+            <text v-if="!user?.save_chat" class="welcome-context">未开启聊天保存：这段对话的原文只在本次使用中可见，不会为你伪造可恢复的历史</text>
+            <text v-if="welcomeContext" class="welcome-context">{{ welcomeContext }}</text>
+            <view class="chat-starter-heading">
+              <text>可以这样开始</text>
+              <text>点选后填入输入框</text>
+            </view>
+            <view class="prompt-list">
+              <button v-for="prompt in newChatStarters" :key="prompt" class="prompt-button"
+                      :disabled="sending || busy" @click="useChatStarter(prompt)"
+                      hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+                <text>{{ prompt }}</text>
+                <SvgIcon name="arrow-diagonal" :size="16" />
+              </button>
+            </view>
+            <text v-if="starterHint" class="chat-starter-hint">{{ starterHint }}</text>
+          </view>
+          <view v-else-if="!messages.length && activeConversation" class="chat-welcome">
             <view class="chat-welcome-intro">
               <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" /></view>
               <text class="body-copy">{{ chatEntry.introduction }}</text>
@@ -935,7 +1054,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <text>点选后填入输入框</text>
             </view>
             <view class="prompt-list">
-              <button v-for="prompt in chatEntry.starters" :key="prompt" class="prompt-button"
+              <button v-for="prompt in chatStarters" :key="prompt" class="prompt-button"
                       :disabled="sending || busy" @click="useChatStarter(prompt)"
                       hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
                 <text>{{ prompt }}</text>
@@ -1014,10 +1133,10 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <view class="insight-actions"><button data-insight="interested" :disabled="sending || busy || insightReaction === 'interested'" @click="reactToInsight('interested')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ insightReaction === 'interested' ? '已带入下一次探索' : '这个角度有意思' }}</button><button data-insight="dismissed" :disabled="sending || busy" @click="reactToInsight('dismissed')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">不太像我</button><button data-insight="experiment" :disabled="sending || busy" @click="reactToInsight('experiment')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">让我试一下 <SvgIcon name="arrow-diagonal" :size="15" /></button></view>
             <text v-if="insightReaction" class="insight-footnote">这只是待探索的角度，尚未写入你的卡片</text>
           </view>
-          <view class="composer"><textarea v-model="draft" class="chat-input" :disabled="readOnlyConversation || !activeConversation" :adjust-position="false" @input="starterHint = ''"
+          <view class="composer"><textarea v-model="draft" class="chat-input" :disabled="readOnlyConversation || (!activeConversation && !isDrafting)" :adjust-position="false" @input="starterHint = ''"
                                            :cursor-spacing="24" maxlength="2000" :auto-height="true"
-                                           placeholder="想到什么，就从哪里说起……"/>
-            <button class="send-button" :disabled="!sending && (!draft.trim() || readOnlyConversation || !activeConversation)"
+                                           :placeholder="isDrafting ? '发送后才会创建这段对话' : '想到什么，就从哪里说起……'"/>
+            <button class="send-button" :disabled="!sending && (!draft.trim() || readOnlyConversation || (!activeConversation && !isDrafting))"
                     :aria-label="sending ? '停止回复' : '发送消息'" @click="sending ? cancelChat() : sendChat()"
                     hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
               <SvgIcon :name="sending ? 'stop' : 'arrow-up'" light :size="21"/>
@@ -1145,7 +1264,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </button>
           <text class="version-label">{{ 'AGENCY BLOOM · 0.1.0\n给自己一点空间' }}</text>
         </view>
-        <view class="tabbar journey-nav" role="navigation" aria-label="主导航">
+        <view v-if="tab !== 'chat'" class="tabbar journey-nav" role="navigation" aria-label="主导航">
           <button
               v-for="item in navigationItems"
               :key="item.id" :data-tab="item.id" class="nav-item"
@@ -1299,6 +1418,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                           :generating="sending" :running="runningIds" :error="chatError || error" :request="request"
                           @close="drawer = ''" @view-changed="drawer = $event" @select="selectConversation" @refresh="guarded(refreshWorkspace)"
                           @create-issue="beginAnotherExploration" @select-issue="selectExploration" @generate="generateSummary" @reviewed="reviewSummary"
+                          @new-chat="startNewChat"
                           @changed="changedConversation" @deleted="deletedConversation" @user-changed="user = $event" @context-changed="workspace.cancelAll()" />
       <view v-if="toast" class="toast">{{ toast }}</view>
     </view>
