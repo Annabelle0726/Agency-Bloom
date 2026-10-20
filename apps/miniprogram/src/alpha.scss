@@ -1,8 +1,8 @@
 .app-shell { max-width:440px; min-height:var(--app-height); border:0; }
 .onboarding-shell { padding-top:0; }
 .app-shell button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
-.app-shell .primary { border-radius:var(--radius-button); min-height:56px; background:var(--button-fill); color:#fff; justify-content:center; gap:14px; font-size:15px; }
-.app-shell .primary[disabled] { background:var(--button-fill); color:#fff; }
+.app-shell .primary { border-radius:var(--radius-button); min-height:56px; justify-content:center; gap:14px; font-size:15px; }
+.app-shell .primary[disabled] { opacity:.55; color:#fff; }
 .onboarding-flow { min-height:var(--app-height); position:relative; }
 .scene-image { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
 .welcome-image { filter:saturate(.72); }

@@ -287,8 +287,6 @@ defineExpose({ clearDraft })
 .flow-footer { background:rgba(246,248,240,.96); border-top:1px solid rgba(115,137,93,.15); padding-top:10px; box-shadow:0 -8px 30px rgba(71,89,58,.025); }
 .selection-reassurance { display:block; text-align:center; color:#697c5e; font-size:11px; line-height:1.8; margin:0 0 9px; }
 .flow-footer :deep(.action-button) { border-radius:8px; }
-.flow-footer :deep(.action-button.primary) { background:#48664b; }
-.flow-footer :deep(.action-button[disabled]) { background:#e0e7da; color:#8a9882; }
 .flow-footer-detail { justify-content:space-between; }
 .flow-footer .flow-skip { color:#516c48; font-size:12px; }
 .flow-footer .draft-link { font-size:10px; }
