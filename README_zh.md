@@ -1,7 +1,7 @@
 # Agency Bloom
 
 <p align="center">
-  <img src="./assets/readme/hero.png" width="100%" alt="Agency Bloom —— 帮你理清处境、比较选择、选一个可承受的小尝试的微信小程序；决策卡始终由你确认。">
+  <img src="./assets/readme/hero_zh.png" width="100%" alt="Agency Bloom —— 帮你理清处境、比较选择、选一个可承受的小尝试的微信小程序；决策卡始终由你确认。">
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 ## 工作原理
 
 <p align="center">
-  <img src="./assets/readme/workflow.png" width="100%" alt="三段流程：Vue 3 小程序连接 FastAPI 后端；后端把确认的卡片与记忆存入 SQLite 或 PostgreSQL；DeepSeek 模型只返回需要用户确认的草稿。">
+  <img src="./assets/readme/workflow_zh.png" width="100%" alt="三段流程：Vue 3 小程序连接 FastAPI 后端；后端把确认的卡片与记忆存入 SQLite 或 PostgreSQL；DeepSeek 模型只返回需要用户确认的草稿。">
 </p>
 
 ## 快速开始
@@ -64,7 +64,7 @@ AGENCY_MAX_OUTPUT_TOKENS=768
 ## 主题
 
 <p align="center">
-  <img src="./assets/readme/themes.png" width="100%" alt="六套主题：晨雾、深夜（黑色星空）、暮烟、森林、薰衣草、极简。">
+  <img src="./assets/readme/themes_zh.png" width="100%" alt="六套主题：晨雾、深夜（黑色星空）、暮烟、森林、薰衣草、极简。">
 </p>
 
 登录前的空间默认使用晨雾；登录后未手动选择主题时，界面会随一天时段安静地变化：清晨是晨雾，白天是森林，近傍晚是暮烟，夜晚是深夜。也可以随时在「我的 → 外观设置」手动选择深夜（黑底淡星）、暮烟、森林、薰衣草与极简，选择后不再自动变化。
