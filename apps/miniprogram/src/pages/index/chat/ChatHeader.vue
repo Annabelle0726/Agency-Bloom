@@ -28,9 +28,10 @@ const emit = defineEmits<{
 
 <template>
   <view class="chat-header">
-    <button class="chat-header-button" aria-label="返回主界面" hover-class="pressed" :hover-start-time="0"
-            :hover-stay-time="70" @click="emit('back')">
-      <image class="chat-header-glyph" :src="iconSources.home.ink" mode="aspectFit" aria-hidden="true" />
+    <button class="chat-header-button" :aria-expanded="chatMenuOpen" aria-haspopup="menu"
+            aria-label="会话管理" hover-class="pressed" :hover-start-time="0"
+            :hover-stay-time="70" @click="emit('toggleMenu')">
+      <SvgIcon name="more" :size="20"/>
     </button>
     <button class="chat-header-button" aria-label="打开会话列表" hover-class="pressed" :hover-start-time="0"
             :hover-stay-time="70" @click="emit('history')">
@@ -43,10 +44,9 @@ const emit = defineEmits<{
     </button>
     <view class="chat-header-right">
       <view v-if="runningIds.length" class="chat-header-running" aria-label="有回复正在生成">◌</view>
-      <button class="chat-header-button" :aria-expanded="chatMenuOpen" aria-haspopup="menu"
-              aria-label="会话管理" hover-class="pressed" :hover-start-time="0"
-              :hover-stay-time="70" @click="emit('toggleMenu')">
-        <SvgIcon name="more" :size="20"/>
+      <button class="chat-header-button" aria-label="返回主界面" hover-class="pressed" :hover-start-time="0"
+              :hover-stay-time="70" @click="emit('back')">
+        <image class="chat-header-glyph" :src="iconSources.home.ink" mode="aspectFit" aria-hidden="true" />
       </button>
     </view>
   </view>
