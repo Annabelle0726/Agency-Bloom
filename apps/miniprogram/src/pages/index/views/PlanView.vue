@@ -21,19 +21,26 @@ const emit = defineEmits<{
 
 <template>
   <view class="workspace plan-content">
-    <view class="section-intro"><text class="eyebrow">ONE SMALL STEP</text><text class="page-title">{{ '为下一步\n留一点空间' }}</text><text class="page-description">这里保留你确认的方向、行动和新的发现</text></view>
-    <view v-if="!card.next_step" class="plan-empty glass-card"><text class="card-title">还没有决定下一步，也没关系</text><text class="body-copy">先写下一件愿意试的事，或和我一起想一想</text><button class="text-button" @click="emit('openEditor')">整理我的卡片 <SvgIcon name="arrow" :size="17" /></button><button class="text-button" @click="emit('chat')">一起聊聊 <SvgIcon name="chat" :size="17" /></button></view>
+    <view class="section-intro"><text class="eyebrow">ONE SMALL STEP</text><text class="page-title plan-title">为下一步，留一点空间</text><text class="page-description">这里保留你确认的方向、行动和新的发现</text></view>
+    <view v-if="!card.next_step" class="plan-empty glass-card">
+      <text class="card-title">还没有决定下一步，也没关系</text>
+      <text class="body-copy">先写下一件愿意试的事，或和我一起想一想</text>
+      <view class="plan-empty-actions">
+        <button class="text-button with-icon" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">整理我的卡片 <SvgIcon name="arrow" :size="17" /></button>
+        <button class="text-button with-icon" @click="emit('chat')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">一起聊聊 <SvgIcon name="chat" :size="17" /></button>
+      </view>
+    </view>
     <view v-if="card.next_step" class="next-card">
       <text class="eyebrow">我愿意尝试的下一步</text>
       <text class="next-title">{{ card.next_step }}</text>
-      <button class="text-button" @click="emit('feedback')" hover-class="pressed" :hover-start-time="0"
+      <button class="text-button with-icon" @click="emit('feedback')" hover-class="pressed" :hover-start-time="0"
               :hover-stay-time="70">记下后来的变化
         <SvgIcon name="arrow" :size="17"/>
       </button>
     </view>
     <view class="section-row">
       <text class="section-title">我的决策卡</text>
-      <button class="text-button" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0"
+      <button class="text-button with-icon" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0"
               :hover-stay-time="70">编辑
         <SvgIcon name="arrow-diagonal" :size="17"/>
       </button>
@@ -59,7 +66,7 @@ const emit = defineEmits<{
     </view>
     <view class="section-row">
       <text class="section-title">一路上的变化</text>
-      <button class="text-button" @click="emit('feedback')" hover-class="pressed" :hover-start-time="0"
+      <button class="text-button with-icon" @click="emit('feedback')" hover-class="pressed" :hover-start-time="0"
               :hover-stay-time="70">
         <SvgIcon name="plus" :size="15"/>
         记录

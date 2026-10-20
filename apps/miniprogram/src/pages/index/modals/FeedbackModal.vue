@@ -43,7 +43,7 @@ function onInput(event: Event) {
     </view>
     <textarea :value="text" class="text-area" maxlength="2000"
               :placeholder="placeholder" @input="onInput"/>
-    <button class="primary" :disabled="busy || !text.trim()" :loading="busy" @click="emit('save')"
+    <button class="primary feedback-submit" :disabled="busy || !text.trim()" :loading="busy" @click="emit('save')"
             hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">留下这次变化
       <SvgIcon name="check" light :size="19"/>
     </button>

@@ -47,10 +47,20 @@
 .quote-signature { display:block; color:var(--muted); font-size:9px; text-align:right; margin-top:4px; }
 .theme-space .plan-content,.theme-space .discover-content { padding:22px 22px 28px; }
 .section-intro { margin-bottom:23px; }
-.section-intro .page-title { font-size:27px; margin:10px 0; }
+.section-intro .page-title { font-family:var(--font-heading); font-size:27px; font-weight:500; line-height:1.5; letter-spacing:1px; margin:10px 0; }
+.plan-title { white-space:nowrap; }
 .section-intro .page-description { font-size:12px; line-height:1.8; }
 .plan-empty { padding:20px; margin-bottom:23px; }
-.plan-empty .text-button { margin-right:16px; }
+.plan-empty-actions { display:flex; align-items:center; flex-wrap:wrap; gap:18px; margin-top:14px; }
+.plan-empty-actions .text-button { min-height:32px; padding:4px 0; font-size:12px; }
+.empty-dashboard .action-button.action-primary {
+  border:1px solid var(--cta-border, var(--line)); border-radius:8px;
+  background:linear-gradient(180deg,var(--cta-highlight,var(--button-fill)) 0%,var(--cta-fill,var(--button-fill)) 46%,var(--cta-deep,var(--button-fill)) 100%);
+  color:var(--cta-ink, #fff); text-shadow:none; box-shadow:var(--cta-shadow, 0 6px 18px rgba(0,0,0,.14));
+}
+.empty-dashboard .action-button.action-primary[disabled] {
+  border-color:transparent; background:var(--cta-disabled, var(--soft)); color:var(--muted); box-shadow:none;
+}
 .theme-space .paper-card,.theme-space .next-card,.theme-space .usage-card,.theme-space .archive-card { border:1px solid var(--line); background:var(--paper); border-radius:10px; color:var(--ink); }
 .theme-space .paper-card { box-shadow:var(--shadow); }
 .theme-space .next-card .eyebrow,.theme-space .card-label,.theme-space .group-label { color:var(--accent); }
@@ -103,6 +113,8 @@
 @media(max-width:360px) {
   .theme-space .home-dashboard { padding-left:16px; padding-right:16px; }
   .hero-title { font-size:24px; }
+  .section-intro .page-title { font-size:24px; }
+  .plan-empty-actions { gap:14px; }
   .hero-aside { font-size:14px; right:4px; top:155px; }
   .focus-row { gap:9px; }
   .focus-row-copy > text:first-child { font-size:12px; }

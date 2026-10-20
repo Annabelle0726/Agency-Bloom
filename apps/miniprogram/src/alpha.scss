@@ -3,6 +3,15 @@
 .app-shell button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
 .app-shell .primary { border-radius:var(--radius-button); min-height:56px; justify-content:center; gap:14px; font-size:15px; }
 .app-shell .primary[disabled] { opacity:.55; color:#fff; }
+.app-shell .primary.feedback-submit {
+  min-height:54px; border:1px solid var(--cta-border, var(--line)); border-radius:8px;
+  background:linear-gradient(180deg,var(--cta-highlight,var(--button-fill)) 0%,var(--cta-fill,var(--button-fill)) 46%,var(--cta-deep,var(--button-fill)) 100%);
+  color:var(--cta-ink, #fff); text-shadow:none; box-shadow:var(--cta-shadow, 0 6px 18px rgba(0,0,0,.14));
+}
+.app-shell .primary.feedback-submit[disabled] {
+  opacity:1; border-color:transparent; background:var(--cta-disabled, var(--soft)); color:var(--muted); box-shadow:none;
+}
+.app-shell .primary.feedback-submit .svg-icon { opacity:.9; }
 .onboarding-flow { min-height:var(--app-height); position:relative; }
 .scene-image { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
 .welcome-image { filter:saturate(.72); }
