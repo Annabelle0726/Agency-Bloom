@@ -137,6 +137,8 @@ class ChatInput(StrictModel):
     task: Literal["chat", "summary"] = "chat"
     session_summary: ConversationSummary | None = None
     dismissed_changes: list[Annotated[str, StringConstraints(max_length=80)]] = Field(default=[], max_length=40)
+    # Per-turn opt-in: web grounding runs only when the user asked for it.
+    web_search: bool = False
 
 
 class ConversationChatInput(ChatInput):
@@ -242,6 +244,16 @@ class PhaseChange(StrictModel):
     source_kind: Literal['memory', 'snapshot'] = 'memory'
     source_version: int = 1
     previous: str = ''
+
+
+class WebSource(StrictModel):
+    """One attributed external page handed to the model or shown to the user."""
+
+    name: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] = ''
+    url: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)]
+    snippet: Annotated[str, StringConstraints(strip_whitespace=True, max_length=400)] = ''
+    site: Annotated[str, StringConstraints(strip_whitespace=True, max_length=80)] = ''
+    published: Annotated[str, StringConstraints(strip_whitespace=True, max_length=10)] = ''
 
 
 class AIOutput(StrictModel):

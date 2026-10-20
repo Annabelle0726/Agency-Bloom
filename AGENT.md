@@ -6,6 +6,14 @@ Agency Bloom helps adults explore career possibilities, compare choices, and lea
 
 Use confirmed user information as facts. Keep model assumptions and unverified market information separate. Suggestions and insights are optional; only explicit user confirmation can turn them into saved decision-card content. Do not add automatic career research, unsolicited reminders, or extra model calls.
 
+## Web grounding
+
+Web search is an explicit, per-turn user action (`web_search: true` on the chat request), powered by the optional Bocha key in backend environment files. It is never automatic, never a background fetch, and never a second model call.
+
+- Search results are unverified external data. They enter the prompt as attributed snippets (`web_search_results` with site, URL and summary), and the system prompt must require the model to say "根据网上资料" or name the source, mark unverified numbers as 待核实, prefer confirmed user information on conflict, and never write search results into `confirmed`/`constraints` or propose card edits from them.
+- The UI shows returned sources under the reply (`web_sources`), labelled as unverified. A failed or unconfigured search degrades silently to a normal un-grounded turn; it must not block the reply or fabricate sources.
+- No page fetching, crawling, or chained tool use: one search call per turn at most, results truncated to five, no persistence of raw result pages. The search key is a backend secret under the same rules as the provider key.
+
 ## Conversations, context, and memory
 
 Read [CONTEXT.md](CONTEXT.md) for the domain vocabulary and [docs/CONVERSATIONS.md](docs/CONVERSATIONS.md) for contracts and migration details.
@@ -77,11 +85,12 @@ The user-selected `design/themes/references/mist.png` is authoritative for Morni
 
 - Keep secrets in ignored backend environment files. Never put provider keys, database passwords, or server secrets in frontend variables, committed files, logs, screenshots, or reports.
 - Do not delete databases, accounts, environment configuration, usage history, or budget ledgers.
-- Keep the total running budget at CNY 100/month and the AI allocation at CNY 20/month unless the user changes them. Preserve reservations, rate limits, and recorded usage.
-- Do not initiate a paid DeepSeek test without explicit authorization for that test. Do not remove a live-test guard or retry a paid request automatically.
-- AI data processing requires separate, revocable consent. Full conversation retention stays opt-in. Keep account-level authorization and editable, user-confirmed cards.
+- Keep the total running budget at CNY 500/month and the AI allocation at CNY 100/month unless the user changes them.
+- AI data processing requires separate, revocable consent. Chat retention is on by default (product decision 2026-10-19); turning it off still purges stored messages and summaries immediately, and re-enabling applies only to future turns. Keep account-level authorization and editable, user-confirmed cards.
 - Distinguish service connectivity, authentication failure, missing WeChat setup, and model-service failure. Never present a Mock response as a real provider response.
 
 ## Documentation and Git
 
 Write repository documentation in English, with Chinese user-facing setup documentation in `README_zh.md`. Use English Git commit messages. Commit or push only when the user requests it; a commit request does not authorize a push. Before committing, inspect the staged diff, check for sensitive data, and state what was verified and what remains unverified.
+
+# All codes should have no errors!

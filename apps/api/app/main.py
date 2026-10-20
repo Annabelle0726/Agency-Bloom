@@ -19,7 +19,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from . import ai
+from . import ai, web_search
 from .config import Settings
 from .conversations import cancel_pending, context_for, register_routes
 from .local_schema import upgrade_local
@@ -100,7 +100,7 @@ def issue_view(db, item):
     }
 
 
-def create_app(ai_transport=None, wechat_transport=None, **overrides):
+def create_app(ai_transport=None, wechat_transport=None, web_search_transport=None, **overrides):
     settings = Settings(**overrides)
     sqlite = settings.database_url.startswith("sqlite")
     args = {"check_same_thread": False, "timeout": 30} if sqlite else {"prepare_threshold": None}
@@ -595,6 +595,20 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                 raise HTTPException(409, "这段会话有一条回复正在生成")
             history, context, sources = context_for(db, user, conversation, body)
             first_turn = bool(context.get("first_turn"))
+        # Per-turn web grounding: only when the user enabled it for this message
+        # and a key is configured. A failed or absent search degrades to a
+        # normal un-grounded turn; it never blocks the reply.
+        web_results = None
+        if body.web_search and body.task == "chat" and web_search.web_search_configured(settings):
+            try:
+                web_results = web_search.search_web(settings, body.message, web_search_transport)
+            except web_search.WebSearchError:
+                web_results = None
+                sources_web_error = True
+            else:
+                sources_web_error = False
+        else:
+            sources_web_error = None
         prompt = ai.messages_for(
             item.card,
             issue_view(db, item)["feedback"][:5],
@@ -606,12 +620,17 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             exploration=item.exploration,
             conversation_context=context,
             history=history,
+            web_results=web_results,
         )
         if sources is not None:
             supplied = json.loads(prompt[1]['content'].split('：', 1)[1])
             sources['recent_feedback'] = supplied['recent_feedback']
             strategy = supplied.get('psychology_strategy')
             sources['strategy'] = {k: strategy[k] for k in ('id', 'version')} if strategy else None
+            if web_results is not None:
+                sources['web_results'] = web_results
+            if sources_web_error is not None:
+                sources['web_search'] = 'failed' if sources_web_error else 'included'
         reserved = ai.reservation_micro(settings, prompt)
         insert = sqlite_insert if sqlite else pg_insert
         db.execute(
@@ -764,6 +783,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                     "thinking_steps": thinking_steps(generation.reasoning),
                 }
                 | ({"supplied_context": sources} if sources else {})
+                | ({"web_sources": web_results} if web_results else {})
             )
         except asyncio.CancelledError:
             logging.getLogger("agency.ai").info("generation_cancelled")

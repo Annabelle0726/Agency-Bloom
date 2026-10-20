@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # DeepSeek thinking mode: the model reasons before answering; the
     # reasoning trace is shown to the user as collapsible steps.
     ai_thinking: bool = True
+    # Optional web grounding (Bocha). Grounding happens only for a turn where
+    # the user explicitly enabled it; results are attributed, never facts.
+    web_search_api_key: str = ""
+    web_search_timeout_seconds: float = Field(default=10, gt=0, le=30)
     wechat_app_id: str = ""
     wechat_app_secret: str = ""
     cors_origins: list[str] = ["http://127.0.0.1:5173", "http://localhost:5173"]

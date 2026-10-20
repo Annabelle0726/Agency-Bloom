@@ -228,9 +228,20 @@ text { overflow-wrap: anywhere; }
 .thinking-step { display: block; font-size: 11px; color: var(--muted); line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
 /* The composer lives inside the fixed dock block; the send key stays in thumb reach. */
 .composer { width: 100%; max-width: 448px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 10px; box-sizing: border-box; box-shadow: 0 5px 24px var(--bg); }
+.web-toggle { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; min-height: 34px; padding: 0; margin: 0 0 3px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--muted); flex-shrink: 0; }
+.web-toggle::after { border: 0; }
+.web-toggle.on { border-color: var(--accent); color: var(--accent); background: var(--soft); }
+.web-toggle[disabled] { opacity: .5; }
 .chat-input { flex: 1; padding: 10px 4px; font-size: 13px; line-height: 1.6; min-height: 41px; max-height: 150px; }
 .send-button { display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--bg); width: 38px; height: 38px; border-radius: 10px; font-size: 23px; flex-shrink: 0; }
 .send-button[disabled] { background: var(--accent); color: var(--bg); }
+/* Attributed external results: clearly not confirmed user facts. */
+.web-sources { margin-top: 8px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 10px; max-width: 100%; box-sizing: border-box; }
+.web-sources-label { display: block; font-size: 9px; color: var(--muted); margin-bottom: 5px; }
+.web-source-row { margin-bottom: 5px; }
+.web-source-row:last-child { margin-bottom: 0; }
+.web-source-site { display: block; font-size: 9px; color: var(--accent); }
+.web-source-name { display: block; font-size: 11px; line-height: 1.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-content { padding-top: 30px; }
 .settings-group { margin: 30px 0; }
 .group-label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 10px; }

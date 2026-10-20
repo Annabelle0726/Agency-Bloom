@@ -19,7 +19,7 @@ export interface Issue {
   exploration_intent?: string; actual_question?: string; focus_response?: string
 }
 export interface User { id: string; theme: ThemeId; save_chat: boolean; ai_consent: boolean; support_style: string; use_memory?: boolean }
-export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; thinking_steps?: string[] } | null }
+export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; thinking_steps?: string[]; web_sources?: WebSource[] | null } | null }
 export interface ConversationSummary { overview: string; decisions: string[]; open_questions: string[]; next_steps: string[] }
 export interface Conversation {
   dismissed_change_ids?: string[]
@@ -56,6 +56,9 @@ export interface SuppliedContext {
   history_retained: boolean
   linked_explorations: { id: string; title: string }[]
 }
+export interface WebSource {
+  name?: string; url: string; snippet?: string; site?: string; published?: string
+}
 export interface ChatResponse {
   reply: string; suggestion: Suggestion | null; mode: 'demo' | 'deepseek'
   insight?: Insight | null
@@ -66,6 +69,7 @@ export interface ChatResponse {
   supplied_context?: SuppliedContext | null
   tail_line?: string | null
   thinking_steps?: string[] | null
+  web_sources?: WebSource[] | null
 }
 
 export const concerns = [
