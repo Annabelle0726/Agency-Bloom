@@ -53,6 +53,7 @@
 .life-contexts { display:flex; flex-wrap:wrap; gap:11px 9px; margin-top:4px; }
 .context-chip { min-height:46px; padding:11px 15px; border-radius:8px; border:1px solid var(--line); background:var(--paper); font-size:13px; line-height:1.7; color:var(--ink); transition:background var(--motion-press),border-color var(--motion-press),transform var(--motion-press); }
 .context-chip.chosen { background:var(--selection); border-color:var(--selection-border); box-shadow:inset 0 0 0 .5px var(--selection-border); }
+.context-placeholder { color:var(--muted); opacity:.82; }
 .reflection-card { position:relative; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-card); padding:23px; box-shadow:var(--shadow); }
 .reflection-card .eyebrow { font-size:10px; letter-spacing:1px; color:var(--muted); }
 .reflection-mark { display:flex; gap:10px; align-items:center; font-size:10px; letter-spacing:.8px; color:var(--muted); }

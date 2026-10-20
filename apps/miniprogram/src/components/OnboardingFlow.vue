@@ -32,7 +32,6 @@ function recoverLegacyDraft() {
   step.value = questionStep(legacyDraft.value.step)
   otherOpen.value = !!form.actual_question
   responseOpen.value = !!form.title || (!!form.focus_response && !focusChoicesFor(form).includes(form.focus_response))
-  detailsOpen.value = !!form.background || form.constraints.length > 0
   persist()
   if (draftSaved.value) {
     try { uni.removeStorageSync(DRAFT_KEY) } catch { /* Keep the original if unavailable. */ }
@@ -41,7 +40,7 @@ function recoverLegacyDraft() {
 }
 const otherOpen = ref(!!form.actual_question)
 const responseOpen = ref(!!form.title || (!!form.focus_response && !focusChoicesFor(form).includes(form.focus_response)))
-const detailsOpen = ref(!!form.background || form.constraints.length > 0)
+const focusedField = ref('')
 const focusChoices = computed(() => focusChoicesFor(form))
 const draftInfo = ref(false)
 const localError = ref('')
@@ -62,7 +61,7 @@ const canContinue = computed(() => step.value === 0 ? form.concerns.length > 0 :
 const headings = [
   { label: 'LET’S BEGIN', title: '最近，有什么让你\n感到焦虑、害怕或不安？', detail: '选下最近挂心的事，也可以带着好奇来。可以多选。' },
   { label: 'A FIRST THREAD', title: '我们先从\n一件小事聊起', detail: '点选就好，暂时没有答案也可以继续' },
-  { label: 'ABOUT YOU', title: '此刻的生活\n主要围绕什么展开', detail: '点亮与你有关的小球，可以多选，也可以先跳过' },
+  { label: 'ABOUT YOU', title: '你最近的生活，\n主要围绕哪些事？', detail: '选与你有关的，也可以用自己的话补充。' },
   { label: 'YOUR STYLE', title: '此刻，你希望\n得到怎样的帮助', detail: '按自己的节奏来，以后也可以改变' },
   { label: 'A BEGINNING', title: '这是一次探索的起点\n而不是对你的定义', detail: '根据固定问题整理，还没有使用 AI' },
 ]
@@ -77,15 +76,13 @@ const visualTones: Record<string, string> = {
 function visual(id: string) {
   return { artwork: choiceArtwork[id as keyof typeof choiceArtwork] || choiceArtwork.unsure, tone: visualTones[id] || 'sage' }
 }
-function bubbleLabel(id: string, title: string) { return id === 'rest' ? '休整与\n重新出发' : title }
-const contextIcons: Record<string, string> = {
-  studying: 'note', searching: 'compass', working: 'layers', transition: 'step',
-  freelance: 'sun', business: 'spark', creating: 'note', care: 'home',
-  rest: 'sun', retired: 'sun', other: 'chat',
-}
+const contextStatus = computed(() => {
+  const count = form.life_contexts?.length || 0
+  return count ? '已选 ' + count + ' 项 · 之后也可以再调整。' : '之后也可以再调整。'
+})
 const selectedNote = computed(() => step.value === 0
   ? (form.concerns.length ? '已选 ' + form.concerns.length + ' 项 · 都可以慢慢聊' : '没有标准答案，选接近你的就好')
-  : step.value === 2 ? (form.life_contexts?.length ? '已点亮 ' + form.life_contexts.length + ' 个 · 生活可以有很多面' : '点一下选中，再点一下取消') : '你的选择，之后仍然可以改变')
+  : step.value === 2 ? '' : '你的选择，之后仍然可以改变')
 
 
 function persist() {
@@ -147,7 +144,7 @@ function clearDraft() {
   Object.assign(form, newOnboarding())
   otherOpen.value = false
   responseOpen.value = false
-  detailsOpen.value = false
+  focusedField.value = ''
   draftInfo.value = false
   step.value = 0
   try { uni.removeStorageSync(draftKey) } catch { /* Reset still works in memory */ }
@@ -167,7 +164,7 @@ defineExpose({ clearDraft })
         <ProgressIndicator :current="step + 1" :total="5" />
       </view>
       <scroll-view class="flow-scroll" scroll-y :scroll-top="scrollTop" :show-scrollbar="false" @scroll="rememberScroll">
-        <view :key="'content-' + step" class="flow-body" :class="'flow-' + direction + '-' + (step % 2)">
+        <view :key="'content-' + step" class="flow-body" :class="['flow-' + direction + '-' + (step % 2), 'flow-step-' + step]">
           <view class="flow-heading"><text class="eyebrow">{{ heading.label }}</text><text class="flow-title">{{ heading.title }}</text><text class="flow-description">{{ heading.detail }}</text></view>
           <view v-if="legacyDraft && step === 0" class="legacy-draft">
             <text>这台设备还有之前的回答，要接着整理吗？</text>
@@ -202,22 +199,39 @@ defineExpose({ clearDraft })
               <text class="optional-note">不选也不写，点「继续」就好</text>
             </view>
           </view>
-          <view v-else-if="step === 2">
-            <view class="life-contexts" aria-label="生活背景，可多选">
-                <button v-for="item in lifeContexts" :key="item.id" class="context-bubble"
-                  :class="[{ chosen: form.life_contexts?.includes(item.id) }, 'bubble-' + item.id]"
-                  :data-context="item.id" :aria-label="item.title" :aria-pressed="!!form.life_contexts?.includes(item.id)"
-                  :disabled="busy || moving" hover-class="bubble-pressed" :hover-start-time="0" :hover-stay-time="90"
-                  @click="context(item.id)">
-                  <view class="bubble-glint" aria-hidden="true" />
-                  <view class="bubble-content"><SvgIcon :name="contextIcons[item.id]" :light="form.life_contexts?.includes(item.id)" :size="26" /><text>{{ bubbleLabel(item.id, item.title) }}</text></view>
-                  <view v-if="form.life_contexts?.includes(item.id)" class="bubble-check"><SvgIcon name="check" light :size="13" /></view>
-                </button>
+          <view v-else-if="step === 2" class="context-step">
+            <view class="life-contexts" role="group" aria-label="最近的生活状态，可多选">
+              <button v-for="item in lifeContexts" :key="item.id" class="life-tag"
+                :class="{ chosen: form.life_contexts?.includes(item.id) }"
+                :data-context="item.id" :aria-label="item.title" :aria-pressed="!!form.life_contexts?.includes(item.id)"
+                :disabled="busy || moving" hover-class="life-tag-pressed" :hover-start-time="0" :hover-stay-time="90"
+                @click="context(item.id)">
+                <text class="life-tag-label">{{ item.title }}</text>
+                <view class="life-tag-check" aria-hidden="true"><view class="life-tag-check-mark" /></view>
+              </button>
             </view>
-            <button class="optional-toggle" :aria-expanded="detailsOpen" @click="detailsOpen = !detailsOpen" hover-class="pressed">{{ detailsOpen ? '收起补充' : '有一点经历或现实条件想补充（选填）' }}</button>
-            <view v-if="detailsOpen">
-              <text class="field-label">愿意补充的经历，选填</text><textarea v-model="form.background" class="text-area flow-textarea" maxlength="400" placeholder="一句话、一件小事就够了" :auto-height="true" />
-              <text class="field-label">想照顾到的现实条件，选填</text><textarea v-model="constraintsText" class="text-area flow-textarea" maxlength="1200" placeholder="比如时间、收入或精力，也可以以后聊" :auto-height="true" />
+            <text class="context-status" role="status" aria-live="polite">{{ contextStatus }}</text>
+            <view class="context-writing">
+              <view class="context-writing-heading">
+                <text class="context-writing-title">还有想补充的吗？</text>
+                <text class="context-optional">选填</text>
+              </view>
+              <view class="context-field" :class="{ 'is-focused': focusedField === 'background' }">
+                <textarea v-model="form.background" class="text-area flow-textarea context-input" maxlength="400"
+                  placeholder="比如，正在工作，也想试试新的方向……" placeholder-class="context-placeholder"
+                  :auto-height="true" :cursor-spacing="110" :show-confirm-bar="false"
+                  @focus="focusedField = 'background'" @blur="focusedField = ''" />
+              </view>
+              <view class="context-subheading">
+                <text class="context-subtitle">想照顾到的现实条件</text>
+                <text class="context-optional">选填</text>
+              </view>
+              <view class="context-field" :class="{ 'is-focused': focusedField === 'constraints' }">
+                <textarea v-model="constraintsText" class="text-area flow-textarea context-input" maxlength="1200"
+                  placeholder="比如时间、收入或精力，也可以以后聊" placeholder-class="context-placeholder"
+                  :auto-height="true" :cursor-spacing="110" :show-confirm-bar="false"
+                  @focus="focusedField = 'constraints'" @blur="focusedField = ''" />
+              </view>
             </view>
           </view>
           <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="visual(item.id).artwork" :tone="visual(item.id).tone" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
@@ -238,7 +252,7 @@ defineExpose({ clearDraft })
         </view>
       </scroll-view>
       <view class="flow-footer">
-        <text v-if="step < 4" class="selection-reassurance">{{ selectedNote }}</text>
+        <text v-if="step < 4 && step !== 2" class="selection-reassurance">{{ selectedNote }}</text>
         <view v-if="localError || error" class="notice">{{ localError || error }}</view>
         <ActionButton v-if="step < 4" :disabled="!canContinue" :locked="moving" @click="go(step + 1)">继续</ActionButton>
         <ActionButton v-else :loading="busy" :locked="moving" @click="submit">保存这次探索</ActionButton>
@@ -268,31 +282,35 @@ defineExpose({ clearDraft })
 .flow-footer-detail { flex-wrap:wrap; gap:4px 12px; }
 
 /* The imagery stays behind readable, tactile choices throughout the five steps. */
-.onboarding-flow { isolation:isolate; background:#f0f3e9; }
+.onboarding-flow { isolation:isolate; background:var(--bg); }
 .question-backdrop { position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
 .question-backdrop > image { position:absolute; width:100%; height:100%; opacity:.65; }
 .question-wash { position:absolute; inset:0; background:linear-gradient(180deg,rgba(248,249,242,.28),rgba(246,248,239,.76) 33%,rgba(239,244,232,.9) 75%,#f1f4e9); }
 .question-scene-1 .question-wash { background:linear-gradient(180deg,rgba(248,249,242,.4),rgba(246,248,239,.83) 40%,rgba(239,244,232,.94)); }
-.question-scene-2 .question-wash { background:linear-gradient(180deg,rgba(250,245,235,.25),rgba(250,245,235,.83) 45%,#f8f3e8); }
+.question-scene-2 .question-backdrop > image { opacity:.5; }
+.question-scene-2 .question-wash { background:linear-gradient(180deg,var(--hero-top) 0%,var(--bg) 56%,var(--bg) 100%); }
 .flow-page { position:relative; z-index:1; background:transparent; }
 .flow-chrome { padding-top:calc(var(--capsule-bottom,64px) + 12px); }
 .flow-nav { margin-bottom:15px; }
-.flow-wordmark { color:#62755d; }
+.flow-wordmark { color:var(--muted); }
 .flow-body { padding-top:25px; }
 .flow-heading { position:relative; padding-bottom:22px; }
-.flow-heading .eyebrow { color:#708362; letter-spacing:2.4px; }
-.flow-heading .flow-title { font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:28px; line-height:1.55; letter-spacing:.7px; color:#334b38; }
-.flow-heading .flow-description { color:#65755d; font-size:13px; line-height:1.9; max-width:95%; margin-top:13px; }
+.flow-heading .eyebrow { color:var(--muted); letter-spacing:2.4px; }
+.flow-heading .flow-title { font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:28px; line-height:1.55; letter-spacing:.7px; color:var(--ink); }
+.flow-heading .flow-description { color:var(--muted); font-size:13px; line-height:1.9; max-width:95%; margin-top:13px; }
+.flow-step-2 .flow-heading .eyebrow { color:var(--accent); }
+.flow-step-2 .flow-heading .flow-title { color:var(--ink); }
+.flow-step-2 .flow-heading .flow-description { color:var(--muted); }
 .selection-stack { gap:13px; }
-.flow-footer { background:rgba(246,248,240,.96); border-top:1px solid rgba(115,137,93,.15); padding-top:10px; box-shadow:0 -8px 30px rgba(71,89,58,.025); }
-.selection-reassurance { display:block; text-align:center; color:#697c5e; font-size:11px; line-height:1.8; margin:0 0 9px; }
+.flow-footer { background:var(--nav-glass); border-top:1px solid var(--line); padding-top:10px; box-shadow:none; }
+.selection-reassurance { display:block; text-align:center; color:var(--muted); font-size:11px; line-height:1.8; margin:0 0 9px; }
 .flow-footer :deep(.action-button) { border-radius:8px; }
 .flow-footer-detail { justify-content:space-between; }
-.flow-footer .flow-skip { color:#516c48; font-size:12px; }
+.flow-footer .flow-skip { color:var(--ink); font-size:12px; }
 .flow-footer .draft-link { font-size:10px; }
-:deep(.progress-track) { height:3px; background:rgba(100,122,77,.16); }
-:deep(.progress-fill) { background:#6c8454; }
-:deep(.progress-count) { color:#647856; }
+:deep(.progress-track) { height:3px; background:var(--line); }
+:deep(.progress-fill) { background:var(--accent); }
+:deep(.progress-count) { color:var(--muted); }
 .exploration-branch { padding:20px 18px; border:1px solid rgba(255,255,255,.95); border-radius:10px; background:rgba(255,253,247,.8); box-shadow:0 6px 24px rgba(60,79,46,.04); }
 .branch-question { font-family:var(--font-heading); font-size:19px; line-height:1.8; color:#3b523a; }
 .quick-answer { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #e1e7d8; border-radius:8px; background:rgba(255,255,250,.9); }
@@ -300,35 +318,44 @@ defineExpose({ clearDraft })
 .answer-symbol { flex-shrink:0; width:39px; height:39px; border-radius:8px; background:#eff1e2; display:flex; align-items:center; justify-content:center; }
 .answer-indicator { flex-shrink:0; width:18px; height:18px; border:1px solid #c0cbae; border-radius:50%; display:flex; align-items:center; justify-content:center; }
 .quick-answer.chosen { background:#e4ecd9; border-color:#738d59; }
-.life-contexts { position:relative; width:100%; height:0; padding-bottom:140%; margin:0 0 10px; }
-.context-bubble { --bubble-tint:#e4ecd9; --bubble-deep:#536e47; position:absolute; z-index:1; display:block; width:30%; height:0; min-height:0; box-sizing:content-box; padding:0 0 30%; margin:0; border-radius:50%; border:1px solid rgba(255,255,255,.95); background:radial-gradient(circle at 30% 22%,#fffef9 0%,var(--bubble-tint) 76%); box-shadow:inset 0 2px 3px rgba(255,255,255,.9),inset -3px -5px 9px rgba(85,111,62,.08),0 6px 14px rgba(73,86,55,.08); color:#40583c; text-align:center; overflow:visible; transition:transform 180ms ease,box-shadow 180ms ease,background 180ms ease; }
-.context-bubble::after { border:0; }
-.bubble-content { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; pointer-events:none; }
-.bubble-content text { display:block; max-width:86px; font-size:12px; line-height:1.5; white-space:pre-line; font-weight:500; }
-.bubble-glint { position:absolute; top:12%; left:20%; width:23%; height:11%; border-radius:50%; background:rgba(255,255,255,.55); transform:rotate(-32deg); pointer-events:none; }
-.bubble-searching,.bubble-business,.bubble-retired { --bubble-tint:#f3e4ce; --bubble-deep:#886843; }
-.bubble-transition,.bubble-care,.bubble-other { --bubble-tint:#dcece8; --bubble-deep:#426e67; }
-.bubble-creating { --bubble-tint:#e8dfee; --bubble-deep:#766381; }
-/* A stable, loosely packed cluster: size is expressive, never a priority ranking. */
-.bubble-studying { left:9.722%; top:1.587%; width:33.889%; padding-bottom:33.889%; }
-.bubble-searching { left:46.389%; top:0.000%; width:25.000%; padding-bottom:25.000%; }
-.bubble-working { left:63.333%; top:16.270%; width:36.667%; padding-bottom:36.667%; }
-.bubble-transition { left:27.222%; top:21.627%; width:32.500%; padding-bottom:32.500%; }
-.bubble-freelance { left:0.000%; top:27.183%; width:27.778%; padding-bottom:27.778%; }
-.bubble-business { left:6.111%; top:47.024%; width:31.667%; padding-bottom:31.667%; }
-.bubble-creating { left:36.667%; top:44.841%; width:36.667%; padding-bottom:36.667%; }
-.bubble-care { left:69.444%; top:47.222%; width:29.167%; padding-bottom:29.167%; }
-.bubble-rest { left:21.667%; top:70.437%; width:34.167%; padding-bottom:34.167%; }
-.bubble-retired { left:56.111%; top:73.413%; width:28.333%; padding-bottom:28.333%; }
-.bubble-other { left:0.000%; top:71.032%; width:23.611%; padding-bottom:23.611%; }
-.context-bubble.chosen { z-index:2; background:radial-gradient(circle at 30% 18%,#91a683,var(--bubble-deep) 78%); color:#fffdf6; border-color:var(--bubble-deep); box-shadow:0 0 0 3px rgba(255,255,255,.84),0 7px 18px rgba(61,86,48,.22),inset 0 2px 5px rgba(255,255,255,.22); animation:bubble-pop 300ms cubic-bezier(.2,.8,.3,1); }
-.context-bubble.chosen .bubble-glint { background:rgba(255,255,255,.22); }
-.bubble-check { position:absolute; top:6px; right:8px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--bubble-deep); border:2px solid #fffdf5; }
-.context-bubble.bubble-pressed { transform:scale(.94); }
-@keyframes bubble-pop { 0% { transform:scale(.94); } 55% { transform:scale(1.065); } 100% { transform:scale(1); } }
-@media(max-width:360px) { .bubble-content text { font-size:11px; max-width:75px; } .bubble-content { gap:5px; } .bubble-check { width:18px; height:18px; top:4px; right:5px; } }
-@media(max-width:330px) { .bubble-content text { font-size:10px; max-width:65px; } }
-@media(prefers-reduced-motion:reduce) { .context-bubble,.context-bubble.chosen { animation:none; transition:none; } }
+.question-scene-2 .flow-chrome, .question-scene-2 .flow-footer { padding-left:22px; padding-right:22px; }
+.flow-body.flow-step-2 { padding-left:22px; padding-right:22px; }
+.flow-body.flow-step-2 { animation:context-enter 240ms var(--ease-out) both; }
+@keyframes context-enter { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+.context-step { padding-bottom:6px; }
+.life-contexts { display:flex; flex-wrap:wrap; align-items:flex-start; gap:11px 10px; width:100%; }
+.life-tag { position:relative; display:inline-flex; align-items:center; flex:0 0 auto; min-height:50px; box-sizing:border-box; margin:0; padding:10px 37px 10px 16px; border:1px solid var(--tag-border); border-radius:999px; background:var(--tag-surface); box-shadow:var(--tag-shadow); color:var(--tag-ink); font-size:14px; font-weight:500; line-height:1.5; letter-spacing:.1px; text-align:left; white-space:nowrap; transition:background-color 160ms var(--ease-out),border-color 160ms var(--ease-out),box-shadow 100ms var(--ease-out),transform 100ms var(--ease-out); touch-action:manipulation; }
+.life-tag::after { border:0; }
+.life-tag-label { display:block; }
+.life-tag-check { position:absolute; top:50%; right:13px; width:17px; height:17px; margin-top:-9px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--tag-check-bg); color:var(--tag-check-ink); opacity:0; transform:scale(.68); transition:opacity 160ms var(--ease-out),transform 180ms var(--ease-out); }
+.life-tag-check-mark { width:4px; height:7px; margin-top:-1px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(45deg); }
+.life-tag.chosen { background:var(--tag-surface-selected); border-color:var(--tag-border-selected); box-shadow:inset 0 0 0 1px var(--tag-border-selected),var(--tag-shadow); }
+.life-tag.chosen .life-tag-check { opacity:1; transform:scale(1); }
+.life-tag.life-tag-pressed { transform:scale(.98); background:var(--tag-surface-pressed); border-color:var(--tag-border-pressed); }
+.life-tag.chosen.life-tag-pressed { background:var(--tag-surface-selected); border-color:var(--tag-border-selected); box-shadow:inset 0 0 0 1px var(--tag-border-selected),0 0 0 3px var(--tag-focus-ring); }
+.context-status { display:block; min-height:22px; margin:15px 0 30px; color:var(--muted); font-size:12px; line-height:1.8; letter-spacing:.1px; }
+.context-writing { margin:0; padding:0; }
+.context-writing-heading { display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
+.context-writing-title { color:var(--ink); font-size:15px; font-weight:500; line-height:1.6; }
+.context-optional { color:var(--muted); font-size:11px; font-weight:400; line-height:1.6; }
+.context-subheading { display:flex; align-items:baseline; gap:8px; margin:20px 0 9px; }
+.context-subtitle { color:var(--ink); font-size:12px; font-weight:500; line-height:1.6; }
+.context-field { border-radius:14px; }
+.context-field .context-input { display:block; width:100%; min-height:104px; margin:0; padding:15px 16px; border:1px solid var(--tag-border); border-radius:14px; background:var(--tag-surface); color:var(--tag-ink); font-size:14px; line-height:1.8; box-shadow:none; transition:border-color 160ms var(--ease-out),box-shadow 160ms var(--ease-out),background-color 160ms var(--ease-out); }
+.context-field.is-focused .context-input { border-color:var(--tag-border-selected); box-shadow:0 0 0 3px var(--tag-focus-ring); background:var(--tag-surface); }
+.context-writing .context-field:last-child .context-input { min-height:96px; }
+@media(max-width:360px) {
+  .question-scene-2 .flow-chrome, .question-scene-2 .flow-footer, .flow-body.flow-step-2 { padding-left:20px; padding-right:20px; }
+  .life-contexts { gap:10px; }
+  .life-tag { min-height:48px; padding:9px 35px 9px 15px; font-size:14px; }
+  .life-tag-check { right:12px; }
+  .context-status { margin-bottom:26px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .flow-body.flow-step-2 { animation:none; }
+  .life-tag, .life-tag-check, .context-field .context-input { transition:none; }
+  .life-tag.life-tag-pressed, .life-tag.chosen .life-tag-check { transform:none; }
+}
 .reflection-card { background:rgba(255,254,248,.91); border:1px solid #fffdf7; border-radius:10px; box-shadow:0 10px 35px rgba(65,78,43,.07); }
 .reflection-next { border-top:1px solid rgba(116,134,90,.25); }
 .optional-writing { border-radius:8px; padding:0 12px; background:rgba(255,253,248,.7); }

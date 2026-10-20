@@ -103,33 +103,40 @@ async function shot(name) { await mp.screenshot({ path: path.join(dir, name + '.
   await relaunch()
   flow = await component('OnboardingFlow')
   assert.ok(await flow.$('.life-contexts'), 'Resume saved question')
-  assert.equal((await flow.$$('textarea')).length, 0, 'Context writing stays optional and collapsed')
-  const bubbles = await flow.$$('.context-bubble')
-  assert.equal(bubbles.length, 11, 'Every life context remains available')
-  for (const bubble of bubbles) {
-    const size = await bubble.size()
-    assert.ok(Math.abs(Number(size.width) - Number(size.height)) < 2, 'Each option must be circular')
+  assert.equal((await flow.$$('textarea')).length, 2, 'The optional context input stays visible')
+  assert.equal(await flow.$('.context-bubble'), null, 'Circular bubbles are gone')
+  const tags = await flow.$$('.life-tag')
+  assert.equal(tags.length, 11, 'Every life context remains available')
+  const tagSizes = await Promise.all(tags.map(async tag => {
+    const size = await tag.size()
+    return { width: Number(size.width), height: Number(size.height) }
+  }))
+  for (const size of tagSizes) {
+    assert.ok(size.height >= 48 && size.height <= 54, 'Tags use a compact pill height')
+    assert.ok(size.width > size.height, 'Tags keep their natural text width')
   }
-  const widths = await Promise.all(bubbles.map(async bubble => Number((await bubble.size()).width)))
-  assert.ok(Math.max(...widths) / Math.min(...widths) > 1.4, 'The cluster must have visibly varied sizes')
+  assert.match(await (await flow.$('.context-status')).text(), /之后也可以再调整。/)
   await shot('06-life-context')
-  const studying = await flow.$('.context-bubble[data-context="studying"]')
-  const searching = await flow.$('.context-bubble[data-context="searching"]')
+  const studying = await flow.$('.life-tag[data-context="studying"]')
+  const searching = await flow.$('.life-tag[data-context="searching"]')
   await studying.tap(); await wait(350)
   await searching.tap(); await wait(350)
-  assert.equal((await flow.$$('.context-bubble.chosen')).length, 2, 'Bubbles support multiple selections')
+  assert.equal((await flow.$$('.life-tag.chosen')).length, 2, 'Life tags support multiple selections')
   await studying.tap(); await wait(350)
-  assert.equal((await flow.$$('.context-bubble.chosen')).length, 1, 'A second tap deselects only that bubble')
+  assert.equal((await flow.$$('.life-tag.chosen')).length, 1, 'A second tap deselects only that tag')
   const savedContext = await mp.callWxMethod('getStorageSync', 'agency.onboarding.v3.' + uid)
   assert.deepEqual(savedContext.form.life_contexts, ['searching'])
   await relaunch()
   flow = await component('OnboardingFlow')
-  assert.equal((await flow.$$('.context-bubble.chosen')).length, 1, 'Bubble selections restore after leaving')
+  assert.equal((await flow.$$('.life-tag.chosen')).length, 1, 'Tag selections restore after leaving')
   await shot('06-life-context-selected')
   await (await flow.$('.flow-scroll')).scrollTo(0, 9999); await wait(350)
   const dockTop = (await (await flow.$('.flow-footer')).offset()).top
-  for (const bubble of await flow.$$('.context-bubble')) {
-    assert.ok((await bubble.offset()).top + Number((await bubble.size()).height) <= dockTop + 2, 'Every bubble remains reachable above the footer')
+  for (const tag of await flow.$$('.life-tag')) {
+    assert.ok((await tag.offset()).top + Number((await tag.size()).height) <= dockTop + 2, 'Every tag remains reachable above the footer')
+  }
+  for (const input of await flow.$$('textarea')) {
+    assert.ok((await input.offset()).top + Number((await input.size()).height) <= dockTop + 2, 'The context input remains reachable above the footer')
   }
   await shot('06-life-context-bottom')
   await action(flow)

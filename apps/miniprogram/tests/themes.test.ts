@@ -62,6 +62,21 @@ it('keeps body, muted text and button labels readable in every palette', () => {
 })
 
 
+it('keeps tag surfaces, borders and check marks legible in every palette', () => {
+  for (const theme of themes) {
+    const style = themeStyle(theme)
+    for (const token of ['--tag-surface', '--tag-surface-pressed', '--tag-surface-selected', '--tag-border',
+      '--tag-border-pressed', '--tag-border-selected', '--tag-ink', '--tag-check-bg', '--tag-check-ink', '--tag-focus-ring', '--tag-shadow']) {
+      expect(style[token], theme.id + token).toBeTruthy()
+    }
+    expect(contrast(style['--tag-ink'], style['--tag-surface']), theme.id + ' tag ink').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(style['--tag-ink'], style['--tag-surface-selected']), theme.id + ' selected tag ink').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(style['--tag-check-ink'], style['--tag-check-bg']), theme.id + ' tag check').toBeGreaterThanOrEqual(3)
+    expect(style['--tag-border-selected']).toBe(theme.palette.accent)
+    expect(style['--tag-surface']).not.toBe(style['--tag-surface-selected'])
+  }
+})
+
 it('provides five distinct themed navigation destinations and complete surface tokens', () => {
   expect(navigationItems.map(item => item.id)).toEqual(['now', 'plan', 'chat', 'discover', 'settings'])
   for (const theme of themes) {

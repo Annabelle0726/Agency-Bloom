@@ -52,6 +52,12 @@ export function themeByTimeOfDay(hour: number): ThemeId {
 export function themeForSession(user: { theme: string } | null | undefined, inPersonalSpace: boolean) {
   return resolveTheme(user && inPersonalSpace ? user.theme : 'light')
 }
+function mixHex(base: string, tint: string, amount: number) {
+  const parse = (hex: string) => parseInt(hex.slice(1), 16)
+  const a = parse(base), b = parse(tint)
+  const channel = (shift: number) => Math.round(((a >> shift) & 255) * (1 - amount) + ((b >> shift) & 255) * amount)
+  return '#' + [16, 8, 0].map(shift => channel(shift).toString(16).padStart(2, '0')).join('')
+}
 export function themeStyle(theme: ThemeDefinition): Record<string, string> {
   const p = theme.palette
   const gradients: Record<ThemeId, [string, string]> = {
@@ -85,6 +91,17 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     '--nav-gem-hi': gem[theme.id].hi, '--nav-gem-deep': gem[theme.id].deep,
     '--nav-gem-hi-soft': rgba(gem[theme.id].hi, .55), '--nav-gem-glow': rgba(gem[theme.id].hi, .42),
     '--theme-glow': p.accent + '30', '--radius-card': '24px', '--radius-button': '18px',
+    '--tag-surface': mixHex(p.paper, p.soft, theme.dark ? .5 : .55),
+    '--tag-surface-pressed': mixHex(p.soft, p.accent, theme.dark ? .12 : .08),
+    '--tag-surface-selected': mixHex(p.paper, p.accent, theme.dark ? .18 : .12),
+    '--tag-border': theme.dark ? mixHex(p.line, p.accent, .08) : p.line,
+    '--tag-border-pressed': mixHex(p.line, p.accent, theme.dark ? .4 : .3),
+    '--tag-border-selected': p.accent,
+    '--tag-ink': p.ink,
+    '--tag-check-bg': p.accent,
+    '--tag-check-ink': p.paper,
+    '--tag-focus-ring': p.accent + (theme.dark ? '38' : '26'),
+    '--tag-shadow': theme.dark ? '0 1px 2px rgba(0,0,0,.2)' : '0 1px 2px rgba(37,49,72,.045)',
   }
 }
 export function themeNavSvg(theme: ThemeDefinition, id: SpaceTab, active: boolean) {
