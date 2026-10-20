@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, onBeforeUnmount, reactive, ref, watch } from 'vue'
-import type { Conversation, ConversationSummary, Issue, Memory, User } from '../domain'
+import type { Conversation, ConversationSummary, Issue, Memory, User, InitialSnapshot } from '../domain'
 import SvgIcon from './SvgIcon.vue'
 import { conversationGreeting } from '../conversation-greeting'
+import { stages, concerns } from '../domain'
+import { lifeContexts, concernOptions } from '../onboarding'
 // Only this drawer consumes the global theme/form styles; its styles do not leak out.
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
-type View = 'list' | 'summary' | 'memories' | 'details'
+type View = 'list' | 'summary' | 'memories' | 'direction' | 'details'
 const props = defineProps<{
   view: View; conversations: Conversation[]; active: Conversation | null; issues: Issue[];
   user: User | null; summary: ConversationSummary | null; summaryDraft: ConversationSummary | null;
@@ -43,11 +45,14 @@ const summaryFields = [{ key: 'decisions', label: '已经决定的' }, { key: 'o
 const detailTitle = ref(props.active?.title || ''), linked = ref<string[]>([...(props.active?.linked_issue_ids || [])])
 const memories = ref<Memory[]>([]), selected = ref<string[]>([]), editing = ref<Memory | null>(null), memoryForm = ref(false), merging = ref(false)
 const memoryContent = ref(''), category = ref<Memory['category']>('fact'), memoryScope = ref(''), memoryFilter = ref('all')
+const horizon = ref<NonNullable<Memory['horizon']>>('long_term'), status = ref<NonNullable<Memory['status']>>('active'), keepHistory = ref(false)
+const snapshots = ref<InitialSnapshot[]>([])
+const statusLabels = { active: '有效', needs_review: '待核实', historical: '历史' } as const
 const categories = [{ id: 'fact', label: '事实' }, { id: 'preference', label: '偏好' }, { id: 'constraint', label: '约束' }] as const
-const shownMemories = computed(() => memories.value.filter(m => memoryFilter.value === 'all' || m.category === memoryFilter.value))
+const shownMemories = computed(() => memories.value.filter(m => (props.view !== 'direction' || m.horizon === 'current_phase') && (memoryFilter.value === 'all' || m.category === memoryFilter.value)))
 const greetingIssue = computed(() => props.issues.find(i => i.id === (filterIssue.value || props.active?.issue_id)) || activeIssues.value[0])
 const greeting = computed(() => conversationGreeting(!!props.user?.use_memory, memories.value, greetingIssue.value))
-const heading = computed(() => ({ list: '会话与探索', summary: '整理当前会话', memories: '整理长期记忆', details: '会话设置' }[props.view]))
+const heading = computed(() => ({ list: '会话与探索', summary: '整理当前会话', memories: '整理长期记忆', direction: '当前方向与初始资料', details: '会话设置' }[props.view]))
 function issueName(id: string | null) { return props.issues.find(i => i.id === id)?.title || (id ? '未命名探索' : '所有探索') }
 async function run(action: () => Promise<void>) { if (busy.value) return; busy.value = true; notice.value = ''; try { await action() } catch (e) { notice.value = e instanceof Error ? e.message : '暂时没有完成，请重试' } finally { busy.value = false } }
 function confirm(title: string, content: string) { return new Promise<boolean>(resolve => uni.showModal({ title, content, confirmText: '确认', success: r => resolve(r.confirm), fail: () => resolve(false) })) }
@@ -56,9 +61,16 @@ watch(() => props.summaryDraft || props.summary, value => {
   for (const field of summaryFields) edited[field.key] = value?.[field.key].join('\n') || ''
 }, { immediate: true })
 watch(() => [props.view, props.user?.use_memory], () => {
-  if (props.view === 'memories' || (props.view === 'list' && props.user?.use_memory)) void loadMemories()
+  if (props.view === 'memories' || props.view === 'direction' || (props.view === 'list' && props.user?.use_memory)) void loadMemories()
 }, { immediate: true })
-function loadMemories() { return run(async () => { memories.value = await props.request('GET', '/memories'); selected.value = [] }) }
+function loadMemories() { return run(async () => {
+  memories.value = await props.request('GET', '/memories'); selected.value = []
+  if (props.view === 'direction') snapshots.value = (await Promise.all(props.issues.map(i => props.request<InitialSnapshot | null>('GET', `/issues/${i.id}/snapshot`)))).filter((s): s is InitialSnapshot => !!s)
+}) }
+async function deleteSnapshot(item: InitialSnapshot) {
+  if (!await confirm('删除这份初始资料？', '这份注册回答和卡片中的原始背景副本将删除，独立保存的卡片内容、记忆和历史聊天仍保留，可分别管理')) return
+  await run(async () => { await props.request('DELETE', `/issues/${item.id.replace('snapshot:', '')}/snapshot?version=${item.version}`); snapshots.value = snapshots.value.filter(s => s.id !== item.id); emit('refresh'); emit('contextChanged') })
+}
 function openNewConversation() {
   if (!activeIssues.value.length) { emit('createIssue'); return }
   emit('newChat')
@@ -93,24 +105,30 @@ async function clearSummary() { if (!props.active || !await confirm('清除会�
   if (props.user?.save_chat) emit('changed', await props.request<Conversation>('PUT', `/conversations/${props.active!.id}/summary`, { version: props.active!.version, summary: null }))
   emit('reviewed', null); notice.value = '总结已清除'
 }) }
-function editMemory(item?: Memory, content = '') { editing.value = item || null; merging.value = false; memoryContent.value = item?.content || content; category.value = item?.category || 'fact'; memoryScope.value = item?.issue_id || ''; memoryForm.value = true }
+function editMemory(item?: Memory, content = '') { editing.value = item || null; merging.value = false; memoryContent.value = item?.content || content; category.value = item?.category || 'fact'; memoryScope.value = item?.issue_id || ''; horizon.value = item?.horizon || (props.view === 'direction' ? 'current_phase' : 'long_term'); status.value = item?.status || 'active'; keepHistory.value = false; memoryForm.value = true }
 function prepareMerge() {
   const chosen = memories.value.filter(m => selected.value.includes(m.id)); if (chosen.length < 2) return
   editing.value = null; merging.value = true; memoryContent.value = chosen.map(m => m.content).join('\n'); category.value = chosen[0].category
   memoryScope.value = chosen.every(m => m.issue_id === chosen[0].issue_id) ? chosen[0].issue_id || '' : props.active?.issue_id || ''
+  horizon.value = chosen[0].horizon || 'long_term'; status.value = 'active'; keepHistory.value = false
   memoryForm.value = true
 }
 async function saveMemory() { await run(async () => {
   if (!memoryContent.value.trim() || memoryContent.value.length > 400) throw Error('请整理成1到400字，再确认保存')
   const body = { content: memoryContent.value.trim(), category: category.value, issue_id: memoryScope.value || null,
+    horizon: horizon.value, status: status.value,
     source_conversation_id: editing.value?.source_conversation_id || props.active?.id || null, enabled: editing.value?.enabled ?? true, confirmed: true }
   if (merging.value) await props.request('POST', '/memories/merge', { ...body, items: memories.value.filter(m => selected.value.includes(m.id)).map(({ id, version }) => ({ id, version })) })
+  else if (editing.value && keepHistory.value) {
+    if (category.value !== editing.value.category || memoryScope.value !== (editing.value.issue_id || '') || horizon.value !== (editing.value.horizon || 'long_term') || status.value !== 'active') throw Error('保留历史时沿用原分类与范围；若要调整它们，请先取消保留历史')
+    await props.request('POST', `/memories/${editing.value.id}/replace`, { content: body.content, version: editing.value.version, confirmed: true, keep_history: true })
+  }
   else if (editing.value) await props.request('PUT', `/memories/${editing.value.id}`, { ...body, version: editing.value.version })
   else await props.request('POST', '/memories', body)
   memories.value = await props.request('GET', '/memories'); selected.value = []; memoryForm.value = false; emit('contextChanged'); notice.value = '已保存你确认的记忆'
 }) }
 async function toggleMemory(item: Memory) { await run(async () => {
-  await props.request('PUT', `/memories/${item.id}`, { content: item.content, category: item.category, issue_id: item.issue_id, source_conversation_id: item.source_conversation_id, enabled: !item.enabled, confirmed: true, version: item.version })
+  await props.request('PUT', `/memories/${item.id}`, { content: item.content, category: item.category, issue_id: item.issue_id, source_conversation_id: item.source_conversation_id, enabled: !item.enabled, status: item.status || 'active', confirmed: true, version: item.version })
   memories.value = await props.request('GET', '/memories'); emit('contextChanged')
 }) }
 async function deleteMemory(item: Memory) { if (!await confirm('删除这条记忆？', '删除后不会再用于后续回复，历史聊天原文不会被改写')) return; await run(async () => {
@@ -142,7 +160,7 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
               <button class="secondary empty-create" :disabled="busy" @click="openNewConversation">＋ 从一段新会话开始</button>
             </view>
             <view v-for="item in visible" :key="item.id" class="conversation-item" :class="{ active: active?.id === item.id }">
-              <button class="conversation-select" :disabled="busy" @click="emit('select', item)"><text class="conversation-title">{{ item.title }}</text><text class="muted small">{{ issueName(item.issue_id) }}</text><text class="muted small">{{ running.includes(item.id) ? '正在回应…' : new Date(item.updated_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) }} · {{ user?.save_chat ? '已开启保存' : '原文仅本次使用' }}</text></button>
+              <button class="conversation-select" :disabled="busy" @click="emit('select', item)"><text class="conversation-title">{{ item.title }}</text><text class="muted small">{{ issueName(item.issue_id) }}</text><text class="muted small">{{ running.includes(item.id) ? '正在回应…' : new Date(item.updated_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) }} · {{ user?.save_chat ? '已保存' : '原文未保存' }}</text></button>
               <view class="conversation-actions"><button class="text-button archive-action" :disabled="busy" @click="archiveConversation(item)">{{ item.archived_at ? '恢复会话' : '归档' }}</button><button class="text-button delete-conversation" :disabled="busy" @click="deleteConversation(item)">删除</button></view>
             </view>
           </template>
@@ -166,14 +184,17 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
           <button v-for="issue in issues.filter(i => i.id !== active!.issue_id)" :key="issue.id" class="link-choice" :aria-pressed="linked.includes(issue.id)" @click="toggleLink(issue.id)">{{ linked.includes(issue.id) ? '✓ ' : '＋ ' }}{{ issue.title || '未命名探索' }}</button>
           <button class="primary" :disabled="busy || generating || !detailTitle.trim()" @click="saveDetails">保存会话设置</button>
         </template>
-        <template v-else-if="view === 'memories'">
+        <template v-else-if="view === 'memories' || view === 'direction'">
           <button class="memory-use setting-row" :aria-pressed="!!user?.use_memory" :disabled="busy" @click="toggleUseMemory"><view><text class="setting-title">在回复中使用长期记忆</text><text class="setting-description">{{ user?.use_memory ? '仅使用启用且范围匹配的记忆' : '已关闭 · 保存的记忆仍可整理' }}</text></view><view class="toggle" :class="{ on: user?.use_memory }"><view /></view></button>
           <text class="muted small">最多40条；只保存你明确确认的内容。删除记忆不会删除历史聊天中的原文</text>
-          <view class="memory-toolbar"><button class="secondary" :disabled="busy" @click="editMemory()">＋ 添加记忆</button><button class="secondary" :disabled="busy || selected.length < 2" @click="prepareMerge">合并选中 {{ selected.length || '' }}</button></view>
+          <view class="memory-toolbar"><button class="secondary" :disabled="busy" @click="editMemory()">{{ view === 'direction' ? '＋ 添加当前方向' : '＋ 添加记忆' }}</button><button class="secondary" :disabled="busy || selected.length < 2" @click="prepareMerge">合并选中 {{ selected.length || '' }}</button></view>
           <view v-if="memoryForm" class="drawer-form memory-editor">
             <text class="field-label">{{ merging ? '审阅合并结果 · 保存后替换选中的记忆' : editing ? '编辑记忆' : '你希望长期记住什么？' }}</text>
             <textarea v-model="memoryContent" class="text-area" :maxlength="-1" placeholder="写具体事实或偏好，避免替自己下结论" /><text class="muted small">{{ memoryContent.length }} / 400</text>
             <view class="drawer-tabs"><button v-for="kind in categories" :key="kind.id" :class="{ selected: category === kind.id }" @click="category = kind.id">{{ kind.label }}</button></view>
+            <text class="field-label">适用阶段</text><view class="drawer-tabs"><button :class="{ selected: horizon === 'long_term' }" @click="horizon = 'long_term'">长期</button><button :class="{ selected: horizon === 'current_phase' }" @click="horizon = 'current_phase'">当前阶段</button></view>
+            <view class="drawer-tabs"><button v-for="(label, value) in statusLabels" :key="value" :class="{ selected: status === value }" @click="status = value">{{ label }}</button></view>
+            <button v-if="editing && editing.status !== 'historical'" class="text-button" :aria-pressed="keepHistory" @click="keepHistory = !keepHistory">{{ keepHistory ? '☑' : '□' }} 保留修改前的版本作为历史</button>
             <text class="field-label">使用范围（选择所有探索会跨会话使用）</text><scroll-view scroll-x class="scope-filters"><button :class="{ selected: !memoryScope }" @click="memoryScope = ''">所有探索</button><button v-for="issue in issues" :key="issue.id" :class="{ selected: memoryScope === issue.id }" @click="memoryScope = issue.id">{{ issue.title || '未命名探索' }}</button></scroll-view>
             <button class="primary confirm-memory" :disabled="busy || !memoryContent.trim() || memoryContent.length > 400" @click="saveMemory">确认并保存记忆</button><button class="text-button" :disabled="busy" @click="memoryForm = false">取消编辑</button>
           </view>
@@ -182,8 +203,22 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
           <view v-for="item in shownMemories" :key="item.id" class="memory-item" :class="{ disabled: !item.enabled }">
             <button class="memory-select" :aria-pressed="selected.includes(item.id)" @click="toggleSelection(item.id)"><text>{{ selected.includes(item.id) ? '☑' : '□' }}</text><text>{{ item.content }}</text></button>
             <text class="muted small">{{ categories.find(k => k.id === item.category)?.label }} · {{ issueName(item.issue_id) }} · {{ item.enabled ? '启用' : '停用' }}</text>
+            <text class="muted small">{{ item.horizon === 'current_phase' ? '当前阶段' : '长期' }} · {{ statusLabels[item.status || 'active'] }} · 来源：{{ item.source === 'user_revision' ? '用户确认的更新' : '用户确认' }}</text>
+            <text class="muted small">创建 {{ item.created_at?.slice(0, 10) || '时间未知' }} · 确认 {{ item.confirmed_at?.slice(0, 10) || '旧记录未记载' }} · 最近核实 {{ item.last_verified_at?.slice(0, 10) || '未记载' }}</text>
             <view class="memory-actions"><button @click="editMemory(item)">编辑</button><button :disabled="busy" @click="toggleMemory(item)">{{ item.enabled ? '停用' : '启用' }}</button><button :disabled="busy" @click="deleteMemory(item)">删除</button></view>
           </view>
+          <template v-if="view === 'direction'">
+            <text class="field-label">初始快照</text><text class="muted small">注册时留下的背景，不是永久定义，无需重做问卷</text>
+            <view v-for="item in snapshots" :key="item.id" class="memory-item">
+              <text class="body-copy">{{ item.direction || '当时尚未确定方向' }}</text><text class="muted small">来源：注册问卷 · {{ item.captured_at.slice(0, 10) }}</text>
+              <text class="body-copy">{{ item.background }}</text><text class="body-copy">{{ item.answers.question }}</text><text class="body-copy">{{ item.answers.response }}</text>
+              <text v-for="constraint in item.constraints" :key="constraint" class="body-copy">当时限制：{{ constraint }}</text>
+              <text class="muted small">当时阶段：{{ stages.find(s => s.id === item.stage)?.label || '未记载' }}</text>
+              <text v-if="item.life_contexts.length" class="muted small">当时背景：{{ item.life_contexts.map(id => lifeContexts.find(c => c.id === id)?.title || '其他').join('、') }}</text>
+              <text v-if="item.concerns.length" class="muted small">当时关注：{{ item.concerns.map(id => concernOptions.find(c => c.id === id)?.title || concerns.find(c => c.id === id)?.title || '其他').join('、') }}</text>
+              <button class="text-button delete-snapshot" :disabled="busy" @click="deleteSnapshot(item)">删除初始资料</button>
+            </view>
+          </template>
         </template>
         </view>
       </scroll-view>

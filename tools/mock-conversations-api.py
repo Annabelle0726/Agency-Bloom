@@ -30,6 +30,13 @@ async def provider(request):
     if "慢回复" in body["messages"][-1]["content"]:
         await asyncio.sleep(3)
     output = {"reply": "［隔离 Mock］已接续本会话，可以比较收入约束和实际时间投入", "suggestion": None}
+    context = json.loads(body['messages'][1]['content'].split('：', 1)[1])
+    if context.get('first_turn'):
+        output['conversation_title'] = body['messages'][-1]['content'][:12]
+    if '现在更想' in body['messages'][-1]['content'] and context.get('current_phase'):
+        source = context['current_phase'][0]
+        if source['id'] not in context.get('dismissed_changes', []):
+            output['phase_change'] = {'source_id': source['id'], 'evidence': body['messages'][-1]['content']}
     if "本次任务是整理会话" in body["messages"][0]["content"]:
         output["summary"] = {"overview": "［隔离 Mock］比较工作选择与每周可投入时间", "decisions": ["先保留稳定收入"],
                              "open_questions": ["实际工作时间还需核实"], "next_steps": ["了解一次真实工作体验"]}

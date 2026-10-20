@@ -8,19 +8,30 @@ Supabase 项目 ref 为 `ycombbpglsmbvjlrjtgc`。本地 `.env` 中保留项目 U
 
 本项目采用「小程序 → FastAPI → PostgreSQL」结构：微信身份由后端换取并验证 openid，应用签发随机不透明会话，数据库只存会话的 SHA-256 摘要。没有使用 Supabase Auth，因此不能把本应用会话当作 Supabase JWT；也不需要在小程序安装 Supabase JS SDK。
 
-## Supabase（用户决定稍后再接）
+## Supabase（迁回云端时）
 
-本地 Supabase CLI 已锁定在根目录依赖，初始化配置已存在。连接云端时，在自己的终端登录：
+Windows 使用 Supabase 官方 CLI 二进制，不再通过 npm 安装 CLI。先确认终端中 `supabase --version` 可用；若没有，从 [Supabase CLI releases](https://github.com/supabase/cli/releases) 下载 `supabase_windows_amd64.zip`，解压后将 `supabase.exe` 所在目录加入 `PATH`。
+
+连接云端时，在自己的终端登录。`supabase login` 使用个人访问令牌，不能使用 publishable key 或 secret API key 代替：
 
 ```powershell
-npx supabase login
+supabase login
 npm run db:link
-npx supabase db push --dry-run
+supabase db push --dry-run
 # 确认目标项目和迁移内容后才执行：
-npx supabase db push
+supabase db push
 ```
 
-`supabase login` 使用个人访问令牌，不能使用 publishable key 或 secret API key 代替。数据库连接密码也不是这两种 API key。通过 CLI 安全输入凭据，不要把它们贴在聊天中。
+`npm run db:link` 会链接 `.env` 中的项目 ref，并可能要求输入数据库密码。数据库连接密码也不是 API key；通过 CLI 安全输入凭据，不要把它们贴在聊天中。
+
+如果 `db push` 直连 `db.PROJECT_REF.supabase.co` 报 `ECONNRESET`，改用 Supabase Connect 面板的 Session pooler 连接串，并通过 `--db-url` 推送：
+
+```powershell
+$url = "postgresql://postgres.PROJECT_REF:URL_ENCODED_PASSWORD@YOUR_SESSION_POOLER_HOST:5432/postgres?sslmode=require"
+supabase db push --dry-run --db-url $url
+supabase db push --db-url $url
+supabase migration list --db-url $url
+```
 
 从 Supabase Connect 面板复制适合部署环境的数据库连接信息，配置后端：
 

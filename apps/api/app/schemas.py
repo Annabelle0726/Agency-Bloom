@@ -136,6 +136,7 @@ class ChatInput(StrictModel):
     insight_feedback: list[InsightFeedback] = Field(default=[], max_length=3)
     task: Literal["chat", "summary"] = "chat"
     session_summary: ConversationSummary | None = None
+    dismissed_changes: list[Annotated[str, StringConstraints(max_length=80)]] = Field(default=[], max_length=40)
 
 
 class ConversationChatInput(ChatInput):
@@ -159,6 +160,7 @@ class ConversationUpdate(StrictModel):
     support_style: SupportStyle | None = None
     archived: bool | None = None
     linked_issue_ids: list[str] | None = Field(default=None, max_length=3)
+    dismissed_change_ids: list[Annotated[str, StringConstraints(max_length=80)]] | None = Field(default=None, max_length=40)
 
 
 class SummaryUpdate(StrictModel):
@@ -172,11 +174,21 @@ class MemoryInput(StrictModel):
     issue_id: str | None = None
     source_conversation_id: str | None = None
     enabled: bool = True
+    horizon: Literal["long_term", "current_phase"] = "long_term"
+    status: Literal["active", "needs_review", "historical"] = "active"
     confirmed: Literal[True]
 
 
 class MemoryUpdate(MemoryInput):
     version: int = Field(ge=1)
+
+
+class MemoryReplacement(StrictModel):
+    version: int = Field(ge=1)
+    content: Line
+    confirmed: Literal[True]
+    keep_history: bool = False
+    source_conversation_id: str | None = None
 
 
 class MemoryReference(StrictModel):
@@ -224,8 +236,38 @@ class Insight(StrictModel):
     experiment: Experiment | None = None
 
 
+class PhaseChange(StrictModel):
+    source_id: Annotated[str, StringConstraints(min_length=1, max_length=80)]
+    evidence: Line
+    source_kind: Literal['memory', 'snapshot'] = 'memory'
+    source_version: int = 1
+    previous: str = ''
+
+
 class AIOutput(StrictModel):
     reply: Annotated[str, StringConstraints(min_length=1, max_length=4000)]
     suggestion: Suggestion | None = None
     insight: Insight | None = None
     summary: ConversationSummary | None = None
+    phase_change: PhaseChange | None = None
+    # A short, single-sentence closing line for the composer footer; generated
+    # by the same chat call, never an extra model request.
+    tail_line: Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)] | None = None
+    # A concise conversation name for the first chat turn. Like tail_line it
+    # rides on the existing call, so opening a chat adds no extra model request.
+    # Normalize and truncate instead of rejecting: optional naming metadata must
+    # never make an otherwise valid chat reply fail schema validation.
+    conversation_title: str | None = None
+
+    @model_validator(mode='after')
+    def normalize_optional_text(self):
+        if self.tail_line == '':
+            self.tail_line = None
+        if self.conversation_title is not None:
+            cleaned = self.conversation_title
+            # Models sometimes wrap names in quotes or end them with a full stop.
+            for _ in range(3):
+                cleaned = cleaned.strip().strip('“”"\'「」『』')
+                cleaned = cleaned.rstrip('。．.!！?？,，、;；：:”"\'」』').strip()
+            self.conversation_title = cleaned[:30] or None
+        return self

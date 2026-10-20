@@ -18,12 +18,13 @@ import {iconSources} from '../../icons'
 import {themes, navigationItems, themeForSession, themeStyle, themeNavSvg, resolveTheme, themeByTimeOfDay} from '../../themes'
 import type {ThemeId, SpaceTab} from '../../themes'
 import ThemePreview from '../../components/ThemePreview.vue'
-import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary, SuppliedContext} from '../../domain'
+import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary} from '../../domain'
 import {ApiError, createApi} from '../../http'
 import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
 import ConversationDrawer from '../../components/ConversationDrawer.vue'
+import PhaseChangeReview from '../../components/PhaseChangeReview.vue'
 import {createAvatarStore} from '../../avatar'
 
 const token = ref<string>(uni.getStorageSync('agency.session') || '')
@@ -171,7 +172,35 @@ const DRAFT_PREFIX = 'draft:'
 const isDraftKey = (id: string) => id.startsWith(DRAFT_PREFIX)
 const isDrafting = computed(() => isDraftKey(workspace.activeId.value))
 let draftSequence = 0
-const drawer = ref<'' | 'list' | 'summary' | 'memories' | 'details'>('')
+const drawer = ref<'' | 'list' | 'summary' | 'memories' | 'direction' | 'details'>('')
+const phaseError = ref('')
+async function skipPhaseChange() {
+  const session = workspace.active.value, candidate = session.phaseChange.value, conversation = activeConversation.value
+  if (busy.value || !candidate || !conversation) return
+  session.skipPhaseChange()
+  await guarded(async () => {
+    try {
+      const updated = await request<Conversation>('PUT', `/conversations/${conversation.id}`, {
+        version: conversation.version,
+        dismissed_change_ids: [...new Set([...(conversation.dismissed_change_ids || []), candidate.source_id])].slice(-40),
+      })
+      changedConversation(updated)
+    } catch { notify('本次已跳过，未能保存跨次不再提示的设置') }
+  })
+}
+async function savePhaseChange(content: string, keepHistory: boolean) {
+  const sourceConversationId = activeConversation.value?.id || null
+  const session = workspace.active.value, candidate = session.phaseChange.value
+  if (!candidate || !session.phaseConfirmed.value || busy.value) return
+  phaseError.value = ''
+  await guarded(async () => {
+    try {
+      const path = candidate.source_kind === 'memory' ? `/memories/${candidate.source_id}/replace` : `/issues/${candidate.source_id.replace('snapshot:', '')}/phase`
+      await request('POST', path, { content, version: candidate.source_version, confirmed: true, keep_history: keepHistory, source_conversation_id: sourceConversationId })
+      session.skipPhaseChange(); workspace.cancelAll(); await refreshWorkspace(); notify('已保存你确认的当前方向')
+    } catch (e) { phaseError.value = e instanceof Error ? e.message : '保存未完成，请稍后重试'; throw e }
+  })
+}
 const openedIds = ref<string[]>([])
 const windows = computed(() => openedIds.value.map(id => conversations.value.find(c => c.id === id)).filter((c): c is Conversation => !!c))
 const runningIds = computed(() => Object.entries(workspace.sessions).filter(([, session]) => session.sending.value).map(([id]) => id))
@@ -184,22 +213,7 @@ const insight = computed({ get: () => workspace.active.value.insight.value, set:
 const insightReaction = computed(() => workspace.active.value.insightReaction.value)
 const generatingSummary = computed(() => sending.value && workspace.active.value.sendingTask.value === 'summary')
 const readOnlyConversation = computed(() => !!activeConversation.value?.archived_at || !!current.value?.ended_at)
-// Per-reply disclosure: what was actually handed to the model for this turn.
-const disclosedContext = ref<Record<string, SuppliedContext | null>>({})
-const disclosureOpen = ref<Record<string, boolean>>({})
-function contextForMessage(message: ChatMessage, index: number): SuppliedContext | null {
-  const key = message.id || `index-${index}`
-  if (key in disclosedContext.value) return disclosedContext.value[key]
-  return message.role === 'assistant' ? (message.payload?.supplied_context ?? null) : null
-}
-function toggleDisclosure(message: ChatMessage, index: number) {
-  const key = message.id || `index-${index}`
-  if (!(key in disclosedContext.value)) disclosedContext.value[key] = message.payload?.supplied_context ?? null
-  disclosureOpen.value[key] = !disclosureOpen.value[key]
-}
-const memoryCategoryLabels: Record<SuppliedContext['memories'][number]['category'], string> = { fact: '事实', preference: '偏好', constraint: '约束' }
-watch(() => workspace.activeId.value, () => { disclosedContext.value = {}; disclosureOpen.value = {} })
-// Animate only genuinely new assistant replies. Restored history remains still.
+// Thinking steps: collapsible reasoning trace shown under each reply.
 const speakingIndex = ref<number | null>(null)
 let speakingTimer: ReturnType<typeof setTimeout> | undefined
 watch(() => messages.value.length, (length, previous) => {
@@ -225,6 +239,27 @@ const canSaveExperiment = computed(() => experimentFields.every(f => experimentE
   !!experimentBase && experimentProposal(experimentBase, experimentEditor).next_step.length <= 600)
 const selectedMode = computed(() => canonicalSupportStyle(activeConversation.value?.support_style || user.value?.support_style))
 const welcomeContext = computed(() => current.value?.focus_response || current.value?.actual_question || current.value?.background || '')
+// Composer footer: the model's own tailored line, falling back to the
+// user's direction/question. Retention status never takes this slot.
+const chatFooterNote = computed(() => {
+  const trim = (text: string) => text.trim().replace(/[。．!！?？]+$/, '')
+  const model = trim(workspace.active.value.tailLine.value)
+  if (model) return model
+  const question = trim(current.value?.actual_question || '')
+  if (question) return `还想着「${question.length > 12 ? question.slice(0, 12) + '…' : question}」吗，可以接着聊`
+  const title = trim(current.value?.title || '')
+  if (title) return `沿着「${title.length > 10 ? title.slice(0, 10) + '…' : title}」继续，或换个话题`
+  return '想到什么，都可以从这里说起'
+})
+// Thinking steps: collapsible reasoning trace shown under each reply.
+const thinkingOpen = ref<Record<string, boolean>>({})
+function stepsForMessage(message: ChatMessage): string[] {
+  return Array.isArray(message.payload?.thinking_steps) ? message.payload!.thinking_steps! : []
+}
+function toggleThinking(message: ChatMessage, index: number) {
+  const key = message.id || `index-${index}`
+  thinkingOpen.value[key] = !thinkingOpen.value[key]
+}
 const chatEntry = computed(() => chatEntryFor(selectedMode.value, current.value || {}))
 const modePickerOpen = ref(false)
 const starterHint = ref('')
@@ -631,6 +666,7 @@ async function setTheme(theme: ThemeId) {
   applyingTheme.value = theme
   try { await guarded(async () => { user.value = await request('PUT', '/me', {theme}) }) }
   finally { applyingTheme.value = null }
+  if (user.value) { try { uni.setStorageSync(manualThemeKey(user.value.id), true) } catch { /* auto theming continues */ } }
 }
 
 async function setSupportStyle(support_style: string) {
@@ -979,9 +1015,13 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
 
         <view v-else-if="current && tab === 'chat'" class="chat-content">
           <view class="chat-header">
+            <button class="chat-header-button" aria-label="返回主界面" hover-class="pressed" :hover-start-time="0"
+                    :hover-stay-time="70" @click="tab = 'now'">
+              <image class="chat-header-glyph" :src="iconSources.home.ink" mode="aspectFit" aria-hidden="true" />
+            </button>
             <button class="chat-header-button" aria-label="打开会话列表" hover-class="pressed" :hover-start-time="0"
                     :hover-stay-time="70" @click="showHistory">
-              <SvgIcon name="back" :size="20"/>
+              <image class="chat-header-glyph" :src="iconSources.menu.ink" mode="aspectFit" aria-hidden="true" />
             </button>
             <button class="chat-header-title" :disabled="busy" aria-label="打开会话列表" hover-class="pressed"
                     :hover-start-time="0" :hover-stay-time="70" @click="showHistory">
@@ -1030,7 +1070,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <view v-if="!messages.length && isDrafting" class="chat-welcome">
             <view class="chat-welcome-intro">
               <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" /></view>
-              <text class="body-copy">想说什么，就从哪里说起。发送后这段对话才会被创建。</text>
+              <text class="body-copy">想说什么，就从哪里说起，发送后这段对话才会被创建</text>
             </view>
             <text v-if="!user?.save_chat" class="welcome-context">未开启聊天保存：这段对话的原文只在本次使用中可见，不会为你伪造可恢复的历史</text>
             <text v-if="welcomeContext" class="welcome-context">{{ welcomeContext }}</text>
@@ -1077,37 +1117,19 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                    mode="aspectFill" aria-label="你的头像"/>
             <view class="message-content">
               <text v-if="message.role === 'assistant'" class="message-name">AGENCY BLOOM</text>
-              <text class="message-bubble">{{ message.content }}</text>
-              <button v-if="message.role === 'assistant' && (message.payload?.supplied_context || disclosedContext[message.id || `index-${index}`])"
-                      class="context-disclosure-toggle" :aria-expanded="!!disclosureOpen[message.id || `index-${index}`]"
-                      @click="toggleDisclosure(message, index)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
-                查看本次提供给 AI 的背景
-                <view class="disclosure-chevron" :class="{ 'is-open': disclosureOpen[message.id || `index-${index}`] }"><SvgIcon name="chevron" :size="13"/></view>
+              <button v-if="message.role === 'assistant' && stepsForMessage(message).length"
+                      class="thinking-toggle" :aria-expanded="!!thinkingOpen[message.id || `index-${index}`]"
+                      @click="toggleThinking(message, index)" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+                <text>{{ thinkingOpen[message.id || `index-${index}`] ? '收起思考过程' : '查看思考过程' }}</text>
+                <view class="thinking-chevron" :class="{ 'is-open': thinkingOpen[message.id || `index-${index}`] }"><SvgIcon name="chevron" :size="12"/></view>
               </button>
-              <view v-if="disclosureOpen[message.id || `index-${index}`]" class="context-disclosure">
-                <template v-if="contextForMessage(message, index)">
-                  <text class="disclosure-heading">实际传入的背景资料</text>
-                  <view v-if="contextForMessage(message, index)!.memories.length" class="disclosure-section">
-                    <text class="disclosure-label">你确认过的长期记忆</text>
-                    <text v-for="memory in contextForMessage(message, index)!.memories" :key="memory.id" class="disclosure-item">「{{ memory.content }}」 · {{ memoryCategoryLabels[memory.category] || memory.category }}</text>
-                  </view>
-                  <view v-if="contextForMessage(message, index)!.summary" class="disclosure-section">
-                    <text class="disclosure-label">这段会话已审阅的总结</text>
-                  </view>
-                  <view class="disclosure-section">
-                    <text class="disclosure-label">最近消息</text>
-                    <text class="disclosure-item">{{ contextForMessage(message, index)!.history_count }} 条{{ contextForMessage(message, index)!.history_retained ? ' · 来自已保存的聊天' : ' · 来自本次使用，未保存' }}</text>
-                  </view>
-                  <view v-if="contextForMessage(message, index)!.linked_explorations.length" class="disclosure-section">
-                    <text class="disclosure-label">关联探索的卡片</text>
-                    <text v-for="issue in contextForMessage(message, index)!.linked_explorations" :key="issue.id" class="disclosure-item">「{{ issue.title || '未命名探索' }}」的已确认卡片</text>
-                  </view>
-                  <text class="disclosure-note">以上是本次实际提供的内容，不代表回复一定逐条使用</text>
-                </template>
-                <text v-else class="disclosure-note">本次回复没有附带长期记忆、总结或关联探索</text>
+              <view v-if="message.role === 'assistant' && thinkingOpen[message.id || `index-${index}`]" class="thinking-steps">
+                <text v-for="(step, stepIndex) in stepsForMessage(message)" :key="stepIndex" class="thinking-step">{{ step }}</text>
               </view>
+              <text class="message-bubble">{{ message.content }}</text>
             </view>
           </view>
+          <button v-if="workspace.active.value.phaseChange.value && !sending" class="text-button review-phase-change" @click="phaseError = ''; workspace.active.value.phaseOpen.value = true">查看可能的方向变化</button>
           <view v-if="sending && !generatingSummary" class="message-row user">
             <image class="chat-avatar" :src="userAvatar || '/static/avatar-user.png'" mode="aspectFill"
                    aria-label="你的头像"/>
@@ -1138,6 +1160,9 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <view class="insight-actions"><button data-insight="interested" :disabled="sending || busy || insightReaction === 'interested'" @click="reactToInsight('interested')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">{{ insightReaction === 'interested' ? '已带入下一次探索' : '这个角度有意思' }}</button><button data-insight="dismissed" :disabled="sending || busy" @click="reactToInsight('dismissed')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">不太像我</button><button data-insight="experiment" :disabled="sending || busy" @click="reactToInsight('experiment')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">让我试一下 <SvgIcon name="arrow-diagonal" :size="15" /></button></view>
             <text v-if="insightReaction" class="insight-footnote">这只是待探索的角度，尚未写入你的卡片</text>
           </view>
+        </view>
+
+        <view v-if="current && tab === 'chat'" class="composer-dock">
           <view class="composer"><textarea v-model="draft" class="chat-input" :disabled="readOnlyConversation || (!activeConversation && !isDrafting)" :adjust-position="false" @input="starterHint = ''"
                                            :cursor-spacing="24" maxlength="2000" :auto-height="true"
                                            :placeholder="isDrafting ? '发送后才会创建这段对话' : '想到什么，就从哪里说起……'"/>
@@ -1147,9 +1172,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <SvgIcon :name="sending ? 'stop' : 'arrow-up'" light :size="21"/>
             </button>
           </view>
-          <text class="chat-disclosure">
-            {{ user?.save_chat ? '已开启聊天保存，可在「我的」中关闭并清除' : '完整聊天默认不保存 · 确认的卡片会留下' }}
-          </text>
+          <text class="chat-disclosure">{{ chatFooterNote }}</text>
         </view>
 
         <view v-else-if="tab === 'discover'" class="workspace discover-content">
@@ -1211,7 +1234,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
                     :hover-start-time="0" :hover-stay-time="70">
               <view>
                 <text class="setting-title">保存完整聊天</text>
-                <text class="setting-description">关闭时清除聊天和总结；长期记忆单独管理</text>
+                <text class="setting-description">默认开启 · 关闭会清除聊天和总结；长期记忆单独管理</text>
               </view>
               <view class="toggle" :class="{ on: user?.save_chat }">
                 <view/>
@@ -1244,6 +1267,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           </view>
           <view class="settings-group">
             <text class="group-label">我的记录</text>
+            <button class="setting-row current-direction" @click="drawer = 'direction'"><view><text class="setting-title">当前方向与初始资料</text><text class="setting-description">查看、修改阶段目标，管理初始快照</text></view><SvgIcon name="chevron" :size="17" /></button>
             <button class="setting-row" @click="drawer = 'memories'"><view><text class="setting-title">整理长期记忆</text><text class="setting-description">{{ user?.use_memory ? '已启用 · 可编辑、停用、合并或删除' : '尚未用于回复 · 由你确认和管理' }}</text></view><SvgIcon name="chevron" :size="17" /></button>
             <button class="setting-row" @click="showHistory" hover-class="pressed" :hover-start-time="0"
                     :hover-stay-time="70">
@@ -1352,7 +1376,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               <text class="body-copy">AI
                 的建议可能有误，尚未核实的内容会作为推测或待核实项，它不会替你做决定，也不会自动改写你的卡片
               </text>
-              <text class="body-copy">产品默认不保存完整聊天；这与第三方模型服务的数据处理政策是不同的</text>
+              <text class="body-copy">聊天默认保存到你的账号，可随时在「我的」关闭并清除；这与第三方模型服务的数据处理政策是不同的</text>
               <button class="primary" :disabled="busy" @click="consentAI" hover-class="pressed" :hover-start-time="0"
                       :hover-stay-time="70">同意并开始聊聊
                 <SvgIcon name="arrow" light :size="20"/>
@@ -1400,7 +1424,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
               </text>
               <text class="field-label">登录和保存</text>
               <text class="body-copy">
-                保存探索、会话名称、你确认的决策卡和反馈。完整聊天默认不保存，开启后只保存之后的对话和你确认的会话总结；关闭会清除聊天与总结。长期记忆只有明确确认后才保存，使用开关独立，支持编辑、停用、合并和删除；删除记忆不改写历史聊天原文
+                保存探索、会话名称、你确认的决策卡和反馈。完整聊天默认保存，关闭会立即清除聊天与总结，可随时重新开启（只影响之后的对话）。长期记忆只有明确确认后才保存，使用开关独立，支持编辑、停用、合并和删除；删除记忆不改写历史聊天原文
               </text>
               <text class="field-label">AI 与数据服务</text>
               <text class="body-copy">AI 对话在你单独同意后调用 DeepSeek，部署版本使用 Supabase 托管
@@ -1420,6 +1444,9 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <view v-if="modal === 'appearance'" class="appearance-footer"><ActionButton :arrow="false" :disabled="busy" @click="modal = ''">完成</ActionButton></view>
         </view>
       </view>
+      <PhaseChangeReview v-if="workspace.active.value.phaseOpen.value && workspace.active.value.phaseChange.value" :key="workspace.activeId.value + workspace.active.value.phaseChange.value.source_id"
+                         :change="workspace.active.value.phaseChange.value" :confirmed="workspace.active.value.phaseConfirmed.value" :busy="busy" :error="phaseError"
+                         @confirm="workspace.active.value.confirmPhaseChange()" @skip="skipPhaseChange" @close="workspace.active.value.phaseOpen.value = false" @save="savePhaseChange" />
       <ConversationDrawer v-if="drawer && user" :view="drawer" :conversations="conversations" :active="activeConversation" :issues="archives" :user="user"
                           :summary="workspace.active.value.summary.value" :summary-draft="workspace.active.value.summaryDraft.value"
                           :generating="sending" :running="runningIds" :error="chatError || error" :request="request"

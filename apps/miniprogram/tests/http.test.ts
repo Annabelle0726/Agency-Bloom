@@ -43,3 +43,16 @@ it('does not expose upstream server diagnostics in production messages', async (
   const api = createApi((options: any) => { options.success({ statusCode: 502, data: { detail: 'sensitive upstream payload' } }); return { abort() {} } }, () => '', () => {}, '')
   await expect(api.request('POST', '/issues/id/chat').promise).rejects.toMatchObject({ kind: 'model', message: 'AI 服务暂时没有完成回复，请稍后再试' })
 })
+
+it.each([
+  ['output_truncated', 'AI 回复达到长度上限，未能完整返回；输入已保留'],
+  ['provider_rejected', 'AI 接口拒绝了这次请求，需要检查服务端配置；输入已保留'],
+  ['output_invalid', 'AI 返回的回复格式不完整或不符合要求；输入已保留'],
+  ['unknown-private-code', 'AI 服务暂时没有完成回复，请稍后再试'],
+])('shows a safe explanation for %s without leaking upstream data', async (code, message) => {
+  const api = createApi((options: any) => {
+    options.success({ statusCode: 502, data: { detail: { code, message: 'private payload' } } })
+    return { abort() {} }
+  }, () => '', () => {}, '')
+  await expect(api.request('POST', '/conversations/id/chat').promise).rejects.toMatchObject({ kind: 'model', message })
+})

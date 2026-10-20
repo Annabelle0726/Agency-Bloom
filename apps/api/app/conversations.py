@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, Query, Request, Response
 from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
+from .adaptive import relevant, snapshot_for
 from .models import AIRequest, Conversation, ConversationLink, Issue, Memory, Message, User, now
 from .schemas import (
     ConversationChatInput,
@@ -11,6 +12,7 @@ from .schemas import (
     ConversationUpdate,
     MemoryInput,
     MemoryMerge,
+    MemoryReplacement,
     MemoryUpdate,
     SummaryUpdate,
 )
@@ -36,6 +38,7 @@ def conversation_view(db, item):
             "title",
             "support_style",
             "summary",
+            "dismissed_change_ids",
             "version",
             "created_at",
             "updated_at",
@@ -57,6 +60,11 @@ def memory_view(item):
             "id",
             "content",
             "category",
+            "horizon",
+            "status",
+            "source",
+            "confirmed_at",
+            "last_verified_at",
             "issue_id",
             "source_conversation_id",
             "enabled",
@@ -112,37 +120,66 @@ def context_for(db, user, conversation, body):
                 .where(
                     Memory.user_id == user.id,
                     Memory.enabled.is_(True),
+                    Memory.status != "historical",
                     or_(Memory.issue_id.is_(None), Memory.issue_id.in_(scope_ids)),
                 )
                 .order_by(Memory.updated_at.desc(), Memory.id)
                 .limit(40)
             )
         ]
+    topic = body.message
+    if body.message.strip('。！ ') in ('继续', '接着说', '然后呢', '继续聊'):
+        topic += ' ' + ' '.join(m['content'] for m in history[-4:] if m['role'] == 'user')
+    memories = [m for m in memories if relevant(m['content'], topic)]
+    memories.sort(key=lambda m: m['horizon'] != 'current_phase')
+    memories = memories[:6]
+    current = [m for m in memories if m['horizon'] == 'current_phase' and m['status'] == 'active']
+    long_term = [m for m in memories if m['horizon'] == 'long_term' and m['status'] == 'active']
+    pending = [m for m in memories if m['status'] == 'needs_review']
+    issue = db.get(Issue, conversation.issue_id)
+    snapshot = snapshot_for(issue)
+    explicit_snapshot = any(s in body.message for s in ('刚才的线索', '注册时', '初始资料', '问卷'))
+    if current or not snapshot or not (explicit_snapshot or relevant(str(snapshot) + issue.title, topic)):
+        snapshot = None
+    primary_relevant = bool(snapshot) or relevant(str(issue.card), body.message)
+    card_reviewed = (issue.exploration or {}).get('card_reviewed_at', issue.version > 1)
+    primary_card = issue.card if primary_relevant and (card_reviewed or snapshot) else {}
+    related = [i for i in related if relevant(str(i.card), body.message)]
+    first_turn = body.task == "chat" and not db.scalar(
+        select(AIRequest.id)
+        .where(
+            AIRequest.conversation_id == conversation.id,
+            AIRequest.kind == "chat",
+            AIRequest.status == "completed",
+        )
+        .limit(1)
+    )
     model_context = {
+        "confirmed_card": primary_card,
+        "current_issue": {"title": issue.title} if primary_card else {},
         "reviewed_conversation_summary": summary,
-        "confirmed_memories": [
-            {
-                "id": m["id"],
-                "content": m["content"],
-                "category": m["category"],
-                "issue_id": m["issue_id"],
-            }
-            for m in memories
-        ],
+        "confirmed_memories": long_term,
+        "current_phase": current,
+        "memories_to_verify": pending,
+        "initial_snapshot": snapshot,
+        "dismissed_changes": list(dict.fromkeys([*(conversation.dismissed_change_ids or []), *body.dismissed_changes])),
         "explicitly_linked_explorations": [
             {"id": i.id, "title": i.title, "card": i.card} for i in related
         ],
+        "first_turn": first_turn,
         "summary_scope": "已审阅总结及最近最多80条消息" if body.task == "summary" else None,
     }
     sources = {
         "memories": [
-            {"id": m["id"], "content": m["content"], "category": m["category"]}
+            {k: m[k] for k in ('id', 'content', 'category', 'horizon', 'status', 'last_verified_at')}
             for m in memories
         ],
         "summary": bool(summary),
         "history_count": len(history),
         "history_retained": user.save_chat,
         "linked_explorations": [{"id": i.id, "title": i.title} for i in related],
+        "initial_snapshot": snapshot,
+        "primary_card": primary_card,
     }
     return history, model_context, sources
 
@@ -163,6 +200,64 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
     def lock_user(db, user):
         # Serialize memory mutations (including count/merge) across workers.
         db.execute(update(User).where(User.id == user.id).values(use_memory=User.use_memory))
+
+    def clear_snapshot(item):
+        snapshot = snapshot_for(item)
+        card = dict(item.card)
+        card['confirmed'] = [s for s in card.get('confirmed', []) if s != item.background]
+        card['constraints'] = [s for s in card.get('constraints', []) if s not in (snapshot or {}).get('constraints', [])]
+        item.card = card
+        item.background = ''
+        item.stage = 'unsure'
+        item.concerns = []
+        item.life_contexts = []
+        item.exploration = {'snapshot_deleted': True, 'card_reviewed_at': (item.exploration or {}).get('card_reviewed_at', item.version > 1)}
+
+    @app.get("/api/issues/{issue_id}/snapshot")
+    def get_snapshot(issue_id: str, user: User = Depends(authenticated),
+                     db: Session = Depends(db_dependency)):
+        return snapshot_for(owned_issue(db, user, issue_id))
+
+    @app.delete("/api/issues/{issue_id}/snapshot", status_code=204)
+    def delete_snapshot(issue_id: str, version: int = Query(ge=1),
+                        user: User = Depends(authenticated), db: Session = Depends(db_dependency)):
+        lock_user(db, user)
+        item = owned_issue(db, user, issue_id)
+        if item.version != version:
+            raise HTTPException(409, "资料已更新，请重新读取后核对")
+        # Remove the original background copy from the card as well. Independently
+        # edited card content and separately confirmed memories remain user owned.
+        clear_snapshot(item)
+        item.version += 1
+        item.updated_at = now()
+        cancel_pending(db, user.id)
+        db.commit()
+        return Response(status_code=204)
+
+    @app.post("/api/issues/{issue_id}/phase", status_code=201)
+    def save_phase_from_snapshot(issue_id: str, body: MemoryReplacement,
+                                 user: User = Depends(authenticated), db: Session = Depends(db_dependency)):
+        lock_user(db, user)
+        item = owned_issue(db, user, issue_id)
+        if item.version != body.version or snapshot_for(item) is None:
+            raise HTTPException(409, "初始资料已更新，请重新核对")
+        if body.source_conversation_id:
+            owned_conversation(db, user, body.source_conversation_id)
+        count = db.scalar(select(func.count()).select_from(Memory).where(Memory.user_id == user.id))
+        if count >= 40:
+            raise HTTPException(409, "记忆已达40条，请先整理")
+        phase = Memory(user_id=user.id, issue_id=item.id, content=body.content,
+                       horizon='current_phase', source='user_revision', source_conversation_id=body.source_conversation_id)
+        db.add(phase)
+        if not body.keep_history:
+            clear_snapshot(item)
+        else:
+            item.exploration = {**(item.exploration or {}), 'card_reviewed_at': (item.exploration or {}).get('card_reviewed_at', item.version > 1)}
+        item.version += 1
+        item.updated_at = now()
+        cancel_pending(db, user.id)
+        db.commit()
+        return memory_view(phase)
 
     @app.get("/api/conversations")
     def list_conversations(
@@ -250,6 +345,14 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
         if body.linked_issue_ids is not None:
             for linked in body.linked_issue_ids:
                 owned_issue(db, user, linked)
+        if body.dismissed_change_ids is not None:
+            # Suppression is explicit conversation metadata containing IDs only,
+            # never an inferred preference or a saved unconfirmed change.
+            for source_id in set(body.dismissed_change_ids) - set(item.dismissed_change_ids or []):
+                if source_id.startswith('snapshot:'):
+                    owned_issue(db, user, source_id.removeprefix('snapshot:'))
+                else:
+                    memory_owned(db, user, source_id)
         changed = db.execute(
             update(Conversation)
             .where(Conversation.id == item.id, Conversation.version == body.version)
@@ -382,11 +485,17 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
         lock_user(db, user)
         item = memory_owned(db, user, memory_id)
         validate_memory(db, user, body)
+        values = body.model_dump(exclude={"confirmed", "version"}, exclude_unset=True)
+        # Disabling/re-enabling alone is not a new verification of its content.
+        status = values.get('status', item.status)
+        if body.content != item.content or status != item.status or 'horizon' in values:
+            values['confirmed_at'] = now()
+            values['last_verified_at'] = now() if status == 'active' else item.last_verified_at
         changed = db.execute(
             update(Memory)
             .where(Memory.id == item.id, Memory.version == body.version)
             .values(
-                **body.model_dump(exclude={"confirmed", "version"}),
+                **values,
                 version=Memory.version + 1,
                 updated_at=now(),
             )
@@ -397,6 +506,34 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
         db.commit()
         db.refresh(item)
         return memory_view(item)
+
+    @app.post("/api/memories/{memory_id}/replace", status_code=201)
+    def replace_memory(memory_id: str, body: MemoryReplacement,
+                       user: User = Depends(authenticated), db: Session = Depends(db_dependency)):
+        lock_user(db, user)
+        item = memory_owned(db, user, memory_id)
+        if item.version != body.version or item.status == 'historical':
+            raise HTTPException(409, "记录已更新，请重新核对")
+        if body.source_conversation_id:
+            owned_conversation(db, user, body.source_conversation_id)
+        if body.keep_history:
+            count = db.scalar(select(func.count()).select_from(Memory).where(Memory.user_id == user.id))
+            if count >= 40:
+                raise HTTPException(409, "记忆已达40条，请先整理或选择不保留旧版本")
+        replacement = Memory(user_id=user.id, content=body.content, category=item.category,
+                             horizon=item.horizon, issue_id=item.issue_id,
+                             source_conversation_id=body.source_conversation_id or item.source_conversation_id,
+                             source='user_revision', enabled=item.enabled)
+        if body.keep_history:
+            item.status = 'historical'
+            item.version += 1
+            item.updated_at = now()
+        else:
+            db.delete(item)
+        db.add(replacement)
+        cancel_pending(db, user.id)
+        db.commit()
+        return memory_view(replacement)
 
     @app.delete("/api/memories/{memory_id}", status_code=204)
     def forget_memory(

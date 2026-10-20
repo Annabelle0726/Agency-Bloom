@@ -1,8 +1,8 @@
 import { ref } from 'vue'
-import type { ChatMessage, ChatResponse, Suggestion, Insight, ConversationSummary, SuppliedContext } from './domain'
+import type { ChatMessage, ChatResponse, Suggestion, Insight, ConversationSummary, SuppliedContext, PhaseChange } from './domain'
 import { ApiError } from './http'
 
-interface ChatBody { request_id: string; message: string; history: { role: 'user' | 'assistant'; content: string }[]; insight_feedback: { possibility: string; reaction: 'dismissed' }[]; task?: 'chat' | 'summary'; session_summary?: ConversationSummary | null }
+interface ChatBody { request_id: string; message: string; history: { role: 'user' | 'assistant'; content: string }[]; insight_feedback: { possibility: string; reaction: 'dismissed' }[]; task?: 'chat' | 'summary'; session_summary?: ConversationSummary | null; dismissed_changes?: string[] }
 export interface ChatOptions {
   post: (issueId: string, body: ChatBody) => { promise: Promise<ChatResponse>; cancel: () => void }
   cancelRemote: (id: string) => Promise<unknown>
@@ -21,6 +21,14 @@ export function createChatSession(options: ChatOptions) {
   const insightReaction = ref<'' | 'interested' | 'experiment'>('')
   const summary = ref<ConversationSummary | null>(null), summaryDraft = ref<ConversationSummary | null>(null)
   const suppliedContext = ref<SuppliedContext | null>(null)
+  const phaseChange = ref<PhaseChange | null>(null), phaseConfirmed = ref(false), phaseOpen = ref(false)
+  let dismissedChanges: string[] = []
+  function confirmPhaseChange() { if (phaseChange.value) phaseConfirmed.value = true }
+  function skipPhaseChange() {
+    if (phaseChange.value) dismissedChanges = [...new Set([...dismissedChanges, phaseChange.value.source_id])].slice(-40)
+    phaseChange.value = null; phaseConfirmed.value = false; phaseOpen.value = false
+  }
+  const tailLine = ref('')
   const error = ref(''), sendingTask = ref<'chat' | 'summary'>('chat'), lastRequestId = ref('')
   const loaded = ref(false), olderCursor = ref<string | null>(null)
   let insightFeedback: ChatBody['insight_feedback'] = []
@@ -33,26 +41,29 @@ export function createChatSession(options: ChatOptions) {
   }
   function reset() {
     cancel()
+    phaseChange.value = null; phaseConfirmed.value = false; phaseOpen.value = false; dismissedChanges = []
     activeId = ''; abort = null; sending.value = false; pendingText.value = ''
     draft.value = ''; messages.value = []; suggestion.value = null; insight.value = null; insightReaction.value = ''; insightFeedback = []
-    summary.value = null; summaryDraft.value = null; suppliedContext.value = null; error.value = ''; loaded.value = false; olderCursor.value = null; lastRequestId.value = ''
+    summary.value = null; summaryDraft.value = null; suppliedContext.value = null; tailLine.value = ''; error.value = ''; loaded.value = false; olderCursor.value = null; lastRequestId.value = ''
   }
   async function send(issueId: string, task: 'chat' | 'summary' = 'chat') {
     if (sending.value || (task === 'chat' && !draft.value.trim())) return
     const original = draft.value, text = task === 'summary' ? '请整理当前会话，保留未解决的问题' : original.trim(), id = options.requestId()
     activeId = id; cancelSent = false; sending.value = true; pendingText.value = text
     sendingTask.value = task; error.value = ''; lastRequestId.value = id
-    if (task === 'chat') suggestion.value = null
+    if (task === 'chat') { suggestion.value = null; phaseChange.value = null; phaseConfirmed.value = false; phaseOpen.value = false }
     try {
       const operation = options.post(issueId, { request_id: id, message: text,
         history: messages.value.slice(task === 'summary' ? -80 : -8).map(({ role, content }) => ({ role, content })),
-        insight_feedback: [...insightFeedback], task, session_summary: summary.value })
+        insight_feedback: [...insightFeedback], dismissed_changes: [...dismissedChanges], task, session_summary: summary.value })
       abort = operation.cancel
       const response = await operation.promise
       if (activeId !== id || cancelSent) return
       if (task === 'summary') { summaryDraft.value = response.summary ?? null; return }
-      messages.value.push({ role: 'user', content: text }, { role: 'assistant', content: response.reply, payload: { suggestion: response.suggestion, insight: response.insight, request_id: id, supplied_context: response.supplied_context ?? null } })
+      messages.value.push({ role: 'user', content: text }, { role: 'assistant', content: response.reply, payload: { suggestion: response.suggestion, insight: response.insight, request_id: id, supplied_context: response.supplied_context ?? null, tail_line: response.tail_line ?? '', thinking_steps: response.thinking_steps ?? [] } })
+      tailLine.value = response.tail_line?.trim() || ''
       suppliedContext.value = response.supplied_context ?? null
+      phaseChange.value = response.phase_change && !dismissedChanges.includes(response.phase_change.source_id) ? response.phase_change : null
       suggestion.value = response.suggestion ?? null
       insight.value = response.insight ?? null; insightReaction.value = ''
       if (draft.value === original) draft.value = ''
@@ -82,5 +93,6 @@ export function createChatSession(options: ChatOptions) {
     return null
   }
   return { messages, draft, pendingText, sending, sendingTask, suggestion, insight, insightReaction, summary, summaryDraft,
-    suppliedContext, error, lastRequestId, loaded, olderCursor, reactToInsight, send, cancel, reset }
+    phaseChange, phaseConfirmed, phaseOpen, confirmPhaseChange, skipPhaseChange,
+    suppliedContext, tailLine, error, lastRequestId, loaded, olderCursor, reactToInsight, send, cancel, reset }
 }

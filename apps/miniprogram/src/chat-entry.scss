@@ -24,6 +24,12 @@
 .chat-header-button.compressed {
   transform: scale(.92);
 }
+.chat-header-glyph {
+  display: block;
+  width: 19px;
+  height: 19px;
+  filter: var(--icon-filter, none);
+}
 .chat-header-title {
   flex: 1;
   min-width: 0;
@@ -223,9 +229,9 @@
 }
 .chat-content {
   padding-top: 18px;
-  /* The composer follows the normal flow; the chat page has no resident
-     tabbar, so only the safe-area gap is needed below it. */
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  /* The fixed dock (footer note + composer) is a separate block; the
+     conversation scrolls above it with clearance so nothing is hidden. */
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
 }
 @media(max-width:350px) {
   .chat-content { padding-left: 18px; padding-right: 18px; }

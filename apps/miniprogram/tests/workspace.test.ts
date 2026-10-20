@@ -3,6 +3,13 @@ import { createChatWorkspace } from '../src/chat-workspace'
 import type { ChatResponse } from '../src/domain'
 import { conversationGreeting } from '../src/conversation-greeting'
 
+it('never presents historical or unverified memory as a current greeting', () => {
+  expect(conversationGreeting(true, [
+    { content: '过去必须稳定', enabled: true, issue_id: null, status: 'historical' },
+    { content: '可能已变的限制', enabled: true, issue_id: null, status: 'needs_review' },
+  ])).toBe('今天有什么想聊的？从一个问题或一个念头开始就好')
+})
+
 it('greets with enabled scoped memory only after consent, otherwise the provided question', () => {
   const issue = { id: 'a', actual_question: '如何保留收入？' }
   const memories = [

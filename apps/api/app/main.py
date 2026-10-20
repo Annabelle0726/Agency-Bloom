@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import json
 import logging
 import secrets
 from contextlib import asynccontextmanager, suppress
@@ -387,6 +388,9 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             concerns=body.concerns,
             life_contexts=body.life_contexts,
             exploration={
+                "card_reviewed_at": None,
+                "initial_title": body.title,
+                "initial_constraints": body.constraints,
                 "intent": body.exploration_intent,
                 "question": body.actual_question,
                 "response": body.focus_response,
@@ -435,6 +439,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             )
             .values(
                 card=body.card.model_dump(),
+                exploration={**(item.exploration or {}), 'card_reviewed_at': now()},
                 title=body.card.title,
                 version=Issue.version + 1,
                 updated_at=now(),
@@ -542,6 +547,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         return await run_chat(issue_id, body, request, user, db)
 
     async def run_chat(issue_id, body, request, user, db, conversation=None):
+        legacy = conversation is None
         # Serialize admission with consent/context edits, then refresh authenticated data.
         # A stale dependency read must never authorize a newly submitted provider call.
         locked = db.execute(
@@ -557,6 +563,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             legacy_conversation = db.get(Conversation, issue_id)
             if not legacy_conversation or legacy_conversation.archived_at:
                 raise HTTPException(409, "原会话已删除或归档，请打开或新建一段会话")
+            conversation = legacy_conversation
         if conversation:
             db.refresh(conversation)
             if conversation.archived_at:
@@ -578,6 +585,7 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
         context = None
         history = None
         sources = None
+        first_turn = False
         if conversation:
             if db.scalar(
                 select(AIRequest.id)
@@ -586,11 +594,12 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             ):
                 raise HTTPException(409, "这段会话有一条回复正在生成")
             history, context, sources = context_for(db, user, conversation, body)
+            first_turn = bool(context.get("first_turn"))
         prompt = ai.messages_for(
             item.card,
             issue_view(db, item)["feedback"][:5],
             body,
-            conversation.support_style if conversation else user.support_style,
+            user.support_style if legacy else conversation.support_style,
             item.life_contexts,
             item.concerns,
             current_issue={"title": item.title, "stage": item.stage},
@@ -598,6 +607,11 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
             conversation_context=context,
             history=history,
         )
+        if sources is not None:
+            supplied = json.loads(prompt[1]['content'].split('：', 1)[1])
+            sources['recent_feedback'] = supplied['recent_feedback']
+            strategy = supplied.get('psychology_strategy')
+            sources['strategy'] = {k: strategy[k] for k in ('id', 'version')} if strategy else None
         reserved = ai.reservation_micro(settings, prompt)
         insert = sqlite_insert if sqlite else pg_insert
         db.execute(
@@ -691,6 +705,29 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                     raise asyncio.CancelledError()
                 if live_conversation:
                     live_conversation.updated_at = now()
+                    # The first completed chat turn can name a still-provisional
+                    # conversation with the same provider response. A title the
+                    # user already chose is never overwritten.
+                    if (
+                        body.task == "chat"
+                        and first_turn
+                        and result.conversation_title
+                        and live_conversation.title
+                        in {"", "新会话", "开始探索", body.message[:30]}
+                    ):
+                        live_conversation.title = result.conversation_title[:30]
+                        live_conversation.version += 1
+
+                def thinking_steps(trace: str | None) -> list[str]:
+                    """Bound the reasoning trace into short display steps."""
+                    if not trace:
+                        return []
+                    steps = [part.strip() for part in trace.replace("\r", "").split("\n") if part.strip()]
+                    if len(steps) == 1 and len(steps[0]) > 80:
+                        sentences = [s for s in steps[0].replace("。", "。\n").split("\n") if s.strip()]
+                        steps = sentences
+                    return [s[:200] for s in steps[:6]]
+
                 if live_user.save_chat and body.task == "chat":
                     target_id = conversation.id if conversation else issue_id
                     done.add(
@@ -709,17 +746,23 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                             role="assistant",
                             content=result.reply,
                             payload={
+                                "supplied_context": sources,
                                 "suggestion": result.suggestion.model_dump()
                                 if result.suggestion
                                 else None,
                                 "insight": result.insight.model_dump() if result.insight else None,
                                 "request_id": str(body.request_id),
+                                "thinking_steps": thinking_steps(generation.reasoning),
                             },
                         )
                     )
             return (
                 result.model_dump()
-                | {"mode": settings.ai_mode, "usage": generation.usage}
+                | {
+                    "mode": settings.ai_mode,
+                    "usage": generation.usage,
+                    "thinking_steps": thinking_steps(generation.reasoning),
+                }
                 | ({"supplied_context": sources} if sources else {})
             )
         except asyncio.CancelledError:
@@ -743,15 +786,17 @@ def create_app(ai_transport=None, wechat_transport=None, **overrides):
                 else "protocol"
             )
             status = exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else 0
+            code = ai.failure_code(exc)
+            fields = ','.join(exc.fields) if isinstance(exc, ai.ProviderOutputError) else ''
             # Do not log exception bodies, prompts, identifiers, URLs or credentials
             logging.getLogger("agency.ai").warning(
-                "generation_failed kind=%s status=%s", kind, status
+                "generation_failed kind=%s status=%s code=%s fields=%s", kind, status, code, fields
             )
             with sessions.begin() as failed:
                 record = failed.get(AIRequest, key)
                 if record:
                     record.status = "failed"
-            raise HTTPException(502, "这次回复没有完成，你的输入还在，稍后可手动重试") from None
+            raise HTTPException(502, {"code": code}) from None
 
     @app.get("/api/requests/{request_id}")
     def request_status(

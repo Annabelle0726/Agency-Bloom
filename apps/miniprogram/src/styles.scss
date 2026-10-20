@@ -219,16 +219,13 @@ text { overflow-wrap: anywhere; }
 .composer-dock { position: fixed; bottom: 0; left: 0; right: 0; z-index: 11; padding: 0 16px calc(env(safe-area-inset-bottom) + 6px); background: var(--bg); }
 .composer-dock .chat-disclosure { margin: 6px 0 2px; }
 .keyboard-open .composer-dock { bottom: var(--keyboard-height, 0px); padding-bottom: 6px; }
-.context-disclosure-toggle { display: inline-flex; align-items: center; gap: 5px; margin: 8px 0 0; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); font-size: 10px; line-height: 1.4; text-align: left; }
-.context-disclosure-toggle::after { border: 0; }
-.disclosure-chevron { display: flex; align-items: center; transition: transform 160ms ease; }
-.disclosure-chevron.is-open { transform: rotate(90deg); }
-.context-disclosure { margin-top: 9px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); max-width: 100%; box-sizing: border-box; }
-.disclosure-heading { display: block; font-size: 10px; color: var(--accent); margin-bottom: 7px; }
-.disclosure-section { margin-bottom: 8px; }
-.disclosure-label { display: block; font-size: 9px; color: var(--muted); margin-bottom: 3px; }
-.disclosure-item { display: block; font-size: 11px; line-height: 1.8; }
-.disclosure-note { display: block; font-size: 9px; color: var(--muted); margin-top: 7px; line-height: 1.6; }
+/* Collapsible reasoning trace above each reply bubble. */
+.thinking-toggle { display: inline-flex; align-items: center; gap: 5px; margin: 2px 0 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); font-size: 10px; line-height: 1.4; text-align: left; }
+.thinking-toggle::after { border: 0; }
+.thinking-chevron { display: flex; align-items: center; transition: transform 160ms ease; }
+.thinking-chevron.is-open { transform: rotate(90deg); }
+.thinking-steps { margin: 0 0 8px; padding: 9px 12px; border-left: 2px solid var(--line); max-width: 100%; box-sizing: border-box; }
+.thinking-step { display: block; font-size: 11px; color: var(--muted); line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
 /* The composer lives inside the fixed dock block; the send key stays in thumb reach. */
 .composer { width: 100%; max-width: 448px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 10px; box-sizing: border-box; box-shadow: 0 5px 24px var(--bg); }
 .chat-input { flex: 1; padding: 10px 4px; font-size: 13px; line-height: 1.6; min-height: 41px; max-height: 150px; }

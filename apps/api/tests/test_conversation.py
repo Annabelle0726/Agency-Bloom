@@ -42,7 +42,7 @@ def test_intent_examples_use_optional_proposals_and_never_autosave(
         sent = json.loads(request.content)
         captured.append(sent)
         assert sent["messages"][-1]["content"] == message
-        assert sent["stream"] is False and sent["thinking"] == {"type": "disabled"}
+        assert sent["stream"] is False and sent["thinking"] == {"type": "enabled"}
         assert "tools" not in sent
         return httpx.Response(
             200,
@@ -98,10 +98,16 @@ def test_intent_examples_use_optional_proposals_and_never_autosave(
         assert result.json()["suggestion"] == suggestion
         assert len(captured) == 1
         context = json.loads(captured[0]["messages"][1]["content"].split("：", 1)[1])
-        assert context["current_issue"]["title"] == before["title"]
-        assert context["recent_feedback"][0]["text"] == "联系了两家公司，都没有回复"
+        if message in ('你好', '我想你了'):
+            assert context['current_issue'] == {}
+            assert context['recent_feedback'] == []
+        else:
+            assert context["current_issue"]["title"] == before["title"]
+            assert context["recent_feedback"][0]["text"] == "联系了两家公司，都没有回复"
         assert client.get(issue_path, headers=auth).json()["card"] == before["card"]
-        assert client.get(issue_path + "/messages", headers=auth).json() == []
+        # Retention defaults on: the completed turn is stored (never autosaving a card).
+        stored = client.get(issue_path + "/messages", headers=auth).json()
+        assert [m["content"] for m in stored] == [message, reply]
         receipt = result.json()["usage"]
         assert receipt["prompt_tokens"] == 100 and receipt["currency"] == "CNY"
 

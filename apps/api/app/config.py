@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-flash"
+    # DeepSeek thinking mode: the model reasons before answering; the
+    # reasoning trace is shown to the user as collapsible steps.
+    ai_thinking: bool = True
     wechat_app_id: str = ""
     wechat_app_secret: str = ""
     cors_origins: list[str] = ["http://127.0.0.1:5173", "http://localhost:5173"]

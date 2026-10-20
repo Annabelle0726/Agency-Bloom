@@ -150,8 +150,8 @@
 .tab-indicator > view { width:50px; height:27px; border-radius:10px; background:var(--soft); }
 .settings-content .page-title { font-family:var(--font-heading); font-weight:500; }
 .chat-content, .settings-content { position:relative; animation:pane-enter 160ms var(--ease-out); }
-/* The composer sits in the normal flow; the chat page has no resident tabbar. */
-.chat-content { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+/* The composer is pinned to the viewport bottom; content reserves its clearance. */
+.chat-content { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 .keyboard-open .modal-backdrop { bottom:var(--keyboard-height); }
 .keyboard-open .modal-sheet { max-height:calc(95vh - var(--keyboard-height)); }
 .keyboard-open .modal-scroll { max-height:calc(85vh - var(--keyboard-height) - 75px); }
@@ -169,7 +169,8 @@
 .message-bubble { font-size:14px; }
 .chat-disclosure { font-size:10px; white-space:pre-line; }
 .prompt-button { font-size:13px; padding:14px; border-radius:8px; }
-.composer { max-width:408px; border-radius:10px; padding:9px 10px 9px 16px; box-shadow:0 5px 24px #2531480b; }
+/* The dock centers the composer; the alpha polish only adjusts its shape. */
+.composer { border-radius:10px; padding:9px 10px 9px 16px; box-shadow:0 5px 24px #2531480b; }
 .chat-input { font-size:14px; }
 .send-button { background:var(--button-fill); color:#fff; width:42px; height:42px; display:flex; align-items:center; justify-content:center; }
 .keyboard-open .tabbar { display:none; }

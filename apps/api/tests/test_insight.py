@@ -51,7 +51,7 @@ def test_modes_ground_optional_insight_in_user_clues_and_do_not_autosave(
         assert context["interaction_mode"] == {"clarify": "discover", "act": "experiment"}.get(
             mode, mode
         )
-        assert body["thinking"] == {"type": "disabled"} and body["stream"] is False
+        assert body["thinking"] == {"type": "enabled"} and body["stream"] is False
         assert "tools" not in body
         return httpx.Response(
             200,
@@ -104,7 +104,8 @@ def test_modes_ground_optional_insight_in_user_clues_and_do_not_autosave(
         assert (payload["insight"] is not None) is expected
         assert len(requests) == 1
         assert client.get(issue_path, headers=auth).json()["card"] == before["card"]
-        assert client.get(issue_path + "/messages", headers=auth).json() == []
+        # Retention defaults on; the turn is stored while the card stays untouched.
+        assert len(client.get(issue_path + "/messages", headers=auth).json()) == 2
 
 
 def test_assistant_speculation_and_card_hypotheses_do_not_count_as_evidence():

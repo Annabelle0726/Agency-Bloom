@@ -88,7 +88,7 @@ def test_parallel_explorations_and_old_version_cannot_overwrite(client):
     assert client.post("/api/issues", headers=auth, json={"title": "新的方向"}).status_code == 201
 
 
-def test_ai_requires_separate_consent_and_does_not_save_chat_by_default(client):
+def test_ai_requires_separate_consent_and_saves_chat_by_default(client):
     auth = login(client)
     current = issue(client, auth)
     path = f"/api/issues/{current['id']}/chat"
@@ -103,17 +103,21 @@ def test_ai_requires_separate_consent_and_does_not_save_chat_by_default(client):
     assert response.status_code == 200
     assert response.json()["mode"] == "demo"
     assert response.json()["suggestion"]["unknowns"]
-    assert client.get(f"/api/issues/{current['id']}/messages", headers=auth).json() == []
+    # Retention is on by default; the completed turn is stored and recoverable.
+    messages = client.get(f"/api/issues/{current['id']}/messages", headers=auth).json()
+    assert len(messages) == 2 and messages[0]["content"] == "我担心收入下降"
     assert client.get("/api/issues/current", headers=auth).json()["card"] == current["card"]
     assert client.post(path, headers=auth, json=body).status_code == 409
 
 
-def test_chat_retention_can_be_enabled_then_purged(client):
+def test_chat_retention_defaults_on_and_can_still_be_purged(client):
     auth = login(client)
     current = issue(client, auth)
-    client.put("/api/me", headers=auth, json={"ai_consent": True, "save_chat": True})
+    assert client.get("/api/me", headers=auth).json()["save_chat"] is True
+    client.put("/api/me", headers=auth, json={"ai_consent": True})
+    path = f"/api/issues/{current['id']}/chat"
     response = client.post(
-        f"/api/issues/{current['id']}/chat",
+        path,
         headers=auth,
         json={
             "request_id": "cb287251-9d34-4474-9baa-2ff5adfb7120",
@@ -122,12 +126,15 @@ def test_chat_retention_can_be_enabled_then_purged(client):
         },
     )
     assert response.status_code == 200
-    path = f"/api/issues/{current['id']}/messages"
-    messages = client.get(path, headers=auth).json()
+    messages_path = f"/api/issues/{current['id']}/messages"
+    messages = client.get(messages_path, headers=auth).json()
     assert len(messages) == 2
     assert messages[0]["content"] == "不知道如何开始"
     client.put("/api/me", headers=auth, json={"save_chat": False})
-    assert client.get(path, headers=auth).json() == []
+    assert client.get(messages_path, headers=auth).json() == []
+    # Re-enabling applies to future turns only; the purged history stays gone.
+    client.put("/api/me", headers=auth, json={"save_chat": True})
+    assert client.get(messages_path, headers=auth).json() == []
 
 
 def test_account_deletion_revokes_session_and_erases_private_data(client):

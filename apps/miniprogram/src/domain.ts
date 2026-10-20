@@ -19,15 +19,26 @@ export interface Issue {
   exploration_intent?: string; actual_question?: string; focus_response?: string
 }
 export interface User { id: string; theme: ThemeId; save_chat: boolean; ai_consent: boolean; support_style: string; use_memory?: boolean }
-export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null } | null }
+export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; thinking_steps?: string[] } | null }
 export interface ConversationSummary { overview: string; decisions: string[]; open_questions: string[]; next_steps: string[] }
 export interface Conversation {
+  dismissed_change_ids?: string[]
   id: string; issue_id: string; title: string; support_style: string; summary: ConversationSummary | null;
   linked_issue_ids: string[]; version: number; created_at: string; updated_at: string; archived_at: string | null
 }
 export interface Memory {
   id: string; content: string; category: 'fact' | 'preference' | 'constraint'; issue_id: string | null;
   source_conversation_id: string | null; enabled: boolean; version: number; updated_at: string
+  horizon?: 'long_term' | 'current_phase'; status?: 'active' | 'needs_review' | 'historical'
+  source?: string; created_at?: string; confirmed_at?: string | null; last_verified_at?: string | null
+}
+export interface InitialSnapshot {
+  id: string; version: number; direction: string; source: string; captured_at: string;
+  background: string; stage: string; life_contexts: string[]; concerns: string[]; constraints: string[];
+  answers: { intent?: string; question?: string; response?: string }
+}
+export interface PhaseChange {
+  source_id: string; source_kind: 'memory' | 'snapshot'; source_version: number; previous: string; evidence: string
 }
 export interface Experiment { action: string; tests: string; effort: string; stop_rule: string }
 export interface Insight {
@@ -35,7 +46,11 @@ export interface Insight {
   evidence: string[]; experiment: Experiment | null
 }
 export interface SuppliedContext {
-  memories: { id: string; content: string; category: 'fact' | 'preference' | 'constraint' }[]
+  memories: { id: string; content: string; category: 'fact' | 'preference' | 'constraint'; horizon?: Memory['horizon']; status?: Memory['status'] }[]
+  initial_snapshot?: InitialSnapshot | null
+  primary_card?: Partial<Card>
+  strategy?: { id: string; version: string } | null
+  recent_feedback?: { text: string }[]
   summary: boolean
   history_count: number
   history_retained: boolean
@@ -44,9 +59,13 @@ export interface SuppliedContext {
 export interface ChatResponse {
   reply: string; suggestion: Suggestion | null; mode: 'demo' | 'deepseek'
   insight?: Insight | null
+  phase_change?: PhaseChange | null
   summary?: ConversationSummary | null
+  conversation_title?: string | null
   usage?: { prompt_tokens: number; completion_tokens: number; cost_cny: string; currency: string } | null
   supplied_context?: SuppliedContext | null
+  tail_line?: string | null
+  thinking_steps?: string[] | null
 }
 
 export const concerns = [

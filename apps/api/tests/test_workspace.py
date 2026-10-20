@@ -66,6 +66,94 @@ def send(client, auth, conv, message="保留收入", **extra):
     )
 
 
+def provider_app(tmp_path, name, provider):
+    return create_app(
+        database_url=f"sqlite:///{tmp_path / name}",
+        ai_mode="deepseek",
+        deepseek_api_key="isolated-test",
+        ai_transport=httpx.MockTransport(provider),
+    )
+
+
+def test_first_chat_turn_generates_a_short_title_without_an_extra_model_call(tmp_path):
+    calls = []
+
+    def provider(request):
+        sent = json.loads(request.content)
+        context = json.loads(sent["messages"][1]["content"].split("：", 1)[1])
+        calls.append((sent["messages"][0]["content"], context))
+        output = {"reply": "先比较实际投入", "suggestion": None}
+        output["conversation_title"] = (
+            "“工作与时间的取舍”。" if context["first_turn"] else "不应采用的第二个名字"
+        )
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": json.dumps(output, ensure_ascii=False)}}],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 60},
+            },
+        )
+
+    app = provider_app(tmp_path, "title.db", provider)
+    with TestClient(app) as client:
+        auth = login(client)
+        item = issue(client, auth)
+        client.put("/api/me", headers=auth, json={"ai_consent": True, "save_chat": True})
+        message = "我该保留现在的收入，还是换一份更能陪家人的工作？"
+        conv = conversation(client, auth, item, title=message[:30])
+
+        result = send(client, auth, conv, message)
+        assert result.status_code == 200
+        # Quotes and a trailing full stop are provider noise, not part of the name.
+        assert result.json()["conversation_title"] == "工作与时间的取舍"
+        updated = client.get(f"/api/conversations/{conv['id']}", headers=auth).json()
+        assert updated["title"] == "工作与时间的取舍"
+        assert updated["version"] == conv["version"] + 1
+        assert calls[0][1]["first_turn"] is True
+        assert "conversation_title" in calls[0][0]
+
+        # A later turn cannot rename the conversation again.
+        assert send(client, auth, conv, "继续比较").status_code == 200
+        assert calls[1][1]["first_turn"] is False
+        assert (
+            client.get(f"/api/conversations/{conv['id']}", headers=auth).json()["title"]
+            == "工作与时间的取舍"
+        )
+        assert len(calls) == 2  # same provider calls as the two chat turns
+
+
+def test_first_turn_preserves_a_user_named_conversation(tmp_path):
+    def provider(request):
+        sent = json.loads(request.content)
+        context = json.loads(sent["messages"][1]["content"].split("：", 1)[1])
+        assert context["first_turn"] is True
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{
+                    "message": {"content": json.dumps({
+                        "reply": "先从具体经历说起",
+                        "suggestion": None,
+                        "conversation_title": "模型建议的名字",
+                    }, ensure_ascii=False)},
+                }],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 60},
+            },
+        )
+
+    app = provider_app(tmp_path, "named.db", provider)
+    with TestClient(app) as client:
+        auth = login(client)
+        item = issue(client, auth)
+        client.put("/api/me", headers=auth, json={"ai_consent": True, "save_chat": True})
+        conv = conversation(client, auth, item, title="我自己的会话名")
+        assert send(client, auth, conv, "最近有些犹豫").status_code == 200
+        assert (
+            client.get(f"/api/conversations/{conv['id']}", headers=auth).json()["title"]
+            == "我自己的会话名"
+        )
+
+
 def test_delete_conversation_preserves_exploration_memory_and_other_sessions(workspace):
     from app.local_schema import upgrade_local
 

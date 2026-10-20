@@ -14,6 +14,30 @@ function harness() {
   return { chat, post, abort, remote, error, notice, resolve: (value: ChatResponse) => resolve(value), reject: (value: Error) => reject(value) }
 }
 
+it('keeps a phase candidate unconfirmed and suppresses it after skipping in this session', async () => {
+  const h = harness()
+  const change = { source_id: 'memory-1', source_kind: 'memory' as const, source_version: 2, previous: '稳定工作', evidence: '现在更想探索成长空间' }
+  h.chat.draft.value = change.evidence
+  const pending = h.chat.send('conversation-a')
+  h.resolve({ reply: '先聊聊现在的想法', suggestion: null, mode: 'deepseek', phase_change: change })
+  await pending
+  expect(h.chat.phaseChange?.value).toEqual(change)
+  expect(h.chat.phaseConfirmed.value).toBe(false)
+  h.chat.confirmPhaseChange()
+  expect(h.chat.phaseConfirmed.value).toBe(true)
+  expect(h.post).toHaveBeenCalledTimes(1)
+  h.chat.skipPhaseChange()
+  expect(h.chat.phaseChange.value).toBeNull()
+  h.chat.draft.value = '继续聊工作'
+  const again = h.chat.send('conversation-a')
+  expect(h.post.mock.calls[1][1].dismissed_changes).toEqual(['memory-1'])
+  h.resolve({ reply: '好的', suggestion: null, mode: 'deepseek', phase_change: change })
+  await again
+  expect(h.chat.phaseChange.value).toBeNull()
+  h.chat.reset()
+  expect(h.chat.phaseConfirmed.value).toBe(false)
+})
+
 it('accepts a natural reply with no card and blocks fast duplicate sends', async () => {
   const h = harness()
   h.chat.draft.value = '我想你了'
