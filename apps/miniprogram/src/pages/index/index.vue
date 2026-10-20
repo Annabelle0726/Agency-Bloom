@@ -1198,7 +1198,7 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
           <button class="text-button" @click="showHistory">回看走过的路 <SvgIcon name="arrow" :size="17" /></button>
         </view>
 
-        <view v-else class="settings-content">
+        <view v-else-if="tab === 'settings'" class="settings-content">
           <text class="eyebrow">MAKE YOURSELF AT HOME</text>
           <text class="page-title">{{ '你的空间，由你做主' }}</text>
           <view class="settings-group avatar-settings">
