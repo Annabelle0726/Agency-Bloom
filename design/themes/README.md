@@ -8,7 +8,7 @@ This folder contains the visual references for the six Agency Bloom themes. Refe
 | --- | --- | --- | --- |
 | Morning Mist | `light` | [mist.png](references/mist.png) | A seated figure seen from behind, mist-covered ridges, a winding lake, and soft morning sunlight |
 | Quiet Night | `dark` | [night.jpg](references/night.jpg) | An ink-blue night sky, a crescent moon, and a quiet mountain lake |
-| First Light | `dawn` | [dawn.jpg](references/dawn.jpg) | A rising sun, pale apricot light, and warm reflections on still water |
+| Evening Smoke | `dawn` | [dawn.jpg](references/dawn.jpg) | A warm dusk sky, apricot-to-amber light, and still water catching the last glow |
 | Forest | `forest` | [forest.jpg](references/forest.jpg) | Moss, fern fronds, layered trees, and diffused woodland light |
 | Lavender | `lavender` | [lavender.jpg](references/lavender.jpg) | Real lavender flowers, dusty foliage, and soft grey-lilac light |
 | Minimal | `minimal` | [minimal.jpg](references/minimal.jpg) | An ivory plaster surface, a gentle architectural shadow, and open space |
