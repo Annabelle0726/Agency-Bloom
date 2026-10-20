@@ -11,6 +11,7 @@ import ChatInsightCard from './chat/ChatInsightCard.vue'
 import type { ChatEntry } from '../../chat-entry'
 import type { ChatMessage, Conversation, Insight, PhaseChange, Suggestion } from '../../domain'
 import type { SupportMode } from '../../onboarding'
+import type { ConversationMenuAction } from '../../conversation-action'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
@@ -50,7 +51,7 @@ const emit = defineEmits<{
   back: []
   history: []
   toggleMenu: []
-  menuAction: [action: 'preference' | 'summary' | 'details' | 'archive']
+  menuAction: [action: ConversationMenuAction]
   dismissError: []
   recover: []
   resume: []

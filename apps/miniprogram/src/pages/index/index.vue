@@ -23,6 +23,7 @@ import AiConsentModal from './modals/AiConsentModal.vue'
 import AppearanceModal from './modals/AppearanceModal.vue'
 import SupportModal from './modals/SupportModal.vue'
 import PrivacyModal from './modals/PrivacyModal.vue'
+import ConversationActionModal from './modals/ConversationActionModal.vue'
 import {useIndexPage} from './useIndexPage'
 
 const {
@@ -89,6 +90,7 @@ const {
   openChatMenu,
   startNewChat,
   chatMenuAction,
+  conversationAction,
   chatStarters,
   reactToInsight,
   saveExperiment,
@@ -239,6 +241,11 @@ const {
                     :selected="canonicalSupportStyle(user?.support_style)" @close="modal = ''"
                     @select="setSupportStyle" />
       <PrivacyModal v-if="modal === 'privacy'" :busy="busy" :error="error" @close="modal = ''" />
+      <ConversationActionModal v-if="conversationAction"
+                               :key="conversationAction.conversation.id + conversationAction.action"
+                               :action="conversationAction.action" :conversation="conversationAction.conversation"
+                               :request="request" @close="conversationAction = null"
+                               @changed="changedConversation" @deleted="deletedConversation" />
 
       <PhaseChangeReview v-if="workspace.active.value.phaseOpen.value && workspace.active.value.phaseChange.value" :key="workspace.activeId.value + workspace.active.value.phaseChange.value.source_id"
                          :change="workspace.active.value.phaseChange.value" :confirmed="workspace.active.value.phaseConfirmed.value" :busy="busy" :error="phaseError"

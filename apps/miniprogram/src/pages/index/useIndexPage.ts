@@ -13,6 +13,7 @@ import {ApiError, createApi} from '../../http'
 import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
+import type {ConversationAction, ConversationMenuAction} from '../../conversation-action'
 import {createAvatarStore} from '../../avatar'
 import {newChatStarters, experimentFields, editFields, todayLabel, greeting} from './data'
 
@@ -240,8 +241,9 @@ export function useIndexPage() {
   const chatEntry = computed(() => chatEntryFor(selectedMode.value, current.value || {}))
   const modePickerOpen = ref(false)
   const starterHint = ref('')
-  // Chat-header menu: management actions live behind ···, not as resident buttons.
+  // The conversation title opens management; the left button remains navigation.
   const chatMenuOpen = ref(false)
+  const conversationAction = ref<{ action: ConversationAction; conversation: Conversation } | null>(null)
   function closeChatMenu() { chatMenuOpen.value = false }
   function openChatMenu() { if (!chatMenuOpen.value) chatMenuOpen.value = true }
   // New ChatGPT-style draft shell: a clean welcome page that stays local until
@@ -263,33 +265,19 @@ export function useIndexPage() {
     drawer.value = ''; tab.value = 'chat'
     void nextTick(() => uni.pageScrollTo({ scrollTop: 0, duration: 0 }))
   }
-  function chatMenuAction(action: 'preference' | 'summary' | 'details' | 'archive') {
+  function chatMenuAction(action: ConversationMenuAction) {
     chatMenuOpen.value = false
+    if (busy.value) return
     if (action === 'preference') { modePickerOpen.value = true; return }
     if (action === 'summary') { drawer.value = 'summary'; return }
     if (action === 'details') { drawer.value = 'details'; return }
-    if (activeConversation.value && !readOnlyConversation.value) void archiveFromChat()
-  }
-  async function archiveFromChat() {
     const item = activeConversation.value
-    if (!item) return
-    const approved = await new Promise<boolean>(resolve => uni.showModal({
-      title: '归档这段会话？',
-      content: '会话会移入归档列表，所属探索继续保留。未开启聊天保存时，原文只在本次使用中可见',
-      confirmText: '归档',
-      cancelText: '再想想',
-      success: result => resolve(result.confirm),
-      fail: () => resolve(false),
-    }))
-    if (!approved) return
-    await guarded(async () => {
-      const updated = await request<Conversation>('PUT', `/conversations/${item.id}`, { version: item.version, archived: true })
-      changedConversation(updated)
-      await refreshWorkspace()
-    })
+    if (!item || (action === 'archive' && item.archived_at)) return
+    conversationAction.value = { action, conversation: { ...item } }
   }
   const chatStarters = computed(() => chatEntry.value.starters.slice(0, 2))
   watch(() => tab.value, closeChatMenu)
+  watch(() => workspace.activeId.value, closeChatMenu)
 
   function reactToInsight(action: 'interested' | 'dismissed' | 'experiment') {
     if (busy.value || sending.value || !insight.value || !current.value) return
@@ -335,6 +323,7 @@ export function useIndexPage() {
   }
 
   function clearSession() {
+    conversationAction.value = null
     workspace.reset(); conversations.value = []; openedIds.value = []; drawer.value = ''
     token.value = '';
     user.value = null;
@@ -895,6 +884,7 @@ export function useIndexPage() {
     openChatMenu,
     startNewChat,
     chatMenuAction,
+    conversationAction,
     chatStarters,
     reactToInsight,
     saveExperiment,

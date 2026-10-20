@@ -1,22 +1,30 @@
-/* Chat entry v0.4: a quiet header for the conversation itself.
-   Management lives behind the ··· menu; the page belongs to the exchange. */
+/* Home and chat share a capsule-safe top edge and 44px navigation targets. */
+.app-shell { --header-inset: calc(var(--capsule-bottom, 64px) - var(--status-bar-height, 0px) + 8px); }
+.app-shell .topbar.header-chrome {
+  margin-top: var(--header-inset);
+  height: 44px;
+  padding: 0 18px;
+}
 .chat-header {
   display: flex;
   align-items: center;
   gap: 6px;
   margin: 0 0 14px;
+  height: 44px;
+  position: relative;
+  z-index: 12;
 }
 .chat-header-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  min-height: 36px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   margin: 0;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink);
   flex-shrink: 0;
@@ -36,15 +44,21 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 36px;
-  min-height: 36px;
+  height: 44px;
+  min-height: 44px;
   margin: 0;
-  padding: 0 4px;
+  padding: 0 10px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   text-align: left;
+  box-shadow: none;
+  transition: background 130ms ease, border-color 130ms ease;
 }
+.app-shell .chat-header-title.header-title-pressed,
+.app-shell .chat-header-title.is-open { background: var(--soft); border-color: var(--line); opacity: 1; }
+.app-shell .chat-header-title::after { border: 0; }
+.header-title-pressed { background: var(--soft); }
 .chat-header-name {
   flex: 1;
   min-width: 0;
@@ -61,7 +75,9 @@
   flex-shrink: 0;
   opacity: .55;
   transform: rotate(90deg);
+  transition: transform 130ms ease;
 }
+.chat-header-title.is-open .chat-header-chevron { transform: rotate(-90deg); }
 .chat-header-right {
   display: flex;
   align-items: center;
@@ -73,11 +89,17 @@
   color: var(--accent);
   padding: 0 4px;
 }
+.chat-menu-backdrop { position:fixed; inset:0; z-index:10; background:transparent; }
 .chat-menu {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: calc(var(--header-inset) + 50px);
+  z-index: 13;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--paper);
   padding: 5px;
   margin: 0 0 14px;
@@ -111,6 +133,7 @@
   white-space: nowrap;
 }
 .chat-menu-item[disabled] { opacity: .5; }
+.chat-menu .menu-delete { border-top:1px solid var(--line); border-radius:0 0 8px 8px; color:var(--ink); }
 .chat-mode-panel {
   margin-bottom: 14px;
 }
@@ -228,17 +251,18 @@
   margin-top: 9px;
 }
 .chat-content {
-  padding-top: 18px;
+  padding-top: var(--header-inset);
+  padding-left: 18px;
+  padding-right: 18px;
   /* The fixed dock (footer note + composer) is a separate block; the
      conversation scrolls above it with clearance so nothing is hidden. */
   padding-bottom: calc(104px + env(safe-area-inset-bottom));
 }
 @media(max-width:350px) {
   .chat-content { padding-left: 18px; padding-right: 18px; }
-  .chat-header-button { width: 33px; height: 33px; min-height: 33px; }
-  .chat-header-title { height: 33px; min-height: 33px; }
   .chat-welcome .prompt-button { padding: 10px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .chat-welcome .prompt-button { transition: none; }
+  .chat-header-title, .chat-header-chevron { transition: none; }
 }
