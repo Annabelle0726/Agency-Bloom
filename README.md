@@ -10,6 +10,28 @@ alt="Agency Bloom — a WeChat Mini Program for exploring career choices, compar
   <em>Your Life. Your Direction. Your Agency.</em>
 </p>
 
+<p align="center">
+  <a href="https://github.com/Annabelle0726/Agency-Bloom/actions/workflows/check.yml"><img src="https://img.shields.io/github/actions/workflow/status/Annabelle0726/Agency-Bloom/check.yml?style=flat-square&label=checks" alt="GitHub Actions checks status"></a>
+  <img src="https://img.shields.io/badge/status-alpha-526C49?style=flat-square" alt="Project status: alpha">
+  <img src="https://img.shields.io/badge/license-Source--Available-29374B?style=flat-square" alt="License: Source-Available">
+  <a href="LICENSE.md"><img src="https://img.shields.io/badge/%E6%9D%A1%E6%AC%BE-%E8%8B%B1%E6%96%87%E4%B8%BA%E5%87%86-4D6BC4?style=flat-square&label=%E4%B8%AD%E6%96%87%E8%AF%91%E6%9C%AC" alt="Chinese translation available"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Vue_3-3.4.21-4E5A52?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3.4.21">
+  <img src="https://img.shields.io/badge/TypeScript-~5.6.3-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript ~5.6.3">
+  <img src="https://img.shields.io/badge/uni--app-3.0.0-2B3D45?style=flat-square" alt="uni-app 3.0.0">
+  <img src="https://img.shields.io/badge/Vite-5.2.8-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite 5.2.8">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/FastAPI-0.143.2-009485?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI 0.143.2">
+  <img src="https://img.shields.io/badge/Python-%E2%89%A53.12-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
+  <img src="https://img.shields.io/badge/SQLAlchemy-2.1.4-D71F00?style=flat-square" alt="SQLAlchemy 2.1.4">
+  <img src="https://img.shields.io/badge/DeepSeek-flash-4D6BC4?style=flat-square" alt="DeepSeek flash model">
+  <img src="https://img.shields.io/badge/platform-WeChat_Mini_Program-07C160?style=flat-square&logo=wechat&logoColor=white" alt="Platform: WeChat Mini Program">
+</p>
+
 **Agency Bloom** is a mobile-first WeChat Mini Program for adults who want to understand their circumstances, clarify a current concern, compare possibilities, and choose one small, affordable real-world step. The Alpha follows one current issue at a time, and every AI suggestion stays a draft until you confirm it.
 
 ## Why it is different
@@ -114,5 +136,15 @@ Environment files, databases, build output, and private Developer Tools settings
 - Real WeChat login requires backend AppID/AppSecret setup ([setup](docs/SETUP.md)); physical-device keyboard occlusion and the real avatar sheet still need manual acceptance.
 - Remote Supabase migrations are applied; do not reset existing databases or budget ledgers.
 - Real devices cannot reach a PC backend through their own `127.0.0.1`; release builds need HTTPS plus registered request domains.
+
+## License
+
+This project is **source-available, not open source** — see [LICENSE.md](LICENSE.md).
+
+- ✅ **Allowed:** personal learning, local running, and non-commercial modification for your own use.
+- ❌ **Not allowed:** commercial use, redistribution, or public deployment without written permission ([contact](LICENSE.md#9-contact-and-permission-requests)).
+- Bundled brand assets and the Morning Mist reference image are not re-granted for reuse; see Sections 4 and 6 of the license for third-party components and unresolved material.
+
+A Chinese reference translation is available at [LICENSE_zh.md](LICENSE_zh.md); the English version prevails.
 
 More: [product](docs/PRODUCT.md) · [design](docs/DESIGN.md) · [setup](docs/SETUP.md) · [native acceptance evidence](docs/WECHAT_VALIDATION.md)

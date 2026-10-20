@@ -9,6 +9,28 @@
   <em>Your Life. Your Direction. Your Agency.</em>
 </p>
 
+<p align="center">
+  <a href="https://github.com/Annabelle0726/Agency-Bloom/actions/workflows/check.yml"><img src="https://img.shields.io/github/actions/workflow/status/Annabelle0726/Agency-Bloom/check.yml?style=flat-square&label=%E6%A3%80%E6%9F%A5" alt="GitHub Actions 检查状态"></a>
+  <img src="https://img.shields.io/badge/%E7%8A%B6%E6%80%81-alpha-526C49?style=flat-square" alt="项目状态：alpha">
+  <img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF-%E6%BA%90%E7%A0%81%E5%8F%AF%E8%A7%81-29374B?style=flat-square" alt="许可：源码可见">
+  <a href="LICENSE_zh.md"><img src="https://img.shields.io/badge/%E8%8B%B1%E6%96%87%E7%89%88%E6%9D%A1%E6%AC%BE%E4%B8%BA%E5%87%86-4D6BC4?style=flat-square&label=LICENSE" alt="英文版条款为权威文本"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Vue_3-3.4.21-4E5A52?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3.4.21">
+  <img src="https://img.shields.io/badge/TypeScript-~5.6.3-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript ~5.6.3">
+  <img src="https://img.shields.io/badge/uni--app-3.0.0-2B3D45?style=flat-square" alt="uni-app 3.0.0">
+  <img src="https://img.shields.io/badge/Vite-5.2.8-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite 5.2.8">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/FastAPI-0.143.2-009485?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI 0.143.2">
+  <img src="https://img.shields.io/badge/Python-%E2%89%A53.12-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
+  <img src="https://img.shields.io/badge/SQLAlchemy-2.1.4-D71F00?style=flat-square" alt="SQLAlchemy 2.1.4">
+  <img src="https://img.shields.io/badge/DeepSeek-flash-4D6BC4?style=flat-square" alt="DeepSeek flash 模型">
+  <img src="https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-%E5%BE%AE%E4%BF%A1%E5%B0%8F%E7%A8%8B%E5%BA%8F-07C160?style=flat-square&logo=wechat&logoColor=white" alt="平台：微信小程序">
+</p>
+
 **Agency Bloom** 是一个面向成年人的微信小程序：理清此刻的处境，比较可能的选择，然后选一个代价可承受的小尝试。Alpha 一次只跟进一个当前问题，所有 AI 建议都只是草稿，经你确认才会写入卡片。
 
 ## 它不一样在哪
@@ -113,5 +135,15 @@ docs/                  产品、设计、接入与验收记录
 - 真实微信登录需要配置后端 AppID/AppSecret（[接入说明](docs/SETUP.md)）；真机软键盘遮挡与真实头像选择面板仍需手动验收
 - 远程 Supabase 迁移已应用；不要重置已有数据库或额度账本
 - 真实手机的 `127.0.0.1` 指向手机自身；发布需 HTTPS 与微信合法域名
+
+## 许可协议
+
+本项目是**源码可见，并非开源**——详见 [LICENSE.md](LICENSE.md)（英文）与 [LICENSE_zh.md](LICENSE_zh.md)（中文参考译本）。
+
+- ✅ **允许**：个人学习、本地运行、非商业的自用修改
+- ❌ **禁止**：未经书面许可的商业使用、再分发、公开部署（[联系方式](LICENSE.md#9-contact-and-permission-requests)）
+- 随包品牌素材与晨雾参考图不另行授予复用权；第三方组件与待确认素材见协议第 4、6 条
+
+**以英文版条款为准。**
 
 其他说明：[产品约定](docs/PRODUCT.md) · [设计说明](docs/DESIGN.md) · [接入说明](docs/SETUP.md) · [微信原生验收证据](docs/WECHAT_VALIDATION.md)
