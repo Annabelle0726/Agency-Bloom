@@ -1269,11 +1269,6 @@ const prettyDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', 
             <text class="group-label">我的记录</text>
             <button class="setting-row current-direction" @click="drawer = 'direction'"><view><text class="setting-title">当前方向与初始资料</text><text class="setting-description">查看、修改阶段目标，管理初始快照</text></view><SvgIcon name="chevron" :size="17" /></button>
             <button class="setting-row" @click="drawer = 'memories'"><view><text class="setting-title">整理长期记忆</text><text class="setting-description">{{ user?.use_memory ? '已启用 · 可编辑、停用、合并或删除' : '尚未用于回复 · 由你确认和管理' }}</text></view><SvgIcon name="chevron" :size="17" /></button>
-            <button class="setting-row" @click="showHistory" hover-class="pressed" :hover-start-time="0"
-                    :hover-stay-time="70">
-              <text class="setting-title">回看走过的路</text>
-              <SvgIcon name="arrow-diagonal" :size="17"/>
-            </button>
             <button class="setting-row" @click="modal = 'privacy'" hover-class="pressed" :hover-start-time="0"
                     :hover-stay-time="70">
               <text class="setting-title">隐私与使用说明</text>
