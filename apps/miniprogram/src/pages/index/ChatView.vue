@@ -5,7 +5,6 @@ import ChatModePanel from './chat/ChatModePanel.vue'
 import ChatWelcome from './chat/ChatWelcome.vue'
 import ChatMessageItem from './chat/ChatMessage.vue'
 import ChatPendingMessage from './chat/ChatPendingMessage.vue'
-import ChatThinking from './chat/ChatThinking.vue'
 import ChatProposalCard from './chat/ChatProposalCard.vue'
 import ChatInsightCard from './chat/ChatInsightCard.vue'
 import type { ChatEntry } from '../../chat-entry'
@@ -93,7 +92,7 @@ const emit = defineEmits<{
       @select="emit('selectMode', $event)"
     />
     <ChatWelcome
-      v-if="!messages.length"
+      v-if="!messages.length && !sending"
       :is-drafting="isDrafting"
       :active-conversation="activeConversation"
       :user-save-chat="userSaveChat"
@@ -119,8 +118,9 @@ const emit = defineEmits<{
       @edit="emit('editMessage', index)"
     />
     <button v-if="phaseChange && !sending" class="text-button review-phase-change" @click="emit('openPhase')">查看可能的方向变化</button>
-    <ChatPendingMessage v-if="sending && !generatingSummary" :pending-text="pendingText" :user-avatar="userAvatar" />
-    <ChatThinking v-if="sending" :generating-summary="generatingSummary" />
+    <view v-if="sending && !generatingSummary" id="pending-message">
+      <ChatPendingMessage :pending-text="pendingText" :user-avatar="userAvatar" />
+    </view>
     <ChatProposalCard v-if="suggestion" :suggestion="suggestion" @review="emit('reviewSuggestion')" />
     <ChatInsightCard
       v-if="insight"

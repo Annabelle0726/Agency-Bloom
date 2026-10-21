@@ -202,6 +202,12 @@ export function useIndexPage() {
   const draft = computed({ get: () => workspace.active.value.draft.value, set: value => { workspace.active.value.draft.value = value } })
   const pendingText = computed({ get: () => workspace.active.value.pendingText.value, set: value => { workspace.active.value.pendingText.value = value } })
   const sending = computed(() => workspace.active.value.sending.value)
+  watch(sending, async value => {
+    if (!value || tab.value !== 'chat' || workspace.active.value.sendingTask.value === 'summary') return
+    uni.hideKeyboard()
+    await nextTick()
+    uni.pageScrollTo({ selector: '#pending-message', duration: 0 })
+  })
   const suggestion = computed({ get: () => workspace.active.value.suggestion.value, set: value => { workspace.active.value.suggestion.value = value } })
   const insight = computed({ get: () => workspace.active.value.insight.value, set: value => { workspace.active.value.insight.value = value } })
   const insightReaction = computed(() => workspace.active.value.insightReaction.value)

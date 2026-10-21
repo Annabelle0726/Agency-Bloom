@@ -16,6 +16,7 @@ export interface ChatOptions {
 export function createChatSession(options: ChatOptions) {
   const messages = ref<ChatMessage[]>([])
   const draft = ref(''), pendingText = ref(''), sending = ref(false)
+  const sendingStartedAt = ref(0)
   const editIndex = ref<number | null>(null), editText = ref('')
   let editTarget: ChatMessage | null = null
   function beginEdit(index: number) {
@@ -54,6 +55,7 @@ export function createChatSession(options: ChatOptions) {
     cancel()
     phaseChange.value = null; phaseConfirmed.value = false; phaseOpen.value = false; dismissedChanges = []
     activeId = ''; abort = null; sending.value = false; pendingText.value = ''
+    sendingStartedAt.value = 0
     closeEdit()
     draft.value = ''; messages.value = []; suggestion.value = null; insight.value = null; insightReaction.value = ''; insightFeedback = []
     summary.value = null; summaryDraft.value = null; suppliedContext.value = null; tailLine.value = ''; error.value = ''; loaded.value = false; olderCursor.value = null; lastRequestId.value = ''
@@ -68,6 +70,7 @@ export function createChatSession(options: ChatOptions) {
     const history = editing ? messages.value.slice(0, index) : messages.value
     const text = task === 'summary' ? '请整理当前会话，保留未解决的问题' : original.trim(), id = options.requestId()
     activeId = id; cancelSent = false; sending.value = true; pendingText.value = text
+    sendingStartedAt.value = Date.now()
     sendingTask.value = task; error.value = ''; lastRequestId.value = id
     if (task === 'chat' && !editing) { suggestion.value = null; phaseChange.value = null; phaseConfirmed.value = false; phaseOpen.value = false }
     try {
@@ -101,6 +104,7 @@ export function createChatSession(options: ChatOptions) {
     } finally {
       if (activeId === id) {
         activeId = ''; abort = null; sending.value = false; pendingText.value = ''
+        sendingStartedAt.value = 0
       }
     }
   }
@@ -119,7 +123,7 @@ export function createChatSession(options: ChatOptions) {
     draft.value = combined; insightReaction.value = action
     return null
   }
-  return { messages, draft, editIndex, editText, beginEdit, closeEdit, pendingText, sending, sendingTask, suggestion, insight, insightReaction, summary, summaryDraft,
+  return { messages, draft, editIndex, editText, beginEdit, closeEdit, pendingText, sending, sendingStartedAt, sendingTask, suggestion, insight, insightReaction, summary, summaryDraft,
     phaseChange, phaseConfirmed, phaseOpen, confirmPhaseChange, skipPhaseChange,
     suppliedContext, tailLine, webSearchOn, error, lastRequestId, loaded, olderCursor, reactToInsight, send, cancel, reset }
 }

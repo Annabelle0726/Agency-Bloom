@@ -214,6 +214,7 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />
         <ChatComposer v-if="current && tab === 'chat'" :draft="draft" :sending="sending"
+                      :sending-started-at="workspace.active.value.sendingStartedAt.value" :generating-summary="generatingSummary"
                       :read-only-conversation="readOnlyConversation" :active-conversation="activeConversation"
                       :is-drafting="isDrafting" :web-search-on="workspace.active.value.webSearchOn.value"
                       :chat-footer-note="chatFooterNote" @draft-change="updateDraft" @toggle-web="toggleWebSearch"

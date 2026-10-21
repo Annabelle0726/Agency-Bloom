@@ -220,6 +220,20 @@ text { overflow-wrap: anywhere; }
    centered and visually separate from the scrolling conversation above. */
 .composer-dock { position: fixed; bottom: 0; left: 0; right: 0; z-index: 11; padding: 0 16px calc(env(safe-area-inset-bottom) + 6px); background: var(--bg); }
 .composer-dock .chat-disclosure { margin: 6px 0 2px; }
+/* One compact waiting surface replaces the long native textarea while a request
+   is active. The original draft stays in session memory for stop/failure. */
+.reply-wait { display: flex; align-items: center; gap: 12px; max-width: 448px; margin: 0 auto; padding: 12px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); }
+.reply-wait-copy { flex: 1; min-width: 0; }
+.reply-wait-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; line-height: 1.6; }
+.reply-wait-time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.reply-wait-note { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.reply-wait-dots { display: flex; gap: 3px; align-items: center; }
+.reply-wait-dots view { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); animation: breathe 1.5s ease-in-out infinite; }
+.reply-wait-dots view:nth-child(2) { animation-delay: .15s; }
+.reply-wait-dots view:nth-child(3) { animation-delay: .3s; }
+.reply-wait-stop { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 66px; min-height: 44px; margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); color: var(--ink); font-size: 13px; line-height: 1.4; }
+.reply-wait-stop::after { border: 0; }
+@media (prefers-reduced-motion: reduce) { .reply-wait-dots view { animation: none; } }
 .keyboard-open .composer-dock { bottom: var(--keyboard-height, 0px); padding-bottom: 6px; }
 /* Grounded reply explanations: quiet, optional and collapsed by default. */
 .response-reasoning { margin-top: 6px; }

@@ -265,3 +265,18 @@ it('clears the supplied context on session reset', async () => {
   h.chat.reset()
   expect(h.chat.suppliedContext.value).toBeNull()
 })
+
+it('tracks the active wait from submission and clears it after failure without losing the draft', async () => {
+  const h = harness()
+  h.chat.draft.value = '长消息也只在等待消息中展示'
+  const before = Date.now()
+  const pending = h.chat.send('issue')
+  expect(h.chat.sendingStartedAt.value).toBeGreaterThanOrEqual(before)
+  const started = h.chat.sendingStartedAt.value
+  await h.chat.send('issue')
+  expect(h.chat.sendingStartedAt.value).toBe(started)
+  h.reject(new ApiError('请求超时'))
+  await pending
+  expect(h.chat.sendingStartedAt.value).toBe(0)
+  expect(h.chat.draft.value).toBe('长消息也只在等待消息中展示')
+})

@@ -27,6 +27,11 @@ async def provider(request):
     global calls
     calls += 1
     body = json.loads(request.content)
+    if "等待状态测试" in body["messages"][-1]["content"]:
+        await asyncio.sleep(20)
+    if "等待失败测试" in body["messages"][-1]["content"]:
+        return httpx.Response(200, json={"choices": [{"message": {"content": ""}}],
+                                       "usage": {"prompt_tokens": 100, "completion_tokens": 0}})
     if "慢回复" in body["messages"][-1]["content"]:
         await asyncio.sleep(3)
     output = {"reply": "［隔离 Mock］已接续本会话，可以比较收入约束和实际时间投入", "suggestion": None}

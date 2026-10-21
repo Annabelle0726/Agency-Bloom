@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
 import type { Conversation } from '../../../domain'
 
@@ -8,6 +8,8 @@ defineOptions({ options: { styleIsolation: 'apply-shared' } })
 const props = defineProps<{
   draft: string
   sending: boolean
+  sendingStartedAt: number
+  generatingSummary: boolean
   readOnlyConversation: boolean
   activeConversation: Conversation | null
   isDrafting: boolean
@@ -26,6 +28,16 @@ const placeholder = computed(() => props.webSearchOn
   : (props.isDrafting ? '发送后才会创建这段对话' : '想到什么，就从哪里说起……'))
 
 const localDraft = ref(props.draft)
+const now = ref(Date.now())
+let waitTimer: ReturnType<typeof setInterval> | undefined
+watch(() => props.sendingStartedAt, started => {
+  if (waitTimer) clearInterval(waitTimer)
+  waitTimer = undefined
+  now.value = Date.now()
+  if (started) waitTimer = setInterval(() => { now.value = Date.now() }, 1000)
+}, { immediate: true })
+onUnmounted(() => { if (waitTimer) clearInterval(waitTimer) })
+const elapsed = computed(() => props.sendingStartedAt ? Math.max(0, Math.floor((now.value - props.sendingStartedAt) / 1000)) : 0)
 watch(() => props.draft, value => {
   if (value !== localDraft.value) localDraft.value = value
 })
@@ -39,7 +51,21 @@ function onInput(event: Event) {
 
 <template>
   <view class="composer-dock">
-    <view class="composer">
+    <view v-if="sending" class="reply-wait" role="status" aria-live="polite">
+      <view class="reply-wait-copy">
+        <view class="reply-wait-heading">
+          <view class="reply-wait-dots" aria-hidden="true"><view/><view/><view/></view>
+          <text>{{ generatingSummary ? '正在整理会话' : '等待 Bloom 回复' }}</text>
+          <text class="reply-wait-time">{{ elapsed }} 秒</text>
+        </view>
+        <text class="reply-wait-note">{{ elapsed >= 15 ? '这次稍久，可以继续等或停止' : '可以随时停止，原输入会保留' }}</text>
+      </view>
+      <button class="reply-wait-stop" aria-label="停止回复" @click="emit('cancel')"
+              hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+        <SvgIcon name="stop" :size="16"/><text>停止</text>
+      </button>
+    </view>
+    <view v-else class="composer">
       <button class="web-toggle" :aria-pressed="webSearchOn"
               :aria-label="webSearchOn ? '已开启联网搜索' : '开启联网搜索'"
               :class="{ on: webSearchOn }" :disabled="sending || readOnlyConversation"
@@ -56,6 +82,6 @@ function onInput(event: Event) {
         <SvgIcon :name="sending ? 'stop' : 'arrow-up'" light :size="21"/>
       </button>
     </view>
-    <text class="chat-disclosure">{{ chatFooterNote }}</text>
+    <text v-if="!sending" class="chat-disclosure">{{ chatFooterNote }}</text>
   </view>
 </template>
