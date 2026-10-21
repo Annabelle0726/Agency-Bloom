@@ -38,7 +38,7 @@ watch(() => [props.message.id, props.message.content, props.message.payload?.rea
            :src="userAvatar || '/static/avatar-user.png'"
            mode="aspectFill" aria-label="你的头像"/>
     <view class="message-content">
-      <text v-if="message.role === 'assistant'" class="message-name">AGENCY BLOOM</text>
+      <text v-if="message.role === 'assistant'" class="message-name">Bloom</text>
       <text class="message-bubble" @longpress.stop="actionsOpen = true">{{ message.content }}</text>
       <view v-if="message.role === 'assistant' && explanations.length" class="response-reasoning">
         <button class="reasoning-toggle" :aria-expanded="open" aria-label="查看回应思路"

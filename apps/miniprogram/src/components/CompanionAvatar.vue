@@ -30,7 +30,7 @@ onUnmounted(() => {
   <view class="companion-bot" :class="'bot-' + motion"
         :style="{ width: size + 'px', height: size + 'px' }"
         :role="interactive ? 'button' : 'img'"
-        :aria-label="interactive ? 'Agency Bloom 机器人头像，轻触互动' : 'Agency Bloom 机器人头像'"
+        :aria-label="interactive ? 'Bloom 机器人头像，轻触互动' : 'Bloom 机器人头像'"
         @tap="greet">
     <view class="bot-glow" />
     <image class="bot-image" src="/static/companion-bot.png" mode="aspectFit" />
