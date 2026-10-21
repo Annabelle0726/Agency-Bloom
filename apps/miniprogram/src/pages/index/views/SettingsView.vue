@@ -55,7 +55,7 @@ const emit = defineEmits<{
       </view>
     </view>
     <view class="settings-group">
-      <button class="setting-row" :disabled="busy" @click="emit('appearance')" hover-class="pressed"
+      <button class="setting-row" @click="emit('appearance')" hover-class="pressed"
               :hover-start-time="0" :hover-stay-time="70">
         <view>
           <text class="setting-title">外观设置</text>

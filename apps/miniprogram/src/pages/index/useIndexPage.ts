@@ -634,16 +634,21 @@ export function useIndexPage() {
   }
 
   async function setTheme(theme: ThemeId) {
-    if (!user.value || screen.value !== 'space' || busy.value || applyingTheme.value) return
+    if (!user.value || screen.value !== 'space' || applyingTheme.value) return
     if (user.value.theme === theme && manualThemeChosen()) return
     const accountId = user.value.id
+    const previousTheme = user.value.theme
+    error.value = ''
     applyingTheme.value = theme
+    // Apply the choice immediately. An unrelated data request must not make the
+    // appearance controls feel unresponsive; a failed save rolls the choice back.
+    user.value = {...user.value, theme}
+    manualThemePreference.markChosen(accountId)
     try {
-      const saved = user.value.theme === theme || await guarded(async () => {
-        const updated = await request<User>('PUT', '/me', {theme})
-        if (user.value?.id === accountId) user.value = updated
-      })
-      if (saved && user.value?.id === accountId) manualThemePreference.markChosen(accountId)
+      await request<User>('PUT', '/me', {theme})
+    } catch (err) {
+      if (user.value?.id === accountId) user.value = {...user.value, theme: previousTheme}
+      error.value = err instanceof Error ? err.message : '主题暂时没有保存，请稍后重试'
     } finally { applyingTheme.value = null }
   }
 

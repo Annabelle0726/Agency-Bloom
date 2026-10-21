@@ -23,7 +23,7 @@ const emit = defineEmits<{ close: []; select: [theme: ThemeId] }>()
     <view class="theme-grid">
       <button v-for="theme in themes" :key="theme.id" class="theme-card" :data-theme="theme.id"
               :aria-label="'使用' + theme.name + '主题'" :aria-pressed="activeTheme.id === theme.id"
-              :class="{ chosen: activeTheme.id === theme.id }" :disabled="busy || !!applyingTheme"
+              :class="{ chosen: activeTheme.id === theme.id }" :disabled="!!applyingTheme"
               @click="emit('select', theme.id)" hover-class="theme-pressed" :hover-start-time="0" :hover-stay-time="70">
         <ThemePreview :theme="theme" />
         <view class="theme-copy" :style="{ background: theme.palette.paper, color: theme.palette.ink }">

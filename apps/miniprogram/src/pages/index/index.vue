@@ -243,7 +243,7 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
       <AiConsentModal v-if="modal === 'ai'" :ai-mode="config.ai_mode" :busy="busy" :error="error"
                       @close="modal = ''" @consent="consentAI" />
       <AppearanceModal v-if="modal === 'appearance'" :themes="themes" :active-theme="activeTheme"
-                       :applying-theme="applyingTheme" :busy="busy" :error="error" @close="modal = ''"
+                       :applying-theme="applyingTheme" :busy="!!applyingTheme" :error="error" @close="modal = ''"
                        @select="setTheme" />
       <SupportModal v-if="modal === 'support'" :busy="busy" :sending="sending" :error="error"
                     :selected="canonicalSupportStyle(user?.support_style)" @close="modal = ''"
