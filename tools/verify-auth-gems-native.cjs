@@ -47,12 +47,12 @@ let mp, mocked = false
   await check.tap(); await wait(400)
   await mp.screenshot({ path: path.join(out, 'auth-consent.png') })
   console.log('shot auth-consent')
-  // dev login path: enter onboarding via the demo button (secondary kind stays flat by design)
+  // Dev login path: enter onboarding via the warm pearl demo button.
   const buttons = await page.$$('components\\AuthWelcome .auth-actions .action-button')
   assert.ok(buttons.length >= 1, 'Action buttons rendered: ' + buttons.length)
   await mp.screenshot({ path: path.join(out, 'auth-actions.png') })
   // login with the demo entry (first secondary action button after wechat)
-  const demo = await page.$('components\\AuthWelcome .action-secondary')
+  const demo = await page.$('components\\AuthWelcome .action-auth-demo')
   assert.ok(demo, 'Demo login button present')
   await demo.tap(); await wait(1000)
   // onboarding flow: the primary "保存这次探索" CTA is gem now

@@ -62,3 +62,18 @@
 - 图标采用本地 SVG 的显式明暗主题颜色，中央对话按钮加入渐变、白色边环和按压反馈；修复微信原生按钮默认裁切凸起内容的问题。
 - 深色主题使用对应底栏和图标颜色；键盘弹出时仍隐藏导航。聊天输入框增加间距，避开凸起圆按钮。
 - 类型检查、生产构建、微信编译器检查通过。verify-navigation-native.cjs 在微信模拟器验证了两种主题的三个入口、选中状态、圆形尺寸和输入框间距；截图已复核，请求全部模拟，无后端或模型调用，结束恢复原会话。
+
+## 2026-10-21 Opening CTA finish
+
+- The final opening CTA uses an opening-only champagne gradient, dark tea-colored text and arrow, a fine highlight rim, and a restrained shadow that complements the meadow sunset.
+- Its pill shape is an intentional exception for the user-requested reference treatment. Other button variants keep their existing shapes and colors.
+- The 54px button centers its label and bare SVG arrow, with 150ms press feedback and reduced-motion support. Styling lives inside ActionButton for native component isolation.
+- Existing navigation, repeat-click protection, footer position, and safe-area spacing remain intact.
+- Verified: TypeScript check and production Mini Program build; isolated tourist-project WeChat simulator at 390 × 844; button measured 334 × 54 at (28, 736); final opening CTA navigated to login. Screenshot: output/opening-button/champagne-final.png. No model calls. Physical-device rendering remains unverified.
+
+## 2026-10-21 Authentication CTA finish
+
+- The two authentication CTAs now share the opening button's pill silhouette, fine rim, bare arrow, and 150ms press feedback. WeChat uses mountain blue-gray; the demo entry uses a softer champagne finish to keep the primary action distinct.
+- These are auth-only ActionButton variants. Explicit wrapper spacing works with native component style isolation. Both retain consent, connecting, loading, and unavailable-provider guards.
+- Verified: typecheck and Mini Program production build; isolated 390 × 844 WeChat simulator screenshots for unchecked consent, demo-only availability, and both providers enabled by mock configuration. Both buttons measure 330 × 54. Unchecked consent disables both; accepting enables the demo while unconfigured WeChat remains disabled; configured WeChat enables after consent.
+- Opening-to-login navigation still passes. No actual authentication or model requests were sent. Physical-device rendering remains unverified. Captures and report: output/opening-button/.

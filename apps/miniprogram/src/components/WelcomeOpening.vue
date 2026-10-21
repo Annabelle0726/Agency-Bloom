@@ -131,7 +131,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
         <text class="story-count">{{ current + 1 }} / {{ slides.length }}</text>
       </view>
       <text v-if="current === slides.length - 1" class="story-note">{{ slides[current].note }}</text>
-      <ActionButton v-if="current === slides.length - 1" kind="secondary" @click="next">开始我的探索</ActionButton>
+      <ActionButton v-if="current === slides.length - 1" kind="opening" @click="next">开始我的探索</ActionButton>
     </view>
   </view>
 </template>
@@ -167,7 +167,6 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
 .story-dot.active { width:20px; background:#fff; }
 .story-count { margin-left:auto; font-size:10px; color:#fff; text-shadow:0 1px 6px #26382d; }
 .story-note { display:block; color:#fff; text-shadow:0 1px 6px #26382d; font-size:11px; line-height:1.8; margin:0 0 14px; min-height:20px; }
-.story-footer :deep(.action-button) { width:100%; min-height:50px; background:#fffdf7; color:#304136; border:1px solid rgba(255,255,255,.8); box-shadow:0 6px 24px rgba(20,35,25,.12); }
 .opening-story .story-about { min-height:44px; margin:3px auto 0; padding:12px; background:transparent; color:#fff; font-size:11px; line-height:1.8; text-shadow:0 1px 5px #253b2c; }
 .motion-reduced .story-scene, .motion-reduced .story-dot { transition:none; }
 @media(prefers-reduced-motion:reduce) {

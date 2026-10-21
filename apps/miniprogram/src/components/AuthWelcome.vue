@@ -26,10 +26,10 @@ function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value
             <view><text>我已阅读并同意</text><button class="auth-policy" @click="emit('privacy')">《用户协议》与《隐私政策》</button></view>
           </view>
           <!-- #ifdef MP-WEIXIN -->
-          <ActionButton kind="wechat" :disabled="!accepted || wechatAuth === false || connecting" :loading="busy" @click="login('wechat')">微信登录 / 注册</ActionButton>
+          <view class="auth-action"><ActionButton kind="auth-wechat" :disabled="!accepted || wechatAuth === false || connecting" :loading="busy" @click="login('wechat')">微信登录 / 注册</ActionButton></view>
           <text v-if="wechatAuth === false && ready" class="auth-note">微信登录尚未配置，请稍后再来</text>
           <!-- #endif -->
-          <ActionButton v-if="devAuth" kind="secondary" :disabled="!accepted || connecting" :loading="busy" @click="login(hasDemo ? 'demo-resume' : 'demo-new')">{{ hasDemo ? '继续本机演示' : '创建演示账号' }}</ActionButton>
+          <view v-if="devAuth" class="auth-action"><ActionButton kind="auth-demo" :disabled="!accepted || connecting" :loading="busy" @click="login(hasDemo ? 'demo-resume' : 'demo-new')">{{ hasDemo ? '继续本机演示' : '创建演示账号' }}</ActionButton></view>
           <text v-if="devAuth" class="auth-note">{{ hasDemo ? '登录之前的演示账号，恢复已有记录' : '首次创建后，本机可在 30 天内重新登录' }}</text>
           <button v-if="devAuth && hasDemo" class="auth-new-demo" :disabled="!accepted || busy || connecting" @click="login('demo-new')">创建新的演示账号</button>
           <text v-if="devAuth" class="auth-note">演示账号与微信账号独立 · 不跨设备同步</text>
@@ -62,7 +62,7 @@ button::after { border:0; }
 .auth-letter { background:var(--surface-glass); border:1px solid var(--paper); border-radius:10px; padding:18px 20px; margin:10px 0 20px; font-family:var(--font-heading); font-size:13px; line-height:2.1; }
 .auth-letter text { display:block; }
 .auth-actions { margin-top:auto; }
-.auth-actions :deep(.action-button) { margin-top:12px; }
+.auth-action { margin-top:12px; }
 .auth-consent { display:flex; align-items:center; font-size:11px; line-height:1.9; color:var(--muted); }
 .auth-check { flex-shrink:0; width:44px; height:44px; padding:13px; margin:0 4px 0 -13px; display:flex; align-items:center; justify-content:center; background:transparent; }
 .auth-check view { width:16px; height:16px; border:1px solid #8a947e; border-radius:4px; display:flex; align-items:center; justify-content:center; }
