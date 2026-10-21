@@ -32,7 +32,7 @@
 
 登录前统一 Morning Mist：暖白、深色文字、低饱和绿、山湖与自然光影。登录后未手动选择主题时按一天时段自动变化：清晨晨雾、白天森林、近傍晚暮烟、夜晚深夜；手动选择后（深夜、暮烟、森林、薰衣草、极简）不再自动变化。按钮即时反馈，支持减少动效偏好。Insight 使用轻描边与清晰层次，不增加持续发光、随机话术或主动提醒。流畅度、字体设置、键盘和安全区域最终以微信真机验收
 
-总运行预算上限 100 元/月，先分配 20 元作为 AI 应用额度，其他资源费用由实际部署方案确定。该范围不意味着尚未选择的服务器已经包含在费用估算中。
+The approved running budget is CNY 500/month, including CNY 100/month for AI. Hosting costs depend on the selected deployment. See [response explanations and model pricing](RESPONSE_REASONING.md) for the current model-aware rate cards and configuration.
 
 
 ## 轻量首次问答

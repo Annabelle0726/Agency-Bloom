@@ -221,13 +221,17 @@ text { overflow-wrap: anywhere; }
 .composer-dock { position: fixed; bottom: 0; left: 0; right: 0; z-index: 11; padding: 0 16px calc(env(safe-area-inset-bottom) + 6px); background: var(--bg); }
 .composer-dock .chat-disclosure { margin: 6px 0 2px; }
 .keyboard-open .composer-dock { bottom: var(--keyboard-height, 0px); padding-bottom: 6px; }
-/* Collapsible reasoning trace above each reply bubble. */
-.thinking-toggle { display: inline-flex; align-items: center; gap: 5px; margin: 2px 0 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); font-size: 10px; line-height: 1.4; text-align: left; }
-.thinking-toggle::after { border: 0; }
-.thinking-chevron { display: flex; align-items: center; transition: transform 160ms ease; }
-.thinking-chevron.is-open { transform: rotate(90deg); }
-.thinking-steps { margin: 0 0 8px; padding: 9px 12px; border-left: 2px solid var(--line); max-width: 100%; box-sizing: border-box; }
-.thinking-step { display: block; font-size: 11px; color: var(--muted); line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+/* Grounded reply explanations: quiet, optional and collapsed by default. */
+.response-reasoning { margin-top: 6px; }
+.reasoning-toggle { display: inline-flex; align-items: center; justify-content: flex-start; gap: 6px; min-height: 32px; margin: 0; padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 400; line-height: 1.4; text-align: left; }
+.reasoning-toggle::after { border: 0; }
+.reasoning-chevron { display: flex; align-items: center; transition: transform 160ms ease; }
+.reasoning-chevron.is-open { transform: rotate(90deg); }
+.reasoning-summary { margin: 8px 0 2px; padding: 0 0 0 12px; border-left: 1px solid var(--line); max-width: 100%; box-sizing: border-box; }
+.reasoning-point + .reasoning-point { margin-top: 10px; }
+.reasoning-label { display: block; color: var(--ink); font-size: 10px; font-weight: 500; margin-bottom: 3px; }
+.reasoning-text { display: block; color: var(--muted); font-size: 12px; line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
+@media (prefers-reduced-motion: reduce) { .reasoning-chevron { transition: none; } }
 /* The composer lives inside the fixed dock block; the send key stays in thumb reach. */
 .composer { width: 100%; max-width: 448px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 10px; box-sizing: border-box; box-shadow: 0 5px 24px var(--bg); }
 .web-toggle { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; min-height: 34px; padding: 0; margin: 0 0 3px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--muted); flex-shrink: 0; }

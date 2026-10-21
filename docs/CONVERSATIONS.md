@@ -14,6 +14,40 @@ Deletion is available in both active and archived lists, after an explicit scope
 
 ## Context contract
 
+Long-pressing a user message offers **Edit**, **Copy**, and **Select text**.
+Assistant replies offer copying and selection only. Editing opens a review sheet
+that explicitly states the replacement scope: the edited message and every later
+turn, plus the reviewed conversation summary. The user chooses **Save and reply
+again**; only one normal, consent/budget-controlled generation is requested.
+
+Retained edits use `POST /api/conversations/{id}/chat` with `edit_message_id`
+and `edit_tail_id`. The server checks ownership, user role, and the current last
+message before calling the provider. It supplies only history preceding the
+target and excludes the old summary. After generation succeeds, a single
+transaction replaces that branch and clears its summary; the response returns
+the saved `user_message_id` and `assistant_message_id`. Failed or cancelled
+generations leave the original branch intact. Context/consent mutations cancel
+in-flight edits through the existing request guard. Historical usage ledgers
+remain intact; independently confirmed memories/cards are not rewritten.
+
+With retention off, `edit_in_memory=true` uses bounded session history and
+replaces only the local branch. A retention mismatch is rejected before a model
+call. No transcript revision table, hidden history copy, automatic retry or
+extra model request is created. Text selection uses native selectable text in a
+temporary sheet; clipboard writes occur only on the user's copy action.
+
+Message-edit verification (2026-10-20): 145 backend tests passed with one optional
+PostgreSQL test skipped; 83 frontend tests, type checking, Ruff, two tool tests
+and the native compiler checks passed. The 390x844 isolated simulator exercised
+long-press editing, replacement of later messages, selectable assistant text,
+database agreement and restart recovery using three Mock calls and zero paid
+calls. Evidence: `output/message-edit/result.json`, `edit-confirmation.png`,
+`select-text.png`, and `persisted-edit.png`. Reproduce with
+`tools/verify-message-edit-native.cjs` after preparing the isolated tourist
+project described below. Actual OS clipboard writes and text-selection handle
+dragging remain real-device acceptance checks; the helper leaves the system
+clipboard untouched.
+
 For retained conversations, the server supplies the authoritative recent transcript, ignoring client-provided history. Non-retained conversations send bounded in-memory history. Chat receives at most eight recent messages plus the reviewed summary; explicit summarization receives at most eighty recent messages plus the previous reviewed summary. The UI states this scope. This is bounded continuity, not a claim that the entire historical transcript fits in the model context.
 
 The prompt also receives the primary exploration card/background/feedback, the conversation's response mode, explicitly linked cards and enabled memories within the relevant scopes. All of these are data, never system instructions. Current user corrections outrank older summaries and memory. A summary does not promote speculative statements into facts.

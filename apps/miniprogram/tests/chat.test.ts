@@ -14,6 +14,65 @@ function harness() {
   return { chat, post, abort, remote, error, notice, resolve: (value: ChatResponse) => resolve(value), reject: (value: Error) => reject(value) }
 }
 
+it('edits a branch only after success, preserves draft on failure, and omits old summary', async () => {
+  const h = harness()
+  h.chat.messages.value = [
+    { id: 'u1', role: 'user', content: '之前' }, { id: 'a1', role: 'assistant', content: '回复' },
+    { id: 'u2', role: 'user', content: '写错了' }, { id: 'a2', role: 'assistant', content: '旧回复' },
+  ]
+  h.chat.draft.value = '未发送草稿'
+  h.chat.summary.value = { overview: '旧总结', decisions: [], open_questions: [], next_steps: [] }
+  h.chat.beginEdit(2)
+  h.chat.editText.value = '修改后的消息'
+  const first = h.chat.send('c', 'chat', true)
+  expect(h.post.mock.calls[0][1]).toMatchObject({
+    edit_message_id: 'u2', edit_tail_id: 'a2', session_summary: null,
+    history: [{ role: 'user', content: '之前' }, { role: 'assistant', content: '回复' }],
+  })
+  h.reject(new Error('失败'))
+  await first
+  expect(h.chat.messages.value[2].content).toBe('写错了')
+  expect(h.chat.editText.value).toBe('修改后的消息')
+  const second = h.chat.send('c', 'chat', true)
+  h.resolve({ reply: '新回复', suggestion: null, mode: 'demo', user_message_id: 'u3', assistant_message_id: 'a3' })
+  await second
+  expect(h.chat.messages.value.map(m => m.content)).toEqual(['之前', '回复', '修改后的消息', '新回复'])
+  expect(h.chat.messages.value[2].id).toBe('u3')
+  expect(h.chat.summary.value).toBeNull()
+  expect(h.chat.editIndex.value).toBeNull()
+  expect(h.chat.draft.value).toBe('未发送草稿')
+})
+
+it('edits non-retained history in memory and keeps the target after earlier rows load', async () => {
+  const h = harness()
+  h.chat.messages.value = [{ role: 'user', content: '原文' }, { role: 'assistant', content: '旧回答' }]
+  h.chat.beginEdit(0)
+  h.chat.messages.value.unshift({ role: 'user', content: '更早的内容' })
+  h.chat.editText.value = '修正'
+  const pending = h.chat.send('c', 'chat', true)
+  expect(h.post.mock.calls[0][1].edit_message_id).toBeUndefined()
+  expect(h.post.mock.calls[0][1].history).toEqual([{ role: 'user', content: '更早的内容' }])
+  h.resolve({ reply: '新回答', suggestion: null, mode: 'demo' })
+  await pending
+  expect(h.chat.messages.value.map(m => m.content)).toEqual(['更早的内容', '修正', '新回答'])
+  h.chat.beginEdit(2)
+  expect(h.chat.editIndex.value).toBeNull()
+})
+
+it('cancelled editing keeps original messages and the edit draft', async () => {
+  const h = harness()
+  h.chat.messages.value = [{ role: 'user', content: '原文' }, { role: 'assistant', content: '旧回答' }]
+  h.chat.beginEdit(0)
+  h.chat.editText.value = '修正'
+  const pending = h.chat.send('c', 'chat', true)
+  h.chat.cancel()
+  await pending
+  expect(h.chat.messages.value[0].content).toBe('原文')
+  expect(h.chat.editText.value).toBe('修正')
+  h.chat.closeEdit()
+  expect(h.chat.editIndex.value).toBeNull()
+})
+
 it('keeps a phase candidate unconfirmed and suppresses it after skipping in this session', async () => {
   const h = harness()
   const change = { source_id: 'memory-1', source_kind: 'memory' as const, source_version: 2, previous: '稳定工作', evidence: '现在更想探索成长空间' }

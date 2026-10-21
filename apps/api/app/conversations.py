@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from .adaptive import relevant, snapshot_for
 from .models import AIRequest, Conversation, ConversationLink, Issue, Memory, Message, User, now
+from .response_reasoning import public_payload
 from .schemas import (
     ConversationChatInput,
     ConversationInput,
@@ -82,7 +83,34 @@ def cancel_pending(db, user_id, conversation_id=None):
     db.execute(query.values(status="cancelled"))
 
 
-def context_for(db, user, conversation, body):
+def edit_anchor(db, user, conversation, body):
+    """Validate the entire visible branch before spending on a replacement reply."""
+    target = getattr(body, 'edit_message_id', None)
+    tail = getattr(body, 'edit_tail_id', None)
+    if getattr(body, 'edit_in_memory', False):
+        if user.save_chat or target or tail or body.task != 'chat':
+            raise HTTPException(409, "消息保存状态已变化，请重新打开会话后修改")
+        return None
+    if not target and not tail:
+        return None
+    if not target or not tail or body.task != 'chat' or not user.save_chat:
+        raise HTTPException(409, "消息保存状态已变化，请重新打开会话后修改")
+    query = select(Message).where(Message.conversation_id == conversation.id)
+    anchor = db.scalar(query.where(Message.id == target, Message.role == 'user'))
+    latest = db.scalar(query.order_by(Message.created_at.desc(), Message.id.desc()).limit(1))
+    if not anchor or not latest or latest.id != tail:
+        raise HTTPException(409, "消息已变化，请重新打开会话后再修改")
+    return anchor
+
+
+def before_message(anchor):
+    return or_(
+        Message.created_at < anchor.created_at,
+        and_(Message.created_at == anchor.created_at, Message.id < anchor.id),
+    )
+
+
+def context_for(db, user, conversation, body, anchor=None):
     """Only this conversation's transcript and explicitly selected context reach AI.
 
     Returns (history, model_context, supplied_sources). supplied_sources is a
@@ -91,14 +119,16 @@ def context_for(db, user, conversation, body):
     """
     limit = 80 if body.task == "summary" else 8
     if user.save_chat:
+        query = select(Message).where(Message.conversation_id == conversation.id)
+        if anchor is not None:
+            query = query.where(before_message(anchor))
         rows = db.scalars(
-            select(Message)
-            .where(Message.conversation_id == conversation.id)
+            query
             .order_by(Message.created_at.desc(), Message.id.desc())
             .limit(limit)
         ).all()
         history = [{"role": row.role, "content": row.content} for row in reversed(rows)]
-        summary = conversation.summary
+        summary = None if anchor is not None else conversation.summary
     else:
         history = [m.model_dump() for m in body.history[-limit:]]
         summary = body.session_summary.model_dump() if body.session_summary else None
@@ -429,7 +459,7 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
                     "role": m.role,
                     "content": m.content,
                     "created_at": m.created_at,
-                    "payload": m.payload,
+                    "payload": public_payload(m.payload),
                 }
                 for m in reversed(rows)
             ],

@@ -55,9 +55,9 @@ AGENCY_DEEPSEEK_MODEL=deepseek-flash
 
 前端 `apps/miniprogram/src/manifest.json` 的 `mp-weixin.appid` 已与本机新增的微信开发者工具项目配置同步。后端 AppID 与 AppSecret 仍需在启用真实登录时配置。应用调用 `uni.login`，后端调用微信 `jscode2session`；不收集手机号。当前真实登录协议只完成模拟上游测试，需在开发者工具与真机完成联调。
 
-DeepSeek 请求显式关闭思考模式，限制输出长度，验证 JSON 结构；请求只从后端发起。默认 20 元/月是分配给 AI 的应用额度，服务器等开支需包含在用户设定的总 100 元/月中。输入/输出单价是用于限制请求的可配置估算参数，必须在真实接入时对照账号币种和 [官方最新价格](https://api-docs.deepseek.com/quick_start/pricing/) 校准，并在服务商账户设置可用的余额/额度控制。应用额度不能控制其他程序对同一密钥的调用，也不能代替真实账单。
+DeepSeek requests run only on the backend. The approved total running budget is CNY 500/month, including CNY 100/month for AI. Flash and Pro rates are selected by model; stale manual rate overrides fail validation. Existing spend is preserved. Provider thinking is private; the UI only displays optional grounded response explanations. See [RESPONSE_REASONING.md](RESPONSE_REASONING.md) for configuration, pricing and QA. This application budget does not control other applications using the same key.
 
-每次调用在数据库事务中先预留费用，成功后按返回 token 用量和配置单价结算。网络中断、取消或结果不确定时保留预留额度，不自动重试；这可能高估应用用量，但不会因重复重试反复发送同一请求。每天每个账号默认最多 30 次。卡片编辑与反馈不受 AI 额度影响。
+每次调用在数据库事务中先预留费用，成功后按返回 token 用量和所选模型的费率卡结算。网络中断、取消或结果不确定时保留预留额度，不自动重试；这可能高估应用用量，但不会因重复重试反复发送同一请求。每天每个账号默认最多 30 次。卡片编辑与反馈不受 AI 额度影响。
 
 ## 上线前的具体未完成项
 

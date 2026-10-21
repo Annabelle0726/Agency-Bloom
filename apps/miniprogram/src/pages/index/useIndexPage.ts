@@ -204,7 +204,7 @@ export function useIndexPage() {
   const insightReaction = computed(() => workspace.active.value.insightReaction.value)
   const generatingSummary = computed(() => sending.value && workspace.active.value.sendingTask.value === 'summary')
   const readOnlyConversation = computed(() => !!activeConversation.value?.archived_at || !!current.value?.ended_at)
-  // Thinking steps: collapsible reasoning trace shown under each reply.
+  // Brief speaking animation for a newly received reply.
   const speakingIndex = ref<number | null>(null)
   let speakingTimer: ReturnType<typeof setTimeout> | undefined
   watch(() => messages.value.length, (length, previous) => {
@@ -303,7 +303,7 @@ export function useIndexPage() {
   const feedbackText = ref('')
   const feedbackKind = ref('progress')
   const archives = ref<Issue[]>([])
-  const usage = ref({used_cny: 0, limit_cny: 20, daily_calls: 0, daily_limit: 30, mode: 'demo'})
+  const usage = ref({used_cny: 0, limit_cny: 100, daily_calls: 0, daily_limit: 30, mode: 'demo'})
   const editor = reactive({
     title: '',
     options: '',
@@ -579,6 +579,20 @@ export function useIndexPage() {
     workspace.active.value.cancel()
   }
 
+  function editMessage(index: number) {
+    if (busy.value || sending.value || readOnlyConversation.value) return
+    workspace.active.value.error.value = ''
+    workspace.active.value.beginEdit(index)
+  }
+  async function saveMessageEdit() {
+    const id = workspace.activeId.value, session = workspace.active.value
+    if (!id || sending.value || readOnlyConversation.value) return
+    if (!user.value?.ai_consent) { notify('请先在“我的”中同意 AI 数据处理说明'); return }
+    operations.clear('ai')
+    await session.send(id, 'chat', true)
+    if (user.value) await guarded(refreshWorkspace)
+  }
+
   async function consentAI() {
     await guarded(async () => {
       user.value = await request('PUT', '/me', {ai_consent: true});
@@ -609,6 +623,7 @@ export function useIndexPage() {
       if (!save) for (const session of Object.values(workspace.sessions)) {
         session.messages.value = []; session.summary.value = null; session.summaryDraft.value = null;
         session.suggestion.value = null; session.insight.value = null; session.olderCursor.value = null
+        session.closeEdit()
       }
       await refreshWorkspace()
       notify(save ? '之后的聊天会保存到你的账号' : '已关闭，并清除已保存的聊天记录')
@@ -778,7 +793,15 @@ export function useIndexPage() {
       if (status.status === 'pending') { notify('请求仍在处理中，请稍后再查看'); return }
       if (status.recoverable) {
         const page = await request<{ items: ChatMessage[]; next_cursor: string | null }>('GET', `/conversations/${id}/messages`)
-        session.messages.value = page.items; session.olderCursor.value = page.next_cursor; session.error.value = ''; notify('已读取保存的回复，输入草稿仍保留')
+        const last = page.items[page.items.length - 1]
+        session.messages.value = page.items; session.olderCursor.value = page.next_cursor; session.error.value = ''
+        session.suggestion.value = last?.payload?.suggestion || null
+        session.insight.value = last?.payload?.insight || null; session.insightReaction.value = ''
+        session.phaseChange.value = null; session.phaseConfirmed.value = false; session.phaseOpen.value = false
+        session.closeEdit()
+        const conversation = await request<Conversation>('GET', `/conversations/${id}`)
+        session.summary.value = conversation.summary; session.summaryDraft.value = null
+        notify('已读取保存的回复，输入草稿仍保留')
       } else notify('没有可恢复的已保存回复；不会自动再次调用模型')
     })
   }
@@ -853,6 +876,8 @@ export function useIndexPage() {
     navImages,
     card,
     workspace,
+    editMessage,
+    saveMessageEdit,
     conversations,
     activeConversation,
     isDrafting,

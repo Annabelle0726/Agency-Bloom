@@ -26,6 +26,7 @@ import AppearanceModal from './modals/AppearanceModal.vue'
 import SupportModal from './modals/SupportModal.vue'
 import PrivacyModal from './modals/PrivacyModal.vue'
 import ConversationActionModal from './modals/ConversationActionModal.vue'
+import EditMessageModal from './modals/EditMessageModal.vue'
 import {useIndexPage} from './useIndexPage'
 
 const {
@@ -61,6 +62,8 @@ const {
   navImages,
   card,
   workspace,
+  editMessage,
+  saveMessageEdit,
   conversations,
   activeConversation,
   isDrafting,
@@ -207,6 +210,7 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
                   @dismiss-error="workspace.active.value.error.value = ''; operations.clear('ai')"
                   @recover="recoverReply" @resume="resumeExploration" @select-mode="setChatMode"
                   @starter="useChatStarter" @load-older="loadOlderMessages"
+                  @edit-message="editMessage"
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />
         <ChatComposer v-if="current && tab === 'chat'" :draft="draft" :sending="sending"
@@ -250,6 +254,11 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
                                :action="conversationAction.action" :conversation="conversationAction.conversation"
                                :request="request" @close="conversationAction = null"
                                @changed="changedConversation" @deleted="deletedConversation" />
+      <EditMessageModal v-if="workspace.active.value.editIndex.value !== null"
+                        :text="workspace.active.value.editText.value" :busy="sending"
+                        :error="workspace.active.value.error.value" :retained="!!user?.save_chat"
+                        @change="workspace.active.value.editText.value = $event"
+                        @close="workspace.active.value.closeEdit()" @save="saveMessageEdit" @cancel="cancelChat" />
 
       <PhaseChangeReview v-if="workspace.active.value.phaseOpen.value && workspace.active.value.phaseChange.value" :key="workspace.activeId.value + workspace.active.value.phaseChange.value.source_id"
                          :change="workspace.active.value.phaseChange.value" :confirmed="workspace.active.value.phaseConfirmed.value" :busy="busy" :error="phaseError"

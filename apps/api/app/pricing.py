@@ -1,4 +1,4 @@
-"""CNY rate card verified against DeepSeek's Chinese pricing page, 2026-10-17.
+"""CNY rate card verified against DeepSeek's Chinese pricing page, 2026-10-20.
 
 Reservation always uses peak/cache-miss prices. Settlement uses reported tokens
 and provider creation time; unconfigured weekday holidays are a conservative
@@ -9,6 +9,28 @@ from datetime import datetime, timezone
 from decimal import ROUND_CEILING, Decimal
 from zoneinfo import ZoneInfo
 
+RATE_CARDS = {
+    "deepseek-flash": ("2", "0.04", "8"),
+    "deepseek-v4-pro": ("9", "0.30", "27"),
+}
+MODEL_ALIASES = {
+    "deepseek-v4-flash": "deepseek-flash",
+    "deepseek-v4-flash-vision-exp": "deepseek-flash",
+    "DeepSeek-V4.1-Flash-1017": "deepseek-flash",
+    "DeepSeek-V4-Pro-0813": "deepseek-v4-pro",
+}
+
+
+def canonical_model(model):
+    name = MODEL_ALIASES.get(model, model)
+    if name not in RATE_CARDS:
+        raise ValueError("Unsupported DeepSeek model rate card")
+    return name
+
+
+def model_rates(model):
+    return tuple(Decimal(value) for value in RATE_CARDS[canonical_model(model)])
+
 
 def token_count(usage, name, default=None):
     value = usage.get(name, default)
@@ -17,7 +39,10 @@ def token_count(usage, name, default=None):
     return value
 
 
-def price_usage(settings, usage, created=None):
+def price_usage(settings, usage, created=None, provider_model=None):
+    model = canonical_model(settings.deepseek_model)
+    if provider_model and canonical_model(provider_model) != model:
+        raise ValueError("Provider model does not match reserved rate card")
     prompt = token_count(usage, "prompt_tokens")
     output = token_count(usage, "completion_tokens")
     hit = token_count(
@@ -49,7 +74,8 @@ def price_usage(settings, usage, created=None):
         "prompt_cache_hit_tokens": hit,
         "prompt_cache_miss_tokens": miss,
         "currency": "CNY",
-        "price_version": "deepseek-flash-cny-2026-10-17",
+        "price_version": f"{model}-cny-2026-10-20",
+        "priced_model": model,
         "price_band": band,
         "input_price_per_million": str(input_price),
         "cached_input_price_per_million": str(cache_price),

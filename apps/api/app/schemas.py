@@ -1,7 +1,15 @@
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 Line = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=400)]
 Lines = Annotated[list[Line], Field(max_length=12)]
@@ -143,6 +151,9 @@ class ChatInput(StrictModel):
 
 class ConversationChatInput(ChatInput):
     history: list[ChatMessage] = Field(default=[], max_length=80)
+    edit_message_id: Annotated[str, StringConstraints(min_length=1, max_length=80)] | None = None
+    edit_tail_id: Annotated[str, StringConstraints(min_length=1, max_length=80)] | None = None
+    edit_in_memory: bool = False
 
 
 class ConversationInput(StrictModel):
@@ -256,7 +267,31 @@ class WebSource(StrictModel):
     published: Annotated[str, StringConstraints(strip_whitespace=True, max_length=10)] = ''
 
 
+class ReasoningEvidence(StrictModel):
+    source_id: Annotated[str, StringConstraints(pattern=r"^s[1-9][0-9]?$")]
+    quote: Annotated[str, StringConstraints(strip_whitespace=True, min_length=4, max_length=160)]
+
+
+class ReasoningPoint(StrictModel):
+    kind: Literal["understanding", "basis", "tradeoff"]
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=8, max_length=120)]
+    evidence: list[ReasoningEvidence] = Field(min_length=1, max_length=2)
+
+
 class AIOutput(StrictModel):
+    reasoning_summary: list[ReasoningPoint] | None = None
+
+    @field_validator("reasoning_summary", mode="before")
+    @classmethod
+    def optional_reasoning(cls, value):
+        # Optional explanations must never break a usable reply.
+        if not isinstance(value, list) or not 2 <= len(value) <= 3:
+            return None
+        try:
+            return [ReasoningPoint.model_validate(item) for item in value]
+        except (ValidationError, TypeError, ValueError):
+            return None
+
     reply: Annotated[str, StringConstraints(min_length=1, max_length=4000)]
     suggestion: Suggestion | None = None
     insight: Insight | None = None

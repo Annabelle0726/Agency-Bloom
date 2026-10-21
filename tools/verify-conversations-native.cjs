@@ -38,7 +38,7 @@ async function shot(name) { await mp.screenshot({ path: path.join(out, name + '.
   await fs.mkdir(out, { recursive: true });
   if (process.argv.includes('--prepare')) {
     const source = path.join(root, 'apps/miniprogram/dist/build/mp-weixin');
-    assert.match(await fs.readFile(path.join(source, 'pages/index/index.js'), 'utf8'), /127\.0\.0\.1:8018/);
+    assert.match(await fs.readFile(path.join(source, 'pages/index/useIndexPage.js'), 'utf8'), /127\.0\.0\.1:8018/);
     await fs.cp(source, project, { recursive: true });
     const config = JSON.parse(await fs.readFile(path.join(project, 'project.config.json'), 'utf8'));
     config.appid = 'touristappid'; config.projectname = 'AgencyOS Isolated Conversation QA'; config.setting.urlCheck = false;

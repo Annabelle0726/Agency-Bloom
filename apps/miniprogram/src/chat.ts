@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import type { ChatMessage, ChatResponse, Suggestion, Insight, ConversationSummary, SuppliedContext, PhaseChange, WebSource } from './domain'
 import { ApiError } from './http'
 
-interface ChatBody { request_id: string; message: string; history: { role: 'user' | 'assistant'; content: string }[]; insight_feedback: { possibility: string; reaction: 'dismissed' }[]; task?: 'chat' | 'summary'; session_summary?: ConversationSummary | null; dismissed_changes?: string[]; web_search?: boolean }
+interface ChatBody { request_id: string; message: string; history: { role: 'user' | 'assistant'; content: string }[]; insight_feedback: { possibility: string; reaction: 'dismissed' }[]; task?: 'chat' | 'summary'; session_summary?: ConversationSummary | null; dismissed_changes?: string[]; web_search?: boolean; edit_message_id?: string; edit_tail_id?: string; edit_in_memory?: boolean }
 export interface ChatOptions {
   post: (issueId: string, body: ChatBody) => { promise: Promise<ChatResponse>; cancel: () => void }
   cancelRemote: (id: string) => Promise<unknown>
@@ -16,6 +16,16 @@ export interface ChatOptions {
 export function createChatSession(options: ChatOptions) {
   const messages = ref<ChatMessage[]>([])
   const draft = ref(''), pendingText = ref(''), sending = ref(false)
+  const editIndex = ref<number | null>(null), editText = ref('')
+  let editTarget: ChatMessage | null = null
+  function beginEdit(index: number) {
+    if (sending.value || messages.value[index]?.role !== 'user') return
+    editIndex.value = index; editTarget = messages.value[index]; editText.value = editTarget.content
+  }
+  function closeEdit() {
+    if (sending.value) return
+    editIndex.value = null; editTarget = null; editText.value = ''
+  }
   const suggestion = ref<Suggestion | null>(null)
   const insight = ref<Insight | null>(null)
   const insightReaction = ref<'' | 'interested' | 'experiment'>('')
@@ -44,31 +54,46 @@ export function createChatSession(options: ChatOptions) {
     cancel()
     phaseChange.value = null; phaseConfirmed.value = false; phaseOpen.value = false; dismissedChanges = []
     activeId = ''; abort = null; sending.value = false; pendingText.value = ''
+    closeEdit()
     draft.value = ''; messages.value = []; suggestion.value = null; insight.value = null; insightReaction.value = ''; insightFeedback = []
     summary.value = null; summaryDraft.value = null; suppliedContext.value = null; tailLine.value = ''; error.value = ''; loaded.value = false; olderCursor.value = null; lastRequestId.value = ''
   }
-  async function send(issueId: string, task: 'chat' | 'summary' = 'chat') {
-    if (sending.value || (task === 'chat' && !draft.value.trim())) return
-    const original = draft.value, text = task === 'summary' ? '请整理当前会话，保留未解决的问题' : original.trim(), id = options.requestId()
+  async function send(issueId: string, task: 'chat' | 'summary' = 'chat', editing = false) {
+    if (sending.value || (editing && (!editTarget || task !== 'chat'))) return
+    const original = editing ? editText.value : draft.value
+    if (task === 'chat' && !original.trim()) return
+    // Locate by object identity so loading earlier pages cannot shift the edit target.
+    const index = editing ? messages.value.indexOf(editTarget!) : -1
+    if (editing && index < 0) return
+    const history = editing ? messages.value.slice(0, index) : messages.value
+    const text = task === 'summary' ? '请整理当前会话，保留未解决的问题' : original.trim(), id = options.requestId()
     activeId = id; cancelSent = false; sending.value = true; pendingText.value = text
     sendingTask.value = task; error.value = ''; lastRequestId.value = id
-    if (task === 'chat') { suggestion.value = null; phaseChange.value = null; phaseConfirmed.value = false; phaseOpen.value = false }
+    if (task === 'chat' && !editing) { suggestion.value = null; phaseChange.value = null; phaseConfirmed.value = false; phaseOpen.value = false }
     try {
       const operation = options.post(issueId, { request_id: id, message: text,
-        history: messages.value.slice(task === 'summary' ? -80 : -8).map(({ role, content }) => ({ role, content })),
-        insight_feedback: [...insightFeedback], dismissed_changes: [...dismissedChanges], task, session_summary: summary.value,
+        history: history.slice(task === 'summary' ? -80 : -8).map(({ role, content }) => ({ role, content })),
+        insight_feedback: editing ? [] : [...insightFeedback], dismissed_changes: [...dismissedChanges], task, session_summary: editing ? null : summary.value,
+        ...(editing && editTarget?.id ? { edit_message_id: editTarget.id, edit_tail_id: messages.value[messages.value.length - 1]?.id } : {}),
+        ...(editing && !editTarget?.id ? { edit_in_memory: true } : {}),
         web_search: task === 'chat' && webSearchOn.value })
       abort = operation.cancel
       const response = await operation.promise
       if (activeId !== id || cancelSent) return
       if (task === 'summary') { summaryDraft.value = response.summary ?? null; return }
-      messages.value.push({ role: 'user', content: text }, { role: 'assistant', content: response.reply, payload: { suggestion: response.suggestion, insight: response.insight, request_id: id, supplied_context: response.supplied_context ?? null, tail_line: response.tail_line ?? '', thinking_steps: response.thinking_steps ?? [], web_sources: response.web_sources ?? null } })
+      if (editing) {
+        messages.value = history
+        summary.value = null; summaryDraft.value = null; insightFeedback = []
+        phaseConfirmed.value = false; phaseOpen.value = false
+        editIndex.value = null; editTarget = null; editText.value = ''
+      }
+      messages.value.push({ id: response.user_message_id, role: 'user', content: text }, { id: response.assistant_message_id, role: 'assistant', content: response.reply, payload: { suggestion: response.suggestion, insight: response.insight, request_id: id, supplied_context: response.supplied_context ?? null, tail_line: response.tail_line ?? '', reasoning_summary: response.reasoning_summary ?? [], web_sources: response.web_sources ?? null } })
       tailLine.value = response.tail_line?.trim() || ''
       suppliedContext.value = response.supplied_context ?? null
       phaseChange.value = response.phase_change && !dismissedChanges.includes(response.phase_change.source_id) ? response.phase_change : null
       suggestion.value = response.suggestion ?? null
       insight.value = response.insight ?? null; insightReaction.value = ''
-      if (draft.value === original) draft.value = ''
+      if (!editing && draft.value === original) draft.value = ''
     } catch (err) {
       if (activeId !== id) return
       if (err instanceof ApiError && err.cancelled) options.onCancelled(err.message)
@@ -94,7 +119,7 @@ export function createChatSession(options: ChatOptions) {
     draft.value = combined; insightReaction.value = action
     return null
   }
-  return { messages, draft, pendingText, sending, sendingTask, suggestion, insight, insightReaction, summary, summaryDraft,
+  return { messages, draft, editIndex, editText, beginEdit, closeEdit, pendingText, sending, sendingTask, suggestion, insight, insightReaction, summary, summaryDraft,
     phaseChange, phaseConfirmed, phaseOpen, confirmPhaseChange, skipPhaseChange,
     suppliedContext, tailLine, webSearchOn, error, lastRequestId, loaded, olderCursor, reactToInsight, send, cancel, reset }
 }

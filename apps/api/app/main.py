@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from . import ai, web_search
 from .config import Settings
-from .conversations import cancel_pending, context_for, register_routes
+from .conversations import before_message, cancel_pending, context_for, edit_anchor, register_routes
 from .local_schema import upgrade_local
 from .models import (
     AIRequest,
@@ -586,6 +586,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         history = None
         sources = None
         first_turn = False
+        anchor = None
         if conversation:
             if db.scalar(
                 select(AIRequest.id)
@@ -593,7 +594,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                 .limit(1)
             ):
                 raise HTTPException(409, "这段会话有一条回复正在生成")
-            history, context, sources = context_for(db, user, conversation, body)
+            anchor = edit_anchor(db, user, conversation, body)
+            history, context, sources = context_for(db, user, conversation, body, anchor)
             first_turn = bool(context.get("first_turn"))
         # Per-turn web grounding: only when the user enabled it for this message
         # and a key is configured. A failed or absent search degrades to a
@@ -689,6 +691,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                     raise asyncio.CancelledError()
             generation = await task
             result, actual_cost = generation.output, generation.cost_micro
+            saved_ids = {}
             with sessions.begin() as done:
                 done.execute(
                     update(User).where(User.id == user_id).values(use_memory=User.use_memory)
@@ -737,53 +740,56 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                         live_conversation.title = result.conversation_title[:30]
                         live_conversation.version += 1
 
-                def thinking_steps(trace: str | None) -> list[str]:
-                    """Bound the reasoning trace into short display steps."""
-                    if not trace:
-                        return []
-                    steps = [part.strip() for part in trace.replace("\r", "").split("\n") if part.strip()]
-                    if len(steps) == 1 and len(steps[0]) > 80:
-                        sentences = [s for s in steps[0].replace("。", "。\n").split("\n") if s.strip()]
-                        steps = sentences
-                    return [s[:200] for s in steps[:6]]
-
                 if live_user.save_chat and body.task == "chat":
                     target_id = conversation.id if conversation else issue_id
-                    done.add(
-                        Message(
-                            issue_id=issue_id,
-                            conversation_id=target_id,
-                            role="user",
-                            content=body.message,
-                        )
+                    if anchor is not None:
+                        # Revalidate under the same user lock as context mutations.
+                        live_anchor = edit_anchor(done, live_user, live_conversation, body)
+                        done.execute(delete(Message).where(
+                            Message.conversation_id == target_id,
+                            ~before_message(live_anchor),
+                        ))
+                        live_conversation.summary = None
+                        live_conversation.version += 1
+                    user_message = Message(
+                        issue_id=issue_id,
+                        conversation_id=target_id,
+                        role="user",
+                        content=body.message,
                     )
+                    done.add(user_message)
                     done.flush()
-                    done.add(
-                        Message(
-                            issue_id=issue_id,
-                            conversation_id=target_id,
-                            role="assistant",
-                            content=result.reply,
-                            payload={
-                                "supplied_context": sources,
-                                "suggestion": result.suggestion.model_dump()
-                                if result.suggestion
-                                else None,
-                                "insight": result.insight.model_dump() if result.insight else None,
-                                "request_id": str(body.request_id),
-                                "thinking_steps": thinking_steps(generation.reasoning),
-                            },
-                        )
+                    assistant_message = Message(
+                        issue_id=issue_id,
+                        conversation_id=target_id,
+                        role="assistant",
+                        content=result.reply,
+                        payload={
+                            "supplied_context": sources,
+                            "suggestion": result.suggestion.model_dump()
+                            if result.suggestion
+                            else None,
+                            "insight": result.insight.model_dump() if result.insight else None,
+                            "request_id": str(body.request_id),
+                            "reasoning_summary": [p.model_dump() for p in result.reasoning_summary] if result.reasoning_summary else None,
+                        },
                     )
+                    done.add(assistant_message)
+                    done.flush()
+                    saved_ids = {
+                        "user_message_id": user_message.id,
+                        "assistant_message_id": assistant_message.id,
+                    }
             return (
                 result.model_dump()
                 | {
                     "mode": settings.ai_mode,
                     "usage": generation.usage,
-                    "thinking_steps": thinking_steps(generation.reasoning),
+                    "reasoning_summary": [p.model_dump() for p in result.reasoning_summary] if result.reasoning_summary else None,
                 }
                 | ({"supplied_context": sources} if sources else {})
                 | ({"web_sources": web_results} if web_results else {})
+                | saved_ids
             )
         except asyncio.CancelledError:
             logging.getLogger("agency.ai").info("generation_cancelled")

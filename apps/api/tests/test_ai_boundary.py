@@ -41,7 +41,7 @@ def test_provider_contract_is_bounded_and_cannot_change_confirmed_facts(tmp_path
     def upstream(request):
         body = json.loads(request.content)
         assert body["thinking"] == {"type": "enabled"}
-        assert body["max_tokens"] == 1200
+        assert body["max_tokens"] == 4096
         assert body["response_format"] == {"type": "text"}
         assert request.headers["Authorization"] == "Bearer test-key"
         return httpx.Response(

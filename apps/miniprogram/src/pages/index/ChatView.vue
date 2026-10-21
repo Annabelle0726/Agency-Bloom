@@ -61,6 +61,7 @@ const emit = defineEmits<{
   openPhase: []
   reviewSuggestion: []
   reactInsight: [action: 'interested' | 'dismissed' | 'experiment']
+  editMessage: [index: number]
 }>()
 </script>
 
@@ -114,6 +115,8 @@ const emit = defineEmits<{
       :is-last="index === messages.length - 1"
       :speaking="speakingIndex === index"
       :user-avatar="userAvatar"
+      :editable="!busy && !sending && !readOnlyConversation && (!userSaveChat || !!message.id)"
+      @edit="emit('editMessage', index)"
     />
     <button v-if="phaseChange && !sending" class="text-button review-phase-change" @click="emit('openPhase')">查看可能的方向变化</button>
     <ChatPendingMessage v-if="sending && !generatingSummary" :pending-text="pendingText" :user-avatar="userAvatar" />
