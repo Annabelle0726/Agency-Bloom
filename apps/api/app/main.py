@@ -49,6 +49,18 @@ from .schemas import (
 )
 
 
+class HealthProbeLogFilter(logging.Filter):
+    """Hide access-log noise from local model discovery probing the root path."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if isinstance(args, tuple) and len(args) == 5:
+            method, path, status = args[1], args[2], args[4]
+            if method == "GET" and path == "/health" and status == 404:
+                return False
+        return True
+
+
 def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
@@ -135,6 +147,10 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type"],
     )
+
+    access_logger = logging.getLogger("uvicorn.access")
+    if not any(isinstance(entry, HealthProbeLogFilter) for entry in access_logger.filters):
+        access_logger.addFilter(HealthProbeLogFilter())
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, error):
