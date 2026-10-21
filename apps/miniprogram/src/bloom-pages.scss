@@ -1,0 +1,87 @@
+/* Shared native style source; only the two reflection pages use these rules. */
+.theme-space .bloom-content { padding:0 20px 40px; color:var(--ink); }
+.bloom-hero { position:absolute; z-index:0; top:-100px; left:0; right:0; height:470px; pointer-events:none; overflow:hidden; background:var(--bg); }
+.bloom-hero-image { display:block; width:100%; height:100%; }
+.bloom-hero-wash { position:absolute; inset:0; background:linear-gradient(180deg,var(--bg) 0%,var(--hero-top) 22%,var(--hero-top) 42%,var(--hero-middle) 66%,var(--hero-middle) 78%,var(--bg) 100%); }
+.bloom-content .bloom-intro { position:relative; z-index:1; min-height:236px; box-sizing:border-box; padding:18px 3px 92px; margin:0; }
+.bloom-content .eyebrow { font-weight:400; }
+.bloom-intro .eyebrow { font-size:10px; line-height:1.6; letter-spacing:1.3px; color:var(--accent); font-weight:400; }
+.bloom-intro .page-title { display:block; font-family:var(--font-heading); font-size:24px; font-weight:400; line-height:1.47; letter-spacing:0; margin:8px 0; white-space:normal; overflow-wrap:break-word; }
+.bloom-intro .page-description { display:block; color:var(--muted); font-size:13px; line-height:1.75; }
+.discovery-list, .bloom-history, .plan-content > .bloom-surface, .plan-content > .section-row, .bloom-decision { position:relative; z-index:1; }
+.bloom-content .bloom-discovery-card { display:flex; align-items:stretch; gap:15px; padding:13px; margin:0 0 11px; border:1px solid var(--line); border-radius:10px; background:var(--surface-glass); box-shadow:0 4px 18px #1d2b3a05; color:var(--ink); line-height:1.6; transition:transform 130ms,opacity 130ms; overflow:hidden; }
+.bloom-discovery-card .discovery-photo { display:block; flex:0 0 84px; width:84px; min-height:136px; height:auto; align-self:stretch; border-radius:8px; background:var(--soft); }
+.discovery-copy { flex:1; min-width:0; padding:2px 0; }
+.bloom-discovery-card .discovery-heading { gap:6px; align-items:center; }
+.bloom-discovery-card .discovery-heading > text { font-size:12px; letter-spacing:0; line-height:1.6; font-weight:400; }
+.bloom-discovery-card .discovery-title { font-family:var(--font-body); font-size:16px; line-height:1.5; margin:8px 0 6px; font-weight:400; }
+.bloom-discovery-card .discovery-question { font-size:13px; line-height:1.8; color:var(--ink); opacity:.86; white-space:normal; }
+.discovery-context { display:block; padding:3px 0 14px; text-align:center; color:var(--muted); font-size:12px; line-height:1.6; }
+.bloom-content .bloom-history { display:flex; align-items:center; justify-content:flex-start; gap:10px; border:0; background:transparent; padding:12px 2px; min-height:48px; text-align:left; color:var(--muted); }
+.bloom-content .bloom-history > view { flex:0 0 auto; }
+.bloom-history > text { flex:1; min-width:0; font-size:13px; color:var(--ink); text-align:left; }
+.bloom-content .bloom-surface { padding:19px; border:1px solid var(--line); border-radius:10px; background:var(--paper); box-shadow:var(--shadow); margin:0 0 22px; }
+.plan-content .bloom-surface .card-title { font-family:var(--font-body); font-size:16px; font-weight:400; line-height:1.55; }
+.plan-content .bloom-surface .body-copy { display:block; margin-top:7px; font-size:12.5px; line-height:1.7; color:var(--muted); }
+.bloom-content .plan-empty { background:var(--surface-glass); }
+.plan-empty-main { display:flex; align-items:flex-start; gap:10px; }
+.plan-empty-sprout { flex:0 0 22px; width:22px; height:22px; margin-top:2px; }
+.plan-empty-copy { flex:1; min-width:0; }
+.plan-empty-arrow { flex:0 0 30px; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:var(--soft); color:var(--accent); display:flex; align-items:center; justify-content:center; line-height:0; }
+.bloom-content .plan-empty-actions { gap:8px 20px; margin-top:14px; }
+.bloom-content .text-button { min-height:44px; box-sizing:border-box; font-size:13px; line-height:1.5; }
+.bloom-content .next-title { font-family:var(--font-body); font-size:16px; line-height:1.6; margin:9px 0 5px; font-weight:400; white-space:pre-wrap; overflow-wrap:anywhere; }
+.bloom-content .section-row { margin-top:22px; margin-bottom:10px; }
+.bloom-content .section-title { font-family:var(--font-body); font-size:15px; line-height:1.6; font-weight:400; color:var(--ink); }
+.bloom-content .bloom-decision { padding:19px; border-radius:10px; background:var(--paper); }
+.decision-heading { display:flex; align-items:flex-start; gap:14px; }
+.decision-heading-copy { flex:1; min-width:0; }
+.decision-heading .paper-top { justify-content:flex-start; gap:8px; margin:0 0 8px; padding-right:0; }
+.decision-heading .live-dot { flex-shrink:0; width:6px; height:6px; }
+.decision-heading .card-title { font-family:var(--font-body); font-size:16px; font-weight:400; line-height:1.55; overflow-wrap:anywhere; margin-top:2px; }
+.decision-subtitle { display:block; font-size:13px; line-height:1.7; color:var(--muted); margin-top:4px; }
+.decision-photo { flex:0 0 82px; width:82px; height:74px; border-radius:10px; background:var(--soft); }
+.decision-rows { margin-top:8px; }
+.decision-row { display:flex; align-items:flex-start; gap:12px; width:100%; box-sizing:border-box; padding:14px 0; border:0; border-top:1px solid var(--line); background:transparent; text-align:left; color:var(--ink); line-height:1.5; }
+.decision-row > .svg-icon { align-self:center; }
+.decision-row-icon { flex:0 0 38px; width:38px; height:38px; border-radius:50%; background:var(--soft); display:flex; align-items:center; justify-content:center; }
+.decision-row-icon.constraints, .decision-row-icon.confirmed, .decision-row-icon.unknowns { background:var(--accent-light); }
+.decision-row-copy { flex:1; min-width:0; }
+.decision-row-label { display:block; font-size:14px; line-height:1.5; font-weight:400; color:var(--ink); }
+.decision-row-hint { display:block; font-size:13px; line-height:1.6; color:var(--muted); margin-top:2px; }
+.bloom-decision .card-line { display:block; color:var(--ink); opacity:.86; font-size:14px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; margin:3px 0; }
+.bloom-decision .paper-footer { font-size:11px; line-height:1.7; flex-wrap:wrap; gap:8px; }
+.bloom-content .timeline-entry { padding:13px 0; gap:12px; }
+.bloom-content .timeline-entry .small { font-size:12px; line-height:1.6; }
+.bloom-content .timeline-entry .body-copy { display:block; color:var(--ink); opacity:.86; font-size:14px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
+.bloom-content .home-empty { font-size:13px; line-height:1.8; color:var(--muted); padding:12px 0 20px; }
+.bloom-content .end-link { margin-top:18px; }
+.theme-dark .bloom-hero-wash { background:linear-gradient(180deg,var(--bg),#06090fbb 30%,#06090f55 56%,#06090f20 75%,var(--bg)); }
+@media(max-width:360px) {
+  .theme-space .bloom-content { padding-left:16px; padding-right:16px; }
+  .bloom-intro .page-title { font-size:22px; }
+  .bloom-intro .page-description { font-size:12.5px; }
+  .bloom-content .bloom-discovery-card { gap:12px; padding:12px; }
+  .bloom-discovery-card .discovery-photo { flex-basis:70px; width:70px; min-height:150px; }
+  .bloom-discovery-card .discovery-title { font-size:15px; }
+  .bloom-content .next-title { font-size:15px; }
+  .bloom-content .section-title { font-size:14px; }
+  .plan-content .bloom-surface .card-title, .decision-heading .card-title { font-size:15px; }
+  .plan-empty-sprout { flex-basis:20px; width:20px; height:20px; }
+  .decision-photo { flex-basis:72px; width:72px; height:66px; }
+  .decision-row { gap:10px; padding:13px 0; }
+  .decision-row-icon { flex-basis:34px; width:34px; height:34px; }
+  .bloom-content .bloom-surface, .bloom-content .bloom-decision { padding:17px; }
+}
+@media(max-height:680px) {
+  .bloom-content .bloom-intro { min-height:204px; padding-bottom:62px; }
+  .bloom-hero { height:430px; }
+}
+@media(prefers-reduced-motion:reduce) { .bloom-content .bloom-discovery-card { transition:none; } }
+
+.theme-reflection .topbar { position:relative; z-index:2; }
+.theme-reflection .theme-atmosphere { display:none; }
+
+/* Keep scrolling text below the native status/capsule area. */
+.theme-reflection .app-shell::after { content:''; position:fixed; z-index:8; top:0; left:0; right:0; height:calc(var(--capsule-bottom, 0px) + 6px); background:var(--bg); pointer-events:none; }
+.bloom-content .next-detail { display:block; font-family:var(--font-body); font-size:13px; line-height:1.75; color:var(--muted); white-space:pre-wrap; overflow-wrap:anywhere; margin:6px 0; }

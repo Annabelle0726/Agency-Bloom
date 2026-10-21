@@ -9,6 +9,7 @@
 <style lang="scss" src="./bottom-nav.scss"></style>
 <style lang="scss" src="./themes.scss"></style>
 <style lang="scss" src="./workspace.scss"></style>
+<style lang="scss" src="./bloom-pages.scss"></style>
 <script setup lang="ts">
 import { onLaunch } from '@dcloudio/uni-app'
 onLaunch(() => {})

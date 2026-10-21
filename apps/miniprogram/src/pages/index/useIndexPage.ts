@@ -15,6 +15,7 @@ import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
 import type {ConversationAction, ConversationMenuAction} from '../../conversation-action'
 import {createAvatarStore} from '../../avatar'
+import {createManualThemePreference} from '../../theme-preference'
 import {newChatStarters, experimentFields, editFields, todayLabel, greeting} from './data'
 
 
@@ -118,11 +119,13 @@ export function useIndexPage() {
   const toast = ref('')
   const form = reactive<Onboarding>(newOnboarding())
   const preview = computed(() => makePreview(form))
-  const manualThemeKey = (userId: string) => `agency.theme.manual.v1:${userId}`
+  const manualThemePreference = createManualThemePreference({
+    read: key => uni.getStorageSync(key),
+    write: (key, value) => uni.setStorageSync(key, value),
+  })
   function manualThemeChosen(): boolean {
     const id = user.value?.id
-    if (!id) return true // outside the personal space the fixed default applies
-    try { return !!uni.getStorageSync(manualThemeKey(id)) } catch { return true }
+    return !id || manualThemePreference.isChosen(id)
   }
   const activeTheme = computed(() => {
     if (screen.value !== 'space' || manualThemeChosen()) return themeForSession(user.value, screen.value === 'space')
@@ -631,11 +634,17 @@ export function useIndexPage() {
   }
 
   async function setTheme(theme: ThemeId) {
-    if (!user.value || screen.value !== 'space' || busy.value || applyingTheme.value || user.value.theme === theme) return
+    if (!user.value || screen.value !== 'space' || busy.value || applyingTheme.value) return
+    if (user.value.theme === theme && manualThemeChosen()) return
+    const accountId = user.value.id
     applyingTheme.value = theme
-    try { await guarded(async () => { user.value = await request('PUT', '/me', {theme}) }) }
-    finally { applyingTheme.value = null }
-    if (user.value) { try { uni.setStorageSync(manualThemeKey(user.value.id), true) } catch { /* auto theming continues */ } }
+    try {
+      const saved = user.value.theme === theme || await guarded(async () => {
+        const updated = await request<User>('PUT', '/me', {theme})
+        if (user.value?.id === accountId) user.value = updated
+      })
+      if (saved && user.value?.id === accountId) manualThemePreference.markChosen(accountId)
+    } finally { applyingTheme.value = null }
   }
 
   async function setSupportStyle(support_style: string) {

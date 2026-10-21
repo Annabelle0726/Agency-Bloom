@@ -154,7 +154,7 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
 
 <template>
   <view class="preview-stage"
-        :class="['theme-' + activeTheme.id, { dark, 'theme-space': screen === 'space', 'theme-home': screen === 'space' && tab === 'now', 'keyboard-open': keyboardHeight > 0 }]"
+        :class="['theme-' + activeTheme.id, { dark, 'theme-space': screen === 'space', 'theme-home': screen === 'space' && tab === 'now', 'theme-reflection': screen === 'space' && (tab === 'plan' || tab === 'discover'), 'keyboard-open': keyboardHeight > 0 }]"
         :style="{ ...activeThemeStyle, '--keyboard-height': `${keyboardHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
     <view class="app-shell"
           :class="{ 'with-tabs': screen === 'space', 'chat-page': tab === 'chat' && screen === 'space', 'onboarding-shell': screen !== 'space' }">
@@ -190,7 +190,7 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
         <HomeView v-if="current && tab === 'now'" :card="card" :current="current" :greeting="greeting"
                   :today-label="todayLabel" @open-editor="openEditor()" @plan="selectTab('plan')"
                   @feedback="modal = 'feedback'" @chat="selectTab('chat')" />
-        <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card"
+        <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id"
                   @open-editor="openEditor()" @feedback="modal = 'feedback'" @chat="selectTab('chat')"
                   @resume="resumeExploration" @end="endIssue" />
         <ChatView v-else-if="current && tab === 'chat'" :busy="busy" :sending="sending"
@@ -218,7 +218,7 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
                       :is-drafting="isDrafting" :web-search-on="workspace.active.value.webSearchOn.value"
                       :chat-footer-note="chatFooterNote" @draft-change="updateDraft" @toggle-web="toggleWebSearch"
                       @send="sendChat" @cancel="cancelChat" />
-        <DiscoverView v-else-if="tab === 'discover'" :has-current="!!current" @explore="explorePrompt"
+        <DiscoverView v-else-if="tab === 'discover'" :has-current="!!current" :theme-id="activeTheme.id" @explore="explorePrompt"
                       @history="showHistory" />
         <EmptyDashboard v-else-if="!current && tab !== 'settings'" :tab="tab" :busy="busy"
                         @onboarding="beginOnboarding" @history="showHistory" />

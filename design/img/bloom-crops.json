@@ -1,0 +1,246 @@
+[
+  {
+    "name": "mist-lake",
+    "source": "design/img/image-gen-1.png",
+    "width": 750,
+    "height": 940,
+    "extract": null,
+    "bytes": 48705
+  },
+  {
+    "name": "mist-reading",
+    "source": "design/img/image-gen-5.png",
+    "width": 750,
+    "height": 940,
+    "extract": null,
+    "bytes": 45087
+  },
+  {
+    "name": "forest-hero",
+    "source": "design/img/image-gen-2.png",
+    "width": 750,
+    "height": 940,
+    "extract": null,
+    "bytes": 116405
+  },
+  {
+    "name": "forest-reading",
+    "source": "design/img/image-gen-3.png",
+    "width": 750,
+    "height": 940,
+    "extract": null,
+    "bytes": 80547
+  },
+  {
+    "name": "forest-path",
+    "source": "design/img/image-gen-2.png",
+    "width": 224,
+    "height": 360,
+    "extract": null,
+    "bytes": 17027
+  },
+  {
+    "name": "reading-corner",
+    "source": "design/img/image-gen-3.png",
+    "width": 224,
+    "height": 360,
+    "extract": null,
+    "bytes": 13748
+  },
+  {
+    "name": "lake-reflection",
+    "source": "design/img/image-gen-4.png",
+    "width": 224,
+    "height": 360,
+    "extract": null,
+    "bytes": 12520
+  },
+  {
+    "name": "night-scene",
+    "source": "design/img/bloom-dark.png",
+    "width": 750,
+    "height": 940,
+    "extract": null,
+    "bytes": 48379
+  },
+  {
+    "name": "night-landscape",
+    "source": "design/img/bloom-dark.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 860,
+      "top": 20,
+      "width": 645,
+      "height": 839
+    },
+    "bytes": 6618
+  },
+  {
+    "name": "night-reading",
+    "source": "design/img/bloom-dark.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 876,
+      "top": 236,
+      "width": 645,
+      "height": 788
+    },
+    "bytes": 8290
+  },
+  {
+    "name": "night-reflection",
+    "source": "design/img/bloom-dark.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 384,
+      "top": 174,
+      "width": 614,
+      "height": 819
+    },
+    "bytes": 3931
+  },
+  {
+    "name": "dusk-scene",
+    "source": "design/img/bloom-dawn.png",
+    "width": 750,
+    "height": 940,
+    "extract": null,
+    "bytes": 41099
+  },
+  {
+    "name": "dusk-landscape",
+    "source": "design/img/bloom-dawn.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 0,
+      "top": 123,
+      "width": 614,
+      "height": 839
+    },
+    "bytes": 3552
+  },
+  {
+    "name": "dusk-reading",
+    "source": "design/img/bloom-dawn.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 876,
+      "top": 236,
+      "width": 645,
+      "height": 788
+    },
+    "bytes": 7994
+  },
+  {
+    "name": "dusk-reflection",
+    "source": "design/img/bloom-dawn.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 384,
+      "top": 174,
+      "width": 614,
+      "height": 819
+    },
+    "bytes": 5051
+  },
+  {
+    "name": "lavender-scene",
+    "source": "design/img/bloom-lavender.png",
+    "width": 750,
+    "height": 940,
+    "extract": null,
+    "bytes": 57892
+  },
+  {
+    "name": "lavender-landscape",
+    "source": "design/img/bloom-lavender.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 0,
+      "top": 123,
+      "width": 614,
+      "height": 839
+    },
+    "bytes": 6566
+  },
+  {
+    "name": "lavender-reading",
+    "source": "design/img/bloom-lavender.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 876,
+      "top": 236,
+      "width": 645,
+      "height": 788
+    },
+    "bytes": 10705
+  },
+  {
+    "name": "lavender-reflection",
+    "source": "design/img/bloom-lavender.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 384,
+      "top": 174,
+      "width": 614,
+      "height": 819
+    },
+    "bytes": 5836
+  },
+  {
+    "name": "minimal-scene",
+    "source": "design/img/bloom-minimal.png",
+    "width": 750,
+    "height": 940,
+    "extract": null,
+    "bytes": 47106
+  },
+  {
+    "name": "minimal-landscape",
+    "source": "design/img/bloom-minimal.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 0,
+      "top": 123,
+      "width": 614,
+      "height": 839
+    },
+    "bytes": 3137
+  },
+  {
+    "name": "minimal-reading",
+    "source": "design/img/bloom-minimal.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 876,
+      "top": 236,
+      "width": 645,
+      "height": 788
+    },
+    "bytes": 8097
+  },
+  {
+    "name": "minimal-reflection",
+    "source": "design/img/bloom-minimal.png",
+    "width": 224,
+    "height": 360,
+    "extract": {
+      "left": 384,
+      "top": 174,
+      "width": 614,
+      "height": 819
+    },
+    "bytes": 3834
+  }
+]
