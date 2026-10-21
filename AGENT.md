@@ -79,6 +79,8 @@ Keep the experience quiet, readable, and responsive. Prefer immediate press feed
 
 Morning Mist is the default outside the authenticated personal space. Theme changes require authentication and must persist without changing privacy settings. Preserve the saved `light` and `dark` IDs for existing accounts.
 
+Inside the authenticated personal space, when the account has never picked a theme manually, the theme follows the time of day quietly via `themeByTimeOfDay`: morning mist in the early morning (5–9), forest through the day, evening smoke near dusk (16–18), quiet night from 19:00. The first manual pick in the appearance sheet writes a per-account local flag (`agency.theme.manual.v1:<userId>`), after which no automatic switching happens. The `dawn` ID, its files, and stored preferences are unchanged; only its display strings were renamed to Evening Smoke / 暮烟 to match the dusk artwork. Do not rename theme IDs.
+
 The user-selected `design/themes/references/mist.png` is authoritative for Morning Mist. Preserve the original PNG. Its background and thumbnail must derive from that source; do not replace it with a new generation or the superseded misty-lake artwork. Follow `design/themes/README.md` for crop dimensions and the limitations of the older preparation script. Keep large reference files outside Mini Program static assets.
 
 ## Privacy, credentials, and budget
