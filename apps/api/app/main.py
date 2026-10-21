@@ -211,7 +211,6 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             result["resume_token"] = resume_token
         return result
 
-    @app.get("/health")
     @app.get("/api/health")
     def health():
         return {"status": "ok"}
