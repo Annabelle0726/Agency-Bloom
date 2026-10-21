@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Onboarding } from '../domain'
-import { startingConcernOptions, focusChoicesFor, concernOptions, lifeContexts, supportStyles, newOnboarding, toggleConcern, reflectionFor, reflectionHeading, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle } from '../onboarding'
+import { startingConcernOptions, focusChoicesFor, focusChoiceViewsFor, explorationIntroFor, concernOptions, lifeContexts, supportStyles, newOnboarding, toggleConcern, reflectionFor, reflectionHeading, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle } from '../onboarding'
 import ActionButton from './ActionButton.vue'
 import SelectionCard from './SelectionCard.vue'
 import ProgressIndicator from './ProgressIndicator.vue'
 import SvgIcon from './SvgIcon.vue'
-import { choiceArtwork } from '../choice-art'
 import { draftKeyFor, questionStep } from '../entry'
 
 const props = defineProps<{ busy: boolean; error: string; userId: string }>()
@@ -31,7 +30,7 @@ function recoverLegacyDraft() {
   if (!form.exploration_intent && form.concerns.length === 1) form.exploration_intent = form.concerns[0]
   step.value = questionStep(legacyDraft.value.step)
   otherOpen.value = !!form.actual_question
-  responseOpen.value = !!form.title || (!!form.focus_response && !focusChoicesFor(form).includes(form.focus_response))
+  nameOpen.value = !!form.title
   persist()
   if (draftSaved.value) {
     try { uni.removeStorageSync(DRAFT_KEY) } catch { /* Keep the original if unavailable. */ }
@@ -39,18 +38,30 @@ function recoverLegacyDraft() {
   }
 }
 const otherOpen = ref(!!form.actual_question)
-const responseOpen = ref(!!form.title || (!!form.focus_response && !focusChoicesFor(form).includes(form.focus_response)))
+const nameOpen = ref(!!form.title)
 const focusedField = ref('')
 const focusChoices = computed(() => focusChoicesFor(form))
+const focusViews = computed(() => focusChoiceViewsFor(form))
+const focusIsSuggestion = computed(() => focusChoices.value.includes(form.focus_response || ''))
+const freeResponse = computed({
+  get: () => focusIsSuggestion.value ? '' : (form.focus_response || ''),
+  set: value => { form.focus_response = value },
+})
+const freePlaceholder = computed(() => form.exploration_intent === 'unsure'
+  ? '比如，最近反复想到的一件事，或一点好奇'
+  : branch.value.placeholder)
 const draftInfo = ref(false)
 const localError = ref('')
 const draftSaved = ref(!!cached)
 const moving = ref(false)
 const direction = ref('forward')
 const scrollTop = ref(0)
-let lastScrollTop = 0
 let navigationTimer: ReturnType<typeof setTimeout> | undefined
-const selected = computed(() => [...concernOptions, { id: 'relationships', title: '之前留下的人际关系困扰' }, { id: 'overload', title: '之前留下的生活与精力困扰' }].filter(item => form.concerns.includes(item.id)))
+const legacyConcerns = [
+  { id: 'relationships', title: '之前留下的人际关系困扰', icon: 'message-heart' },
+  { id: 'overload', title: '之前留下的生活与精力困扰', icon: 'moon' },
+]
+const selected = computed(() => [...concernOptions, ...legacyConcerns].filter(item => form.concerns.includes(item.id)))
 const reflection = computed(() => reflectionFor(form))
 const reflectionTitle = computed(() => reflectionHeading(form))
 const contextLabels = computed(() => lifeContexts.filter(item => form.life_contexts?.includes(item.id)))
@@ -59,29 +70,22 @@ const branch = computed(() => branchFor(form))
 const constraintsText = computed({ get: () => form.constraints.join('\n'), set: value => { form.constraints = value.split('\n').map(v => v.trim()).filter(Boolean).slice(0, 12) } })
 const canContinue = computed(() => step.value === 0 ? form.concerns.length > 0 : step.value === 1 ? !!form.exploration_intent : step.value === 3 ? !!form.support_style : true)
 const headings = [
-  { label: 'LET’S BEGIN', title: '最近，有什么让你\n感到焦虑、害怕或不安？', detail: '选下最近挂心的事，也可以带着好奇来。可以多选。' },
+  { label: 'LET’S BEGIN', title: '最近，有什么让你\n感到焦虑、害怕或不安？', detail: '选下最近挂心的事，可多选，也可以带着好奇来' },
   { label: 'A FIRST THREAD', title: '我们先从\n一件小事聊起', detail: '点选就好，暂时没有答案也可以继续' },
-  { label: 'ABOUT YOU', title: '你最近的生活，\n主要围绕哪些事？', detail: '选与你有关的，也可以用自己的话补充。' },
+  { label: 'ABOUT YOU', title: '你最近的生活，\n主要围绕哪些事？', detail: '选与你有关的，也可以用自己的话补充' },
   { label: 'YOUR STYLE', title: '此刻，你希望\n得到怎样的帮助', detail: '按自己的节奏来，以后也可以改变' },
   { label: 'A BEGINNING', title: '这是一次探索的起点\n而不是对你的定义', detail: '根据固定问题整理，还没有使用 AI' },
 ]
-const heading = computed(() => headings[step.value] || headings[0])
+const heading = computed(() => step.value === 1 ? explorationIntroFor(form) : headings[step.value] || headings[0])
 const scenes = ['water', 'path', 'rest', 'meadow', 'dawn']
 const scene = computed(() => '/static/opening-' + scenes[step.value] + '.jpg')
-const visualTones: Record<string, string> = {
-  direction: 'sage', change: 'rose', choices: 'sage', start: 'water',
-  other: 'lilac', possibility: 'gold', unsure: 'water',
-  listen: 'rose', discover: 'gold', compare: 'sage', experiment: 'water',
-}
-function visual(id: string) {
-  return { artwork: choiceArtwork[id as keyof typeof choiceArtwork] || choiceArtwork.unsure, tone: visualTones[id] || 'sage' }
-}
 const contextStatus = computed(() => {
   const count = form.life_contexts?.length || 0
-  return count ? '已选 ' + count + ' 项 · 之后也可以再调整。' : '之后也可以再调整。'
+  return count ? '已选 ' + count + ' 项 · 之后也可以再调整' : '之后也可以再调整'
 })
 const selectedNote = computed(() => step.value === 0
   ? (form.concerns.length ? '已选 ' + form.concerns.length + ' 项 · 都可以慢慢聊' : '没有标准答案，选接近你的就好')
+  : step.value === 1 ? '不确定也没关系，可以直接继续'
   : step.value === 2 ? '' : '你的选择，之后仍然可以改变')
 
 
@@ -101,18 +105,15 @@ function go(value: number) {
   emit('navigate')
   direction.value = value < step.value ? 'backward' : 'forward'
   moving.value = true
-  scrollTop.value = lastScrollTop
   step.value = value
-  void nextTick(() => { scrollTop.value = 0; lastScrollTop = 0 })
-  uni.pageScrollTo({ scrollTop: 0, duration: 0 })
+  // The native scroll-view can keep its previous offset across step changes.
+  // A 1px -> 0px change is deliberate and resets it on every forward/back move.
+  scrollTop.value = 1
+  void nextTick(() => { scrollTop.value = 0 })
   // Lock only the short transition, so a second tap cannot skip the next step
   navigationTimer = setTimeout(() => { moving.value = false }, 180)
 }
 onUnmounted(() => clearTimeout(navigationTimer))
-function rememberScroll(event: { detail: { scrollTop: number } }) {
-  // Do not send scroll position back through the Mini Program bridge on every frame
-  lastScrollTop = event.detail.scrollTop
-}
 function choose(id: string) {
   const wasQuickAnswer = focusChoices.value.includes(form.focus_response || '')
   form.concerns = toggleConcern(form.concerns, id)
@@ -123,7 +124,6 @@ function choose(id: string) {
 }
 function focus(intent: string) {
   selectMainline(form, intent)
-  responseOpen.value = !!form.title || (!!form.focus_response && !focusChoices.value.includes(form.focus_response))
 }
 function chooseFocus(answer: string) {
   if (moving.value || props.busy) return
@@ -143,7 +143,7 @@ function clearDraft() {
   moving.value = false
   Object.assign(form, newOnboarding())
   otherOpen.value = false
-  responseOpen.value = false
+  nameOpen.value = false
   focusedField.value = ''
   draftInfo.value = false
   step.value = 0
@@ -163,7 +163,7 @@ defineExpose({ clearDraft })
         <view class="flow-nav"><button class="icon-button flow-back" aria-label="返回上一步" :disabled="busy || moving" hover-class="pressed" :hover-start-time="0" @click="go(step - 1)"><SvgIcon name="back" :size="22" /></button><text class="flow-wordmark">YOUR SPACE</text><button class="icon-button" aria-label="草稿与隐私" hover-class="pressed" :hover-start-time="0" @click="draftInfo = true"><SvgIcon name="more" :size="22" /></button></view>
         <ProgressIndicator :current="step + 1" :total="5" />
       </view>
-      <scroll-view class="flow-scroll" scroll-y :scroll-top="scrollTop" :show-scrollbar="false" @scroll="rememberScroll">
+      <scroll-view class="flow-scroll" scroll-y :scroll-top="scrollTop" :show-scrollbar="false">
         <view :key="'content-' + step" class="flow-body" :class="['flow-' + direction + '-' + (step % 2), 'flow-step-' + step]">
           <view class="flow-heading"><text class="eyebrow">{{ heading.label }}</text><text class="flow-title">{{ heading.title }}</text><text class="flow-description">{{ heading.detail }}</text></view>
           <view v-if="legacyDraft && step === 0" class="legacy-draft">
@@ -172,31 +172,39 @@ defineExpose({ clearDraft })
             <button class="text-button" @click="legacyDraft = null">这次先不使用</button>
           </view>
           <view v-if="step === 0" class="selection-stack">
-            <SelectionCard v-for="item in startingConcernOptions" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="visual(item.id).artwork" :tone="visual(item.id).tone" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" />
+            <SelectionCard v-for="item in startingConcernOptions" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :selected="form.concerns.includes(item.id)" @select="choose(item.id)" />
             <view v-if="form.concerns.includes('other') || form.actual_question" class="optional-writing">
               <button class="optional-toggle" :aria-expanded="otherOpen" @click="otherOpen = !otherOpen" hover-class="pressed">{{ otherOpen ? '收起补充' : '我想补充一句（选填）' }}</button>
               <textarea v-if="otherOpen" v-model="form.actual_question" class="text-area flow-textarea" maxlength="400" placeholder="一句话就好，也可以不写" :auto-height="true" />
             </view>
           </view>
-          <view v-else-if="step === 1" class="selection-stack">
+          <view v-else-if="step === 1" class="exploration-step">
             <template v-if="selected.length > 1">
-              <text class="field-label">先聊哪一个方向？</text>
-              <SelectionCard v-for="item in selected" :key="item.id" :title="item.title" :artwork="visual(item.id).artwork" :tone="visual(item.id).tone" radio :selected="form.exploration_intent === item.id" @select="focus(item.id)" />
+              <text class="field-label exploration-field-label">先聊哪一个方向</text>
+              <view class="selection-stack mainline-stack">
+                <SelectionCard v-for="item in selected" :key="item.id" :title="item.title" :icon="item.icon" radio :selected="form.exploration_intent === item.id" @select="focus(item.id)" />
+              </view>
             </template>
             <view v-if="form.exploration_intent" class="exploration-branch">
-              <text class="branch-question">{{ branch.question }}</text>
-              <text class="flow-description">选一个接近的，也可以不选</text>
-              <view class="quick-answers">
-                <button v-for="(answer, answerIndex) in focusChoices" :key="answer" class="quick-answer" :class="{ chosen: form.focus_response === answer }"
-                  :aria-pressed="form.focus_response === answer" @click="chooseFocus(answer)" hover-class="pressed" :hover-start-time="0"><view class="answer-symbol"><SvgIcon :name="['sun', 'paths', 'spark', 'step'][answerIndex % 4]" :size="21" /></view><text>{{ answer }}</text><view class="answer-indicator"><SvgIcon v-if="form.focus_response === answer" name="check" :size="14" /></view></button>
+              <text v-if="form.exploration_intent !== 'unsure'" class="branch-question">{{ branch.question }}</text>
+              <view class="selection-stack exploration-starts" role="group" aria-label="选择一个探索起点">
+                <SelectionCard v-for="choice in focusViews" :key="choice.value" :data-start="choice.value"
+                  :title="choice.title" :detail="choice.detail || undefined" :icon="choice.icon || undefined"
+                  :selected="form.focus_response === choice.value" @select="chooseFocus(choice.value)" />
               </view>
-              <button class="optional-toggle" :aria-expanded="responseOpen" @click="responseOpen = !responseOpen" hover-class="pressed">{{ responseOpen ? '收起补充' : '我想用自己的话说（选填）' }}</button>
-              <view v-if="responseOpen">
-                <textarea v-model="form.focus_response" class="text-area flow-textarea branch-response" maxlength="800" :placeholder="branch.placeholder" :auto-height="true" />
-                <text class="field-label">为这次探索起个名字，选填</text>
-                <input v-model="form.title" class="text-field exploration-title" maxlength="120" placeholder="可以以后再起名字" />
+              <view class="free-writing">
+                <text class="free-writing-title">或者，用自己的话说</text>
+                <view class="free-field" :class="{ 'is-focused': focusedField === 'free' }">
+                  <textarea v-model="freeResponse" class="text-area flow-textarea free-textarea" maxlength="800"
+                    :placeholder="freePlaceholder" placeholder-class="free-placeholder" :auto-height="true"
+                    :cursor-spacing="110" :show-confirm-bar="false" aria-label="用自己的话写下此刻的想法"
+                    @focus="focusedField = 'free'" @blur="focusedField = ''" />
+                </view>
               </view>
-              <text class="optional-note">不选也不写，点「继续」就好</text>
+              <view class="exploration-name">
+                <button class="optional-toggle name-toggle" :aria-expanded="nameOpen" @click="nameOpen = !nameOpen" hover-class="pressed">{{ nameOpen ? '收起这次探索的名字' : '给这次探索起个名字（选填）' }}</button>
+                <input v-if="nameOpen" v-model="form.title" class="text-field exploration-title" maxlength="120" placeholder="可以以后再起名字" />
+              </view>
             </view>
           </view>
           <view v-else-if="step === 2" class="context-step">
@@ -234,7 +242,7 @@ defineExpose({ clearDraft })
               </view>
             </view>
           </view>
-          <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :artwork="visual(item.id).artwork" :tone="visual(item.id).tone" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
+          <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
           <view v-else class="reflection-summary">
             <view class="reflection-card reflection-record"><view class="reflection-mark"><SvgIcon name="compass" :size="24" /><text>你留下的线索，由你解释</text></view>
               <view v-if="selected.length" class="reflection-context"><text class="muted">这次想关注的方向</text><view class="chips"><text v-for="item in selected" :key="item.id" class="tag">{{ item.title }}</text></view></view>
@@ -254,8 +262,8 @@ defineExpose({ clearDraft })
       <view class="flow-footer">
         <text v-if="step < 4 && step !== 2" class="selection-reassurance">{{ selectedNote }}</text>
         <view v-if="localError || error" class="notice">{{ localError || error }}</view>
-        <ActionButton v-if="step < 4" :disabled="!canContinue" :locked="moving" @click="go(step + 1)">继续</ActionButton>
-        <ActionButton v-else :loading="busy" :locked="moving" @click="submit">保存这次探索</ActionButton>
+        <ActionButton v-if="step < 4" kind="quiet" :disabled="!canContinue" :locked="moving" @click="go(step + 1)">继续</ActionButton>
+        <ActionButton v-else kind="quiet" :loading="busy" :locked="moving" @click="submit">保存这次探索</ActionButton>
         <view class="flow-footer-detail">
           <button class="flow-skip" :disabled="busy || moving" @click="emit('skip')" hover-class="pressed">稍后再说，先进入空间</button>
           <button class="draft-link" @click="draftInfo = true"><SvgIcon name="lock" :size="12" /><text>{{ draftSaved ? '本机草稿已保留' : '回答暂不上传' }}</text></button>
@@ -272,52 +280,87 @@ defineExpose({ clearDraft })
 </template>
 
 <style scoped>
-.quick-answers { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 10px; }
-.quick-answer { width:100%; min-height:48px; margin:0; padding:12px 16px; border:1px solid #dce2d8; border-radius:8px; text-align:left; font-size:14px; line-height:1.7; background:#fffdfa; color:#37483d; transition:background 130ms ease,border-color 130ms ease; }
-.quick-answer.chosen { background:#e7eee1; border-color:#6f8863; color:#314c35; }
-.quick-answer::after,.optional-toggle::after { border:0; }
-.optional-toggle { display:block; margin:14px 0 0; padding:12px 0; min-height:44px; text-align:left; color:#52674e; background:transparent; font-size:13px; line-height:1.8; }
-.optional-note { display:block; color:#667180; font-size:12px; line-height:1.8; margin-top:10px; }
-.legacy-draft { padding:16px; margin-bottom:20px; background:#edf0e7; border-radius:8px; font-size:13px; line-height:1.8; }
+/* Quiet onboarding surfaces are theme tokens, never a fixed green or blue. */
+.optional-toggle {
+  display:block; margin:12px 0 0; padding:12px 0; min-height:44px; text-align:left;
+  color:var(--muted); background:transparent; font-size:13px; line-height:1.8;
+}
+.optional-toggle::after { border:0; }
+.legacy-draft {
+  padding:16px; margin-bottom:20px; background:var(--quiet-surface); border:1px solid var(--quiet-border);
+  border-radius:14px; box-shadow:var(--quiet-shadow); font-size:13px; line-height:1.8;
+}
 .flow-footer-detail { flex-wrap:wrap; gap:4px 12px; }
 
-/* The imagery stays behind readable, tactile choices throughout the five steps. */
+/* The imagery stays behind readable choices and follows the active theme wash. */
 .onboarding-flow { isolation:isolate; background:var(--bg); }
 .question-backdrop { position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
-.question-backdrop > image { position:absolute; width:100%; height:100%; opacity:.65; }
-.question-wash { position:absolute; inset:0; background:linear-gradient(180deg,rgba(248,249,242,.28),rgba(246,248,239,.76) 33%,rgba(239,244,232,.9) 75%,#f1f4e9); }
-.question-scene-1 .question-wash { background:linear-gradient(180deg,rgba(248,249,242,.4),rgba(246,248,239,.83) 40%,rgba(239,244,232,.94)); }
-.question-scene-2 .question-backdrop > image { opacity:.5; }
-.question-scene-2 .question-wash { background:linear-gradient(180deg,var(--hero-top) 0%,var(--bg) 56%,var(--bg) 100%); }
+.question-backdrop > image { position:absolute; width:100%; height:100%; opacity:var(--onboarding-image-opacity,.62); }
+.question-wash {
+  position:absolute; inset:0;
+  background:linear-gradient(180deg,var(--onboarding-wash-top),var(--onboarding-wash-mid) 42%,var(--onboarding-wash-bottom));
+}
+.question-scene-1 .question-wash { background:linear-gradient(180deg,var(--onboarding-wash-top),var(--onboarding-wash-mid) 34%,var(--onboarding-wash-bottom)); }
+.question-scene-2 .question-backdrop > image { opacity:var(--onboarding-image-opacity,.62); }
+.question-scene-2 .question-wash { background:linear-gradient(180deg,var(--onboarding-wash-top) 0%,var(--onboarding-wash-mid) 52%,var(--bg) 100%); }
 .flow-page { position:relative; z-index:1; background:transparent; }
 .flow-chrome { padding-top:calc(var(--capsule-bottom,64px) + 12px); }
-.flow-nav { margin-bottom:15px; }
+.flow-nav { margin-bottom:14px; }
 .flow-wordmark { color:var(--muted); }
-.flow-body { padding-top:25px; }
-.flow-heading { position:relative; padding-bottom:22px; }
-.flow-heading .eyebrow { color:var(--muted); letter-spacing:2.4px; }
-.flow-heading .flow-title { font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:28px; line-height:1.55; letter-spacing:.7px; color:var(--ink); }
-.flow-heading .flow-description { color:var(--muted); font-size:13px; line-height:1.9; max-width:95%; margin-top:13px; }
+.flow-body { padding-top:22px; }
+.flow-heading { position:relative; padding-bottom:8px; }
+.flow-heading .eyebrow { color:var(--muted); letter-spacing:2.2px; }
+.flow-heading .flow-title {
+  font-family:var(--font-heading); font-size:24px; font-weight:500; line-height:1.5;
+  letter-spacing:.5px; color:var(--ink);
+}
+.flow-heading .flow-description { color:var(--muted); font-size:13px; line-height:1.9; max-width:100%; margin-top:12px; margin-bottom:24px; }
 .flow-step-2 .flow-heading .eyebrow { color:var(--accent); }
 .flow-step-2 .flow-heading .flow-title { color:var(--ink); }
 .flow-step-2 .flow-heading .flow-description { color:var(--muted); }
-.selection-stack { gap:13px; }
+.selection-stack { gap:12px; }
 .flow-footer { background:var(--nav-glass); border-top:1px solid var(--line); padding-top:10px; box-shadow:none; }
 .selection-reassurance { display:block; text-align:center; color:var(--muted); font-size:11px; line-height:1.8; margin:0 0 9px; }
-.flow-footer :deep(.action-button) { border-radius:8px; }
+.flow-footer :deep(.action-button) { border-radius:16px; }
 .flow-footer-detail { justify-content:space-between; }
 .flow-footer .flow-skip { color:var(--ink); font-size:12px; }
 .flow-footer .draft-link { font-size:10px; }
 :deep(.progress-track) { height:3px; background:var(--line); }
 :deep(.progress-fill) { background:var(--accent); }
 :deep(.progress-count) { color:var(--muted); }
-.exploration-branch { padding:20px 18px; border:1px solid rgba(255,255,255,.95); border-radius:10px; background:rgba(255,253,247,.8); box-shadow:0 6px 24px rgba(60,79,46,.04); }
-.branch-question { font-family:var(--font-heading); font-size:19px; line-height:1.8; color:#3b523a; }
-.quick-answer { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #e1e7d8; border-radius:8px; background:rgba(255,255,250,.9); }
-.quick-answer > text { flex:1; }
-.answer-symbol { flex-shrink:0; width:39px; height:39px; border-radius:8px; background:#eff1e2; display:flex; align-items:center; justify-content:center; }
-.answer-indicator { flex-shrink:0; width:18px; height:18px; border:1px solid #c0cbae; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-.quick-answer.chosen { background:#e4ecd9; border-color:#738d59; }
+.flow-step-1 .flow-heading .flow-description { margin-bottom:22px; }
+.exploration-step { padding-bottom:10px; }
+.exploration-field-label { margin:0 0 11px; }
+.mainline-stack { margin-bottom:24px; }
+.exploration-branch { display:flex; flex-direction:column; }
+.branch-question {
+  display:block; margin:0 0 14px; color:var(--ink);
+  font-family:var(--font-heading); font-size:17px; line-height:1.72;
+}
+.exploration-starts { gap:11px; }
+.free-writing { margin-top:24px; }
+.free-writing-title {
+  display:block; margin-bottom:9px; color:var(--ink);
+  font-size:13px; font-weight:500; line-height:1.8; letter-spacing:.1px;
+}
+.free-field {
+  border:1px solid var(--quiet-border); border-radius:14px; background:var(--quiet-surface);
+  box-shadow:var(--quiet-shadow); overflow:hidden;
+  transition:border-color 160ms var(--ease-out),box-shadow 160ms var(--ease-out);
+}
+.free-field.is-focused { border-color:var(--quiet-border-selected); box-shadow:0 0 0 3px var(--tag-focus-ring); }
+.free-textarea {
+  display:block; width:100%; min-height:96px; margin:0; padding:14px 15px;
+  border:0; background:transparent; color:var(--quiet-title);
+  font-size:13.5px; line-height:1.9;
+}
+.free-placeholder { color:var(--quiet-detail); opacity:1; }
+.exploration-name { margin-top:2px; }
+.name-toggle { margin:0; padding:10px 0; font-size:12px; min-height:44px; }
+.exploration-title {
+  margin:2px 0 10px; min-height:48px; border-radius:14px;
+  border-color:var(--quiet-border); background:var(--quiet-surface); color:var(--quiet-title);
+}
 .question-scene-2 .flow-chrome, .question-scene-2 .flow-footer { padding-left:22px; padding-right:22px; }
 .flow-body.flow-step-2 { padding-left:22px; padding-right:22px; }
 .flow-body.flow-step-2 { animation:context-enter 240ms var(--ease-out) both; }
@@ -356,12 +399,15 @@ defineExpose({ clearDraft })
   .life-tag, .life-tag-check, .context-field .context-input { transition:none; }
   .life-tag.life-tag-pressed, .life-tag.chosen .life-tag-check { transform:none; }
 }
-.reflection-card { background:rgba(255,254,248,.91); border:1px solid #fffdf7; border-radius:10px; box-shadow:0 10px 35px rgba(65,78,43,.07); }
-.reflection-next { border-top:1px solid rgba(116,134,90,.25); }
-.optional-writing { border-radius:8px; padding:0 12px; background:rgba(255,253,248,.7); }
+.reflection-card { background:var(--quiet-surface); border:1px solid var(--quiet-border); border-radius:18px; box-shadow:var(--quiet-shadow); }
+.reflection-next { border-top:1px solid var(--quiet-border); }
+.optional-writing { border:1px solid var(--quiet-border); border-radius:14px; padding:0 12px; background:var(--quiet-surface); }
 @media(max-width:360px) {
-  .flow-heading .flow-title { font-size:25px; }
+  .flow-heading .flow-title { font-size:22px; }
   .flow-chrome,.flow-body,.flow-footer { padding-left:20px; padding-right:20px; }
 }
-@media(prefers-reduced-motion:reduce) { .question-backdrop > image { transition:none; } }
+@media(prefers-reduced-motion:reduce) {
+  .question-backdrop > image { transition:none; }
+  .free-field, .free-textarea { transition:none; }
+}
 </style>

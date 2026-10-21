@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { focusChoicesFor, startingConcernOptions, concernOptions, newOnboarding, toggleConcern, reflectionFor, restoreDraft, saveDraft, branchFor, selectMainline, canonicalSupportStyle, reflectionHeading, loginSummaryFor } from '../src/onboarding'
+import { focusChoicesFor, focusChoiceViewsFor, explorationIntroFor, uncertaintyStarts, startingConcernOptions, concernOptions, newOnboarding, toggleConcern, reflectionFor, restoreDraft, saveDraft, branchFor, selectMainline, canonicalSupportStyle, reflectionHeading, loginSummaryFor } from '../src/onboarding'
 
 it('keeps unsure exclusive while allowing the first five concerns together', () => {
   expect(toggleConcern(['direction', 'relationships'], 'unsure')).toEqual(['unsure'])
@@ -102,6 +102,19 @@ it('persists the exact quick answer chosen by the user', () => {
   const form = { ...newOnboarding(), concerns: ['start'], exploration_intent: 'start', support_style: 'experiment' }
   form.focus_response = focusChoicesFor(form)[0]
   expect(restoreDraft(saveDraft(form, 4, 1000), 2000)?.form.focus_response).toBe('稳定的收入')
+})
+
+it('keeps the three gentle exploration entries mapped to existing draft values', () => {
+  const unsure = { ...newOnboarding(), concerns: ['unsure'], exploration_intent: 'unsure' }
+  expect(focusChoicesFor(unsure)).toEqual(uncertaintyStarts.map(item => item.value))
+  expect(focusChoiceViewsFor(unsure)).toEqual(uncertaintyStarts)
+  expect(focusChoiceViewsFor(unsure).map(item => item.title)).toEqual(['聊聊最近的感受', '更了解自己', '看看新的可能'])
+  expect(explorationIntroFor(unsure)).toMatchObject({ label: 'LET’S EXPLORE', title: '还没有方向，也没关系' })
+
+  const specific = { ...newOnboarding(), concerns: ['change'], exploration_intent: 'change' }
+  expect(focusChoiceViewsFor(specific).map(item => item.title)).toEqual(focusChoicesFor(specific))
+  expect(focusChoiceViewsFor(specific).every(item => !item.icon && !item.detail)).toBe(true)
+  expect(explorationIntroFor(specific).title).not.toContain('还没有方向')
 })
 
 it('does not carry a suggested answer into a different question or erase free writing', () => {

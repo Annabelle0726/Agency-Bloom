@@ -2,22 +2,35 @@ import type { Onboarding } from './domain'
 
 export const concernOptions = [
   { id: 'direction', title: '找到更适合我的方向', detail: '还不知道往哪里走，或者想重新选择', icon: 'compass' },
-  { id: 'change', title: '看看我的能力还能用在哪里', detail: '面对 AI 和行业变化，发现已有经历的新用处', icon: 'spark' },
-  { id: 'choices', title: '认真比较几个选择', detail: '不只看哪个更好，也看看哪个适合现在的我', icon: 'paths' },
-  { id: 'start', title: '改变现状，但不贸然冒险', detail: '先找到一个代价可控的尝试', icon: 'step' },
-  { id: 'possibility', title: '发现一点没想过的可能', detail: '带着好奇，看看还有哪些值得探索的方向', icon: 'sun' },
-  { id: 'other', title: '我想自己说说', detail: '可选，留下一点自己的想法', icon: 'chat' },
-  { id: 'unsure', title: '还不知道，先看看', detail: '还没有方向，也可以开始', icon: 'compass' },
+  { id: 'change', title: '看看我的能力还能用在哪里', detail: '面对 AI 和行业变化，发现已有经历的新用处', icon: 'orbit' },
+  { id: 'choices', title: '认真比较几个选择', detail: '不只看哪个更好，也看看哪个适合现在的我', icon: 'split' },
+  { id: 'start', title: '改变现状，但不贸然冒险', detail: '先找到一个代价可控的尝试', icon: 'shield-check' },
+  { id: 'possibility', title: '发现一点没想过的可能', detail: '带着好奇，看看还有哪些值得探索的方向', icon: 'door-open' },
+  { id: 'other', title: '我想自己说说', detail: '可选，留下一点自己的想法', icon: 'message-heart' },
+  { id: 'unsure', title: '还不知道，先看看', detail: '还没有方向，也可以开始', icon: 'message-more' },
 ]
 // First question describes the user's situation; concernOptions remain exploration directions.
 export const startingConcernOptions = [
   { id: 'direction', title: '不知道未来该往哪里走', detail: '工作、学习或生活的方向还不清楚', icon: 'compass' },
-  { id: 'change', title: '担心跟不上 AI 或行业变化', detail: '想知道自己的能力，还能用在哪里', icon: 'spark' },
-  { id: 'choices', title: '有选择要做，却害怕选错', detail: '每条路都有让我犹豫的地方', icon: 'paths' },
-  { id: 'start', title: '想改变，又怕失去收入或稳定', detail: '希望找到代价可承受的一小步', icon: 'step' },
-  { id: 'other', title: '有别的事，让我放不下', detail: '关系、期待、精力，或其他牵挂，不必马上说明', icon: 'chat' },
-  { id: 'possibility', title: '也想看看生活还有哪些可能', detail: '没有明显不安，也欢迎带着好奇来', icon: 'sun' },
-  { id: 'unsure', title: '暂时说不清，先看看', detail: '现在不想细说，也可以继续', icon: 'compass' },
+  { id: 'change', title: '担心跟不上 AI 或行业变化', detail: '想知道自己的能力，还能用在哪里', icon: 'orbit' },
+  { id: 'choices', title: '有选择要做，却害怕选错', detail: '每条路都有让我犹豫的地方', icon: 'split' },
+  { id: 'start', title: '想改变，又怕失去收入或稳定', detail: '希望找到代价可承受的一小步', icon: 'shield-check' },
+  { id: 'other', title: '有别的事，让我放不下', detail: '关系、期待、精力，或其他牵挂，不必马上说明', icon: 'message-heart' },
+  { id: 'possibility', title: '也想看看生活还有哪些可能', detail: '没有明显不安，也欢迎带着好奇来', icon: 'door-open' },
+  { id: 'unsure', title: '暂时说不清，先看看', detail: '现在不想细说，也可以继续', icon: 'message-more' },
+]
+export interface ExplorationStart {
+  value: string
+  title: string
+  detail: string
+  icon: string
+}
+// The values stay in sync with the original focus answers, so drafts created
+// before the visual redesign keep the exact selected state.
+export const uncertaintyStarts: ExplorationStart[] = [
+  { value: '想先说说最近的感受', title: '聊聊最近的感受', detail: '先把心里的事情说出来', icon: 'chat' },
+  { value: '想更了解自己', title: '更了解自己', detail: '慢慢发现自己的需要', icon: 'user' },
+  { value: '想看看新的可能', title: '看看新的可能', detail: '探索还没尝试过的方向', icon: 'sunrise' },
 ]
 const focusChoices: Record<string, string[]> = {
   direction: ['收入更稳定一点', '工作之外有自己的时间', '做自己愿意投入的事', '少一点疲惫和消耗'],
@@ -26,10 +39,28 @@ const focusChoices: Record<string, string[]> = {
   start: ['稳定的收入', '身体与精力', '重要的关系', '属于自己的时间'],
   possibility: ['过去做过的事', '一直感兴趣的领域', '一次新的体验'],
   other: ['工作或学习', '关系与他人的期待', '生活与精力', '对未来的不确定'],
-  unsure: ['想先说说最近的感受', '想更了解自己', '想看看新的可能'],
+  unsure: uncertaintyStarts.map(item => item.value),
 }
 export function focusChoicesFor(form: Onboarding): string[] {
   return focusChoices[form.exploration_intent || ''] || []
+}
+export function focusChoiceViewsFor(form: Onboarding) {
+  if (form.exploration_intent === 'unsure') return uncertaintyStarts
+  return focusChoicesFor(form).map(value => ({ value, title: value, detail: '', icon: '' }))
+}
+export function explorationIntroFor(form: Onboarding) {
+  if (form.exploration_intent === 'unsure') {
+    return {
+      label: 'LET’S EXPLORE',
+      title: '还没有方向，也没关系',
+      detail: '从此刻最想了解的事情开始',
+    }
+  }
+  return {
+    label: 'LET’S EXPLORE',
+    title: '从一个此刻想聊的地方开始',
+    detail: '不用先想清楚，选一个现在有感觉的起点',
+  }
 }
 export const lifeContexts = [
   { id: 'studying', title: '学习或备考' }, { id: 'searching', title: '求职' },
@@ -48,8 +79,8 @@ export function canonicalSupportStyle(value?: string): SupportMode {
 export const supportStyles = [
   { id: 'listen', title: '先听我说', detail: '不用急着建议，先认真听听我的想法', icon: 'ear' },
   { id: 'discover', title: '带我发现新的可能', detail: '从我的经历里，看看有没有没想过的方向', icon: 'spark' },
-  { id: 'compare', title: '陪我比较几个选择', detail: '把选择背后的代价、条件和未知说清楚', icon: 'paths' },
-  { id: 'experiment', title: '给我一个值得试的小实验', detail: '不用一下改变人生，先试一点点', icon: 'step' },
+  { id: 'compare', title: '陪我比较几个选择', detail: '把选择背后的代价、条件和未知说清楚', icon: 'scale' },
+  { id: 'experiment', title: '给我一个值得试的小实验', detail: '不用一下改变人生，先试一点点', icon: 'flask' },
 ]
 export const DRAFT_KEY = 'agency.onboarding.v2'
 export function newOnboarding(): Onboarding {

@@ -102,7 +102,7 @@ async function continueButton(component) {
   const headingBox = await box(heading)
   assert.ok(headingBox.top >= 0, 'Heading is cut off at the top')
   assert.match(await heading.text(), /你最近的生活，\s*主要围绕哪些事？/)
-  assert.match(await heading.text(), /选与你有关的，也可以用自己的话补充。/)
+  assert.match(await heading.text(), /选与你有关的，也可以用自己的话补充/)
 
   const tags = await current.$$('.life-tag')
   assert.equal(tags.length, 11, 'Every life context must remain available')
@@ -123,7 +123,7 @@ async function continueButton(component) {
   assert.ok(restBox.height <= 54, '休整与重新出发 must stay on one line')
   const maxTagWidth = Math.max(...emptyBoxes.map(item => item.width))
   assert.ok(maxTagWidth <= 280, 'Every natural-width tag fits a 320px screen with 20px page padding')
-  assert.match(await (await current.$('.context-status')).text(), /之后也可以再调整。/)
+  assert.match(await (await current.$('.context-status')).text(), /之后也可以再调整/)
   assert.equal(await current.$$('.context-bubble').then(items => items.length), 0, 'Old circular bubbles were removed')
   assert.equal(await current.$$('.life-tag .svg-icon').then(items => items.length), 0, 'Tags have no decorative icons')
   await shot(shotNames.empty)
@@ -144,7 +144,7 @@ async function continueButton(component) {
   await fresh(); current = await flow()
   const selectedTags = await current.$$('.life-tag.chosen')
   assert.equal(selectedTags.length, 2, 'Multiple life contexts stay selectable')
-  assert.match(await (await current.$('.context-status')).text(), /已选 2 项 · 之后也可以再调整。/)
+  assert.match(await (await current.$('.context-status')).text(), /已选 2 项 · 之后也可以再调整/)
   const selectedBoxes = await Promise.all((await current.$$('.life-tag')).map(box))
   selectedBoxes.forEach((item, index) => {
     assert.ok(Math.abs(item.width - emptyBoxes[index].width) < 1, 'Selection must not change tag width: ' +

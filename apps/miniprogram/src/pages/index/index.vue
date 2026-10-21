@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed, provide } from 'vue'
 import SvgIcon from '../../components/SvgIcon.vue'
+import { ICON_PALETTE_KEY } from '../../icon-system'
 import OnboardingFlow from '../../components/OnboardingFlow.vue'
 import WelcomeOpening from '../../components/WelcomeOpening.vue'
 import AuthWelcome from '../../components/AuthWelcome.vue'
@@ -143,6 +145,8 @@ const {
   greeting,
   canonicalSupportStyle,
 } = useIndexPage()
+
+provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
 </script>
 
 <template>

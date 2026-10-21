@@ -102,6 +102,36 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     '--tag-check-ink': p.paper,
     '--tag-focus-ring': p.accent + (theme.dark ? '38' : '26'),
     '--tag-shadow': theme.dark ? '0 1px 2px rgba(0,0,0,.2)' : '0 1px 2px rgba(37,49,72,.045)',
+    // Quiet onboarding surfaces: pale theme tints, a single accent border and
+    // a restrained CTA. Values stay derived from the six-theme palette so the
+    // cards never drift toward a fixed green or blue.
+    '--quiet-surface': mixHex(p.paper, p.soft, theme.dark ? .5 : .42),
+    '--quiet-surface-pressed': mixHex(p.paper, p.soft, theme.dark ? .72 : .8),
+    '--quiet-surface-selected': mixHex(p.paper, p.accent, theme.dark ? .12 : .07),
+    '--quiet-border': theme.dark ? mixHex(p.line, p.accent, .08) : p.line,
+    '--quiet-border-selected': mixHex(p.line, p.accent, .58),
+    '--quiet-title': p.ink,
+    '--quiet-detail': p.muted,
+    '--quiet-tile': mixHex(p.soft, p.paper, theme.dark ? .14 : .45),
+    '--quiet-tile-selected': mixHex(p.soft, p.accent, theme.dark ? .24 : .12),
+    '--quiet-control': mixHex(p.line, p.muted, .45),
+    '--quiet-check': p.accent,
+    '--quiet-check-ink': p.paper,
+    '--quiet-shadow': theme.dark ? 'none' : `0 1px 2px ${rgba(p.ink, .035)},0 8px 22px ${rgba(p.ink, .035)}`,
+    '--quiet-shadow-selected': theme.dark ? 'none' : `0 2px 10px ${rgba(p.accent, .1)}`,
+    '--cta-fill': p.fill,
+    '--cta-highlight': mixHex(p.fill, '#ffffff', theme.dark ? .12 : .055),
+    '--cta-deep': mixHex(p.fill, '#0b1018', theme.dark ? .2 : .12),
+    '--cta-ink': '#ffffff',
+    '--cta-border': mixHex(p.fill, '#ffffff', .14),
+    '--cta-pressed-border': mixHex(p.fill, '#ffffff', theme.dark ? .3 : .22),
+    '--cta-disabled': mixHex(p.paper, p.line, .55),
+    '--cta-shadow': theme.dark ? 'none' : `0 6px 18px ${rgba(p.fill, .2)}`,
+    '--cta-pressed-shadow': theme.dark ? 'none' : `0 3px 10px ${rgba(p.fill, .16)}`,
+    '--onboarding-image-opacity': theme.dark ? '.4' : '.62',
+    '--onboarding-wash-top': rgba(p.bg, theme.dark ? .58 : .5),
+    '--onboarding-wash-mid': rgba(p.bg, theme.dark ? .82 : .78),
+    '--onboarding-wash-bottom': rgba(p.bg, .97),
   }
 }
 export function themeNavSvg(theme: ThemeDefinition, id: SpaceTab, active: boolean) {

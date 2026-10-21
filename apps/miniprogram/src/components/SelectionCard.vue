@@ -1,59 +1,84 @@
 <script setup lang="ts">
 import SvgIcon from './SvgIcon.vue'
-withDefaults(defineProps<{ title: string; detail?: string; icon?: string; selected?: boolean; radio?: boolean; artwork?: string; tone?: string }>(), { selected: false })
+withDefaults(defineProps<{ title: string; detail?: string; icon?: string; selected?: boolean; radio?: boolean }>(), { selected: false })
 defineEmits<{ select: [] }>()
 </script>
+
 <template>
-  <button class="selection-card" :class="[{ chosen: selected, detailed: detail, illustrated: artwork }, 'tone-' + (tone || 'sage')]" :aria-pressed="selected" hover-class="selection-pressed" :hover-start-time="0" :hover-stay-time="70" @click="$emit('select')">
-    <view v-if="artwork" class="selection-art" aria-hidden="true">
-      <image :src="artwork" mode="aspectFit" />
+  <button
+    class="selection-card"
+    :class="{ chosen: selected, compact: !detail }"
+    :aria-pressed="selected"
+    hover-class="selection-pressed"
+    :hover-start-time="0"
+    :hover-stay-time="70"
+    @click="$emit('select')"
+  >
+    <view v-if="icon" class="selection-icon-tile" aria-hidden="true">
+      <SvgIcon :name="icon" :size="22" :tone="selected ? 'accent' : 'ink'" />
     </view>
-    <view v-if="radio && !artwork" class="selection-radio" :class="{ checked: selected }"><view /></view>
     <view class="selection-copy">
-      <view class="selection-heading">
-        <view v-if="!radio && icon && !artwork" class="selection-icon"><SvgIcon :name="icon" :size="21" /></view>
-        <text class="selection-title">{{ title }}</text>
-      </view>
-      <text v-if="detail" class="selection-detail" :class="{ 'with-icon': !radio && icon && !artwork }">{{ detail }}</text>
+      <text class="selection-title">{{ title }}</text>
+      <text v-if="detail" class="selection-detail">{{ detail }}</text>
     </view>
-    <view v-if="!radio || artwork" class="selection-check" :class="{ visible: selected }"><SvgIcon v-if="selected" name="check" :size="16" /></view>
+    <view v-if="radio" class="selection-radio" :class="{ checked: selected }" aria-hidden="true"><view /></view>
+    <view v-else class="selection-control" :class="{ checked: selected }" aria-hidden="true">
+      <SvgIcon v-if="selected" name="check" :size="13" tone="paper" />
+    </view>
   </button>
 </template>
-<style scoped>
-.selection-card { display:flex; align-items:center; gap:13px; width:100%; min-height:57px; margin:0; padding:15px 16px; background:var(--paper); border:1px solid var(--line); border-radius:8px; color:var(--ink); text-align:left; box-sizing:border-box; transition:background var(--motion-press),border-color var(--motion-press),transform var(--motion-press); touch-action:manipulation; }
-.selection-card::after { border:0; }
-.selection-card.chosen { background:var(--selection); border-color:var(--selection-border); box-shadow:inset 0 0 0 .5px var(--selection-border); }
-.selection-icon { display:flex; align-items:center; justify-content:center; width:21px; height:21px; flex-shrink:0; opacity:.85; }
-.selection-copy { flex:1; min-width:0; }
-.selection-heading { display:flex; align-items:center; gap:13px; }
-.selection-heading .selection-title { flex:1; min-width:0; }
-.selection-detail.with-icon { margin-left:34px; }
-.selection-title { display:block; font-size:14px; line-height:1.65; letter-spacing:.15px; }
-.selection-detail { display:block; font-size:12px; line-height:1.7; margin-top:3px; color:var(--muted); }
-.selection-check { display:flex; align-items:center; justify-content:center; width:18px; height:18px; flex-shrink:0; opacity:0; transform:scale(.7); transition:opacity 120ms,transform 160ms var(--ease-out); }
-.selection-check.visible { opacity:1; transform:scale(1); }
-.selection-radio { width:20px; height:20px; border:1px solid var(--muted); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.selection-radio.checked { border-color:var(--ink); }
-.selection-radio > view { width:10px; height:10px; border-radius:50%; background:var(--ink); transform:scale(0); transition:transform 160ms var(--ease-out); }
-.selection-radio.checked > view { transform:scale(1); }
-.detailed { min-height:76px; }
-.selection-pressed, .selection-card:active { transform:scale(.985); }
-@media (prefers-reduced-motion: reduce) { .selection-card { transition:none; } }
 
-.illustrated { --card-accent:#476951; --card-tint:#e8f0e3; position:relative; gap:15px; min-height:104px; border:1px solid rgba(255,255,255,.95); border-radius:10px; padding:13px 15px 13px 12px; background:rgba(255,253,247,.87); box-shadow:0 5px 20px rgba(46,66,53,.045); }
-.illustrated.tone-water { --card-accent:#3f6a70; --card-tint:#e3eeed; }
-.illustrated.tone-rose { --card-accent:#98624d; --card-tint:#f5e9df; }
-.illustrated.tone-gold { --card-accent:#8b702f; --card-tint:#f3eddb; }
-.illustrated.tone-lilac { --card-accent:#726783; --card-tint:#ede8f1; }
-.selection-art { position:relative; width:64px; height:70px; border-radius:10px; flex-shrink:0; background:var(--card-tint); }
-.selection-art > image { position:absolute; inset:6px; width:calc(100% - 12px); height:calc(100% - 12px); border-radius:0; }
-.illustrated .selection-title { color:#304738; font-size:15px; font-weight:500; line-height:1.65; }
-.illustrated .selection-detail { color:#6b766a; font-size:12px; line-height:1.7; margin-top:5px; }
-.illustrated .selection-check { width:20px; height:20px; border-radius:50%; border:1px solid #b7c4ad; opacity:1; transform:none; background:rgba(255,255,255,.55); }
-.illustrated .selection-check :deep(.svg-icon) { opacity:0; }
-.illustrated .selection-check.visible { background:var(--card-tint); border-color:var(--card-accent); }
-.illustrated .selection-check.visible :deep(.svg-icon) { opacity:1; }
-.illustrated.chosen { background:var(--card-tint); border-color:var(--card-accent); box-shadow:0 4px 18px rgba(55,83,61,.09),inset 0 0 0 .5px var(--card-accent); }
-.illustrated.chosen .selection-title { color:var(--card-accent); }
-@media(max-width:360px) { .illustrated { gap:12px; padding-right:12px; } .selection-art { width:52px; height:62px; } .illustrated .selection-title { font-size:14px; } .illustrated .selection-detail { font-size:11px; } }
+<style scoped>
+.selection-card {
+  display:flex; align-items:center; gap:13px; width:100%; min-height:78px; margin:0; padding:14px 15px;
+  box-sizing:border-box; border:1px solid var(--quiet-border); border-radius:17px;
+  background:var(--quiet-surface); box-shadow:var(--quiet-shadow); color:var(--quiet-title);
+  text-align:left; touch-action:manipulation;
+  transition:background-color 160ms var(--ease-out),border-color 160ms var(--ease-out),box-shadow 160ms var(--ease-out),transform 120ms var(--ease-out);
+}
+.selection-card::after { border:0; }
+.selection-card.compact { min-height:64px; padding:12px 15px; }
+.selection-card.chosen {
+  background:var(--quiet-surface-selected); border-color:var(--quiet-border-selected);
+  box-shadow:var(--quiet-shadow-selected),inset 0 0 0 .5px var(--quiet-border-selected);
+}
+.selection-icon-tile {
+  display:flex; align-items:center; justify-content:center; width:42px; height:42px; flex-shrink:0;
+  border-radius:13px; background:var(--quiet-tile);
+  transition:background-color 160ms var(--ease-out);
+}
+.selection-card.chosen .selection-icon-tile { background:var(--quiet-tile-selected); }
+.selection-copy { flex:1; min-width:0; padding:1px 0; }
+.selection-title { display:block; font-size:14.5px; font-weight:500; line-height:1.55; letter-spacing:.1px; color:var(--quiet-title); }
+.selection-detail { display:block; font-size:12px; line-height:1.72; letter-spacing:.05px; margin-top:3px; color:var(--quiet-detail); }
+.selection-control {
+  display:flex; align-items:center; justify-content:center; width:22px; height:22px; flex-shrink:0;
+  border:1px solid var(--quiet-control); border-radius:50%; background:transparent;
+  transition:background-color 160ms var(--ease-out),border-color 160ms var(--ease-out),transform 160ms var(--ease-out);
+}
+.selection-control.checked { background:var(--quiet-check); border-color:var(--quiet-check); transform:scale(1); }
+.selection-radio {
+  width:22px; height:22px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--quiet-control); border-radius:50%;
+  transition:border-color 160ms var(--ease-out);
+}
+.selection-radio.checked { border-color:var(--quiet-check); }
+.selection-radio > view {
+  width:10px; height:10px; border-radius:50%; background:var(--quiet-check);
+  transform:scale(0); transition:transform 160ms var(--ease-out);
+}
+.selection-radio.checked > view { transform:scale(1); }
+.selection-pressed, .selection-card:active { transform:scale(.988); background:var(--quiet-surface-pressed); }
+.selection-card.chosen.selection-pressed, .selection-card.chosen:active { background:var(--quiet-surface-selected); }
+@media(max-width:360px) {
+  .selection-card { gap:12px; min-height:74px; padding:13px 14px; border-radius:16px; }
+  .selection-card.compact { min-height:62px; padding:11px 14px; }
+  .selection-icon-tile { width:40px; height:40px; border-radius:12px; }
+  .selection-title { font-size:14px; }
+  .selection-detail { font-size:11.5px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .selection-card, .selection-icon-tile, .selection-control, .selection-radio, .selection-radio > view { transition:none; }
+  .selection-pressed, .selection-card:active { transform:none; }
+}
 </style>

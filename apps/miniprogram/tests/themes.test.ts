@@ -77,6 +77,31 @@ it('keeps tag surfaces, borders and check marks legible in every palette', () =>
   }
 })
 
+it('keeps quiet onboarding cards restrained but legible in every palette', () => {
+  for (const theme of themes) {
+    const style = themeStyle(theme)
+    for (const token of ['--quiet-surface', '--quiet-surface-pressed', '--quiet-surface-selected',
+      '--quiet-border', '--quiet-border-selected', '--quiet-title', '--quiet-detail', '--quiet-tile',
+      '--quiet-tile-selected', '--quiet-control', '--quiet-check', '--quiet-check-ink', '--quiet-shadow',
+      '--cta-fill', '--cta-highlight', '--cta-deep', '--cta-ink', '--cta-border', '--cta-pressed-border',
+      '--cta-disabled', '--cta-shadow', '--cta-pressed-shadow',
+      '--onboarding-wash-top', '--onboarding-wash-mid', '--onboarding-wash-bottom']) {
+      expect(style[token], theme.id + token).toBeTruthy()
+    }
+    expect(contrast(style['--quiet-title'], style['--quiet-surface']), theme.id + ' quiet title').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(style['--quiet-detail'], style['--quiet-surface']), theme.id + ' quiet detail').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(style['--quiet-title'], style['--quiet-surface-selected']), theme.id + ' selected title').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(style['--quiet-detail'], style['--quiet-surface-selected']), theme.id + ' selected detail').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(style['--quiet-check-ink'], style['--quiet-check']), theme.id + ' quiet check').toBeGreaterThanOrEqual(3)
+    expect(contrast(style['--cta-ink'], style['--cta-fill']), theme.id + ' quiet cta').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(style['--cta-ink'], style['--cta-highlight']), theme.id + ' cta highlight').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(style['--cta-ink'], style['--cta-deep']), theme.id + ' cta deep').toBeGreaterThanOrEqual(4.5)
+    expect(style['--quiet-surface']).not.toBe(style['--quiet-surface-selected'])
+    expect(style['--quiet-tile']).not.toBe(style['--quiet-tile-selected'])
+    expect(style['--cta-highlight']).not.toBe(style['--cta-deep'])
+  }
+})
+
 it('provides five distinct themed navigation destinations and complete surface tokens', () => {
   expect(navigationItems.map(item => item.id)).toEqual(['now', 'plan', 'chat', 'discover', 'settings'])
   for (const theme of themes) {
