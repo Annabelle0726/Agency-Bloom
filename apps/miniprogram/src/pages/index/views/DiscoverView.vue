@@ -38,10 +38,11 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
               <text class="discovery-question">{{ prompt.question }}</text>
             </view>
           </button>
-          <view class="discovery-meta"><text>{{ prompt.sourceLabel }}</text><button class="discovery-dismiss" @click="emit('dismiss', prompt)" hover-class="pressed" :hover-start-time="0">不太适用</button></view>
+          <view class="discovery-meta"><text>{{ prompt.sourceLabel }}</text><button v-if="prompt.strategy !== 'self'" class="discovery-dismiss" @click="emit('dismiss', prompt)" hover-class="pressed" :hover-start-time="0">不太适用</button></view>
         </view>
-        <text v-if="!recommendations.length" class="discovery-context">暂时没有更合适的问题\n不必急着开始，等有了新的线索再来</text>
-        <view v-else class="discovery-tools"><text class="discovery-context">开启新对话，问题可以自由修改</text><button class="discovery-rotate" @click="emit('rotate')" hover-class="pressed" :hover-start-time="0">换一组</button></view>
+        <text v-if="recommendations.some(item => item.strategy === 'self')" class="discovery-context discovery-invitation">如果这些问题还不贴近你，可以想想：此刻你需要什么？
+不必马上说清楚，也可以从一件小事开始</text>
+        <view class="discovery-tools"><text class="discovery-context">开启新对话，问题可以自由修改</text><button v-if="recommendations.some(item => item.strategy !== 'self')" class="discovery-rotate" @click="emit('rotate')" hover-class="pressed" :hover-start-time="0">换一组</button></view>
       </template>
     </view>
     <button class="history-entry bloom-history" @click="openJourney" hover-class="pressed"><SvgIcon name="note" :size="21" /><text>回看走过的路</text><SvgIcon name="chevron" :size="18" /></button>

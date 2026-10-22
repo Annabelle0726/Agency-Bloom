@@ -55,7 +55,7 @@ async function oldConversation(id){
  await openDiscover();await tap(await discover(),'.discovery-card');await until(async()=>!!await composer(),'Second draft');
  await (await (await composer()).$('.chat-input')).input('我愿意继续了解这个问题');
  await api('/qa/fail-next','POST');await tap(await composer(),'.send-button');
- await until(async()=>!!await (await chat()).$('.chat-error'),'Failed creation is visible');
+ await until(async()=>(!!await (await composer()).$('.composer-error') || !!await (await chat()).$('.chat-error')),'Failed creation is visible');
  assert.equal((await api('/api/conversations')).length,1);assert.equal(await (await (await composer()).$('.chat-input')).value(),'我愿意继续了解这个问题');
  const send=await (await composer()).$('.send-button');await Promise.all([send.tap(),send.tap()]);
  await until(async()=> { const all=await api('/api/conversations'); const created=all.find(c=>c.id!==seed.conversation_id); return all.length===2 && created && (await api('/api/conversations/'+created.id+'/messages')).items.length===2; },'One real conversation and completed first send');
@@ -63,11 +63,24 @@ async function oldConversation(id){
  assert.equal((await api('/api/conversations/'+created.id+'/messages')).items.length,2,'Only one normal chat turn');
  await oldConversation(seed.conversation_id);assert.equal(await (await (await composer()).$('.chat-input')).value(),original);
  await openDiscover();const beforeRotation=await questions();await tap(await discover(),'.discovery-rotate');await refresh();const afterRotation=await questions();assert.notDeepEqual(afterRotation,beforeRotation);
- const rejected=afterRotation[0];await tap(await discover(),'.discovery-dismiss');await refresh();assert.ok(!(await questions()).includes(rejected));
- await mp.callWxMethod('reLaunch',{url:'/pages/index/index'});await until(async()=>!!await bar(),'Reload');await openDiscover();assert.ok(!(await questions()).includes(rejected),'Dismissal persists for this account');
+ const rejected=afterRotation[0], retained=afterRotation[1];await tap(await discover(),'.discovery-dismiss');await refresh();assert.ok(!(await questions()).includes(rejected));assert.ok((await questions()).includes(retained),'Only rejected card changes');
+ await tap(await discover(),'.discovery-rotate');await refresh();assert.equal((await questions()).length,2,'Second alternative batch');
+ await tap(await discover(),'.discovery-rotate');await refresh();assert.equal((await questions()).length,3,'Third swap includes self-directed prompt');
+ assert.ok(await (await discover()).$('.discovery-invitation'));await mp.callWxMethod('pageScrollTo',{scrollTop:10000,duration:0});await refresh();await shot('discovery-invitation');await mp.callWxMethod('pageScrollTo',{scrollTop:0,duration:0});
+ const beforeLogin=await questions();
+ await mp.callWxMethod('reLaunch',{url:'/pages/index/index'});await until(async()=>!!await bar(),'Reload');await openDiscover();assert.ok(!(await questions()).includes(rejected),'Dismissal persists for this account');assert.notDeepEqual(await questions(),beforeLogin,'Restored login refreshes');
+ // Reproduce the reported exhausted state, without deleting any exploration.
+ for(let n=0;n<35;n++){const button=await (await discover()).$('.discovery-dismiss');if(!button)break;const before=await questions();await button.tap();await until(async()=>JSON.stringify(await questions())!==JSON.stringify(before),'Dismissal replenishes');assert.ok((await questions()).length>=2)}
+ assert.equal((await (await discover()).$$('.discovery-dismiss')).length,0,'Finite sources lead to user-directed entries');assert.equal(await (await discover()).$('.discovery-rotate'),null,'No dead rotate action when only user-directed entries remain');
+ assert.ok((await questions()).every(q=>q.includes('这些问题还没贴近我')||q.includes('我还说不清')));await shot('discovery-exhausted');
+ const selfCard=await (await discover()).$('.discovery-card');await selfCard.tap();await until(async()=>!!await composer(),'Self-directed new draft');
+ assert.equal((await (await chat()).$$('pages\\/index\\/chat\\/ChatMessage')).length,0);
+ assert.equal((await api('/api/conversations')).length,2,'Prompt invitation does not autosend');
+ await oldConversation(seed.conversation_id);assert.equal(await (await (await composer()).$('.chat-input')).value(),'','Cold restart clears unsaved drafts under the existing privacy contract');assert.deepEqual((await api('/api/conversations/'+seed.conversation_id+'/messages')).items,oldMessages);
+
  for(const theme of process.argv.includes('--flows-only')?[]:['dark','light','dawn','lavender','minimal']){const themed=await api('/qa/seed?theme='+theme,'POST');await enter(themed);await openDiscover();await shot(theme+'-discover');assert.ok((await (await page.$('.preview-stage')).attribute('class')).includes('theme-'+theme))}
  const empty=await api('/qa/seed?theme=forest&empty=true','POST');await enter(empty);await openDiscover();assert.ok((await questions()).every(q=>!q.includes('需求分析')));await tap(await discover(),'.discovery-card');await until(async()=>!!await composer(),'Empty account draft');assert.equal((await api('/api/issues')).length,0);await shot('first-exploration-draft');
  // Empty account has no consent: explicitly allow only the fixture before send.
  await api('/api/me','PUT',{ai_consent:true});await mp.callWxMethod('reLaunch',{url:'/pages/index/index'});await until(async()=>!!await bar(),'Empty account reload');await openDiscover();await tap(await discover(),'.discovery-card');await until(async()=>!!await composer(),'Empty draft reopens');await tap(await composer(),'.send-button');await until(async()=> (await api('/api/issues')).length===1 && (await api('/api/conversations')).length===1 && !!await (await composer()).$('.chat-input'),'First issue and conversation saved once');
- assert.deepEqual(errors,[]);const info=await mp.systemInfo();const report={passed:true,width:info.windowWidth,height:info.windowHeight,flows:['old draft and history preserved','clean editable unsaved draft','double click','failed creation retains text','one first-send creation','same exploration','stable visits','manual rotation','dismissal survives reload','account isolation','first-use promotion'],errors,paidRequests:0};await fs.writeFile(path.join(out,'report-'+Date.now()+'.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+ assert.deepEqual(errors,[]);const info=await mp.systemInfo();const report={passed:true,width:info.windowWidth,height:info.windowHeight,flows:['old draft and history preserved','clean editable unsaved draft','double click','failed creation retains text','one first-send creation','same exploration','stable visits','manual rotation','dismissal retains other card','two alternative rounds','third swap invitation','login refresh','exhaustion remains actionable','dismissal survives reload','account isolation','first-use promotion'],errors,paidRequests:0};await fs.writeFile(path.join(out,'report-'+Date.now()+'.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 })().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(mp)await mp.disconnect()});

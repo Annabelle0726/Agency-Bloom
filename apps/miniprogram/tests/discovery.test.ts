@@ -6,10 +6,10 @@ import type { JourneyEvent } from '../src/journey'
 const issue = (extra: Partial<Issue> = {}): Issue => ({ id: 'a', title: '工作方向', concerns: [], stage: 'working', background: '', card: { title: '工作方向', options: [], constraints: [], confirmed: [], hypotheses: [], unknowns: [], next_step: '' }, version: 1, created_at: '2026-01-01', updated_at: '2026-01-01', ended_at: null, feedback: [], ...extra })
 const now = Date.UTC(2026, 9, 22)
 describe('confirmed-source discovery rules', () => {
-  it('uses curated fallback without padding a single real recommendation', () => {
+  it('uses curated fallback and grounds multiple inquiry strategies in a saved topic', () => {
     expect(discoveryCandidates([], []).every(c => c.sourceId === 'curated:v1')).toBe(true)
     const list = discoveryCandidates([issue()], [])
-    expect(selectDiscovery(list, emptyDiscoveryState(), now)).toHaveLength(1)
+    expect(selectDiscovery(list, emptyDiscoveryState(), now)).toHaveLength(3)
     expect(list[0].question).toContain('工作方向')
   })
   it('does not use hypotheses, arbitrary chats, pending insights, or ended issues', () => {
@@ -40,11 +40,11 @@ describe('confirmed-source discovery rules', () => {
   })
   it('deduplicates identical questions and cools down refusals without user traits', () => {
     const a = issue(), b = issue({ id: 'b' })
-    expect(discoveryCandidates([a, b], [])).toHaveLength(1)
+    expect(new Set(discoveryCandidates([a, b], []).map(c => c.question)).size).toBe(discoveryCandidates([a, b], []).length)
     const candidates = discoveryCandidates([a], []), chosen = candidates[0]
     const state = recordDiscoveryFeedback(emptyDiscoveryState(), chosen, 'dismissed', now)
-    expect(selectDiscovery(candidates, state, now + 86400000)).toEqual([])
-    expect(selectDiscovery(candidates, state, now + 91 * 86400000)).toHaveLength(1)
+    expect(selectDiscovery(candidates, state, now + 86400000).some(c => c.id === chosen.id)).toBe(false)
+    expect(selectDiscovery(candidates, state, now + 91 * 86400000)).toHaveLength(3)
     expect(JSON.stringify(state)).not.toContain('工作方向')
     expect(discoveryStateKey('a')).not.toBe(discoveryStateKey('b'))
   })
