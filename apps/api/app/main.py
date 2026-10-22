@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from . import ai, web_search
 from .config import Settings
 from .conversations import before_message, cancel_pending, context_for, edit_anchor, register_routes
+from .journey import register_journey_routes
 from .local_schema import upgrade_local
 from .models import (
     AIRequest,
@@ -858,6 +859,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             ),
         }
 
+    register_journey_routes(app, authenticated, db_dependency, owned)
     register_routes(app, authenticated, db_dependency, owned, run_chat)
     return app
 

@@ -1,3 +1,4 @@
+import { resolveTheme, themeByTimeOfDay, themeForSession } from './themes'
 import { ref } from 'vue'
 interface PreferenceStorage { read: (key: string) => unknown; write: (key: string, value: boolean) => void }
 export function createManualThemePreference(storage: PreferenceStorage) {
@@ -16,4 +17,10 @@ export function createManualThemePreference(storage: PreferenceStorage) {
       revision.value += 1
     },
   }
+}
+
+/** One policy for the root workspace and every authenticated subpage. */
+export function personalSpaceTheme(user: { theme: string } | null, manuallyChosen: boolean, hour: number) {
+  if (!user || manuallyChosen) return themeForSession(user, true)
+  return resolveTheme(themeByTimeOfDay(hour))
 }

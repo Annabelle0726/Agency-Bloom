@@ -7,6 +7,7 @@ defineOptions({ options: { styleIsolation: 'apply-shared' } })
 const props = defineProps<{ hasCurrent: boolean; themeId: string }>()
 const art = computed(() => resolveDiscoverVisuals(props.themeId))
 const cardSrc = (index: number) => art.value.cards[index]?.src || ''
+function openJourney() { uni.navigateTo({ url: '/pages/journey/index?theme=' + props.themeId }) }
 const emit = defineEmits<{ explore: [question: string]; history: [] }>()
 </script>
 
@@ -39,7 +40,7 @@ const emit = defineEmits<{ explore: [question: string]; history: [] }>()
       </button>
       <text class="discovery-context">{{ hasCurrent ? '选一个问题，带着它聊聊' : '选一个问题，先留下线索' }}</text>
     </view>
-    <button class="history-entry bloom-history" @click="emit('history')" hover-class="pressed">
+    <button class="history-entry bloom-history" @click="openJourney" hover-class="pressed">
       <SvgIcon name="note" :size="21" />
       <text>回看走过的路</text>
       <SvgIcon name="chevron" :size="18" />

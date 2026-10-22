@@ -1,4 +1,28 @@
 {
-  "pages": [{ "path": "pages/index/index", "style": { "navigationStyle": "custom", "disableScroll": false } }],
-  "globalStyle": { "navigationBarTextStyle": "black", "navigationBarTitleText": "Agency Bloom", "backgroundColor": "#F6F5F2" }
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationStyle": "custom",
+        "disableScroll": false
+      }
+    },
+    {
+      "path": "pages/journey/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/journey/detail",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "Agency Bloom",
+    "backgroundColor": "#F6F5F2"
+  }
 }

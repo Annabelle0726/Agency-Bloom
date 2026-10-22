@@ -6,7 +6,7 @@ import type {SupportMode} from '../../onboarding'
 import {chatEntryFor, draftChangeFor} from '../../chat-entry'
 import { OPENING_KEY, initialScreen, signedInScreen, draftKeyFor, pauseKeyFor } from '../../entry'
 import type { EntryScreen } from '../../entry'
-import {navigationItems, themeForSession, themeStyle, themeNavSvg, resolveTheme, themeByTimeOfDay} from '../../themes'
+import {navigationItems, themeForSession, themeStyle, themeNavSvg} from '../../themes'
 import type {ThemeId, SpaceTab} from '../../themes'
 import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary} from '../../domain'
 import {ApiError, createApi} from '../../http'
@@ -15,7 +15,7 @@ import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
 import type {ConversationAction, ConversationMenuAction} from '../../conversation-action'
 import {createAvatarStore} from '../../avatar'
-import {createManualThemePreference} from '../../theme-preference'
+import {createManualThemePreference, personalSpaceTheme} from '../../theme-preference'
 import {newChatStarters, experimentFields, editFields, todayLabel, greeting} from './data'
 
 
@@ -128,9 +128,8 @@ export function useIndexPage() {
     return !id || manualThemePreference.isChosen(id)
   }
   const activeTheme = computed(() => {
-    if (screen.value !== 'space' || manualThemeChosen()) return themeForSession(user.value, screen.value === 'space')
-    // No manual pick yet: follow the time of day quietly.
-    return resolveTheme(themeByTimeOfDay(new Date().getHours()))
+    if (screen.value !== 'space') return themeForSession(user.value, false)
+    return personalSpaceTheme(user.value, manualThemeChosen(), new Date().getHours())
   })
   const activeThemeStyle = computed(() => themeStyle(activeTheme.value))
   const dark = computed(() => activeTheme.value.dark)
@@ -405,8 +404,21 @@ export function useIndexPage() {
     try { await initializing } finally { initializing = undefined }
   }
 
+  let journeyChanged = false
+  const markJourneyChanged = () => { journeyChanged = true }
+  onMounted(() => uni.$on('agency:journey-changed', markJourneyChanged))
+  onUnmounted(() => uni.$off('agency:journey-changed', markJourneyChanged))
   onMounted(initialize)
-  onShow(() => { if (ready.value && offline.value) void initialize() })
+  onShow(() => {
+    if (ready.value && offline.value) void initialize()
+    if (journeyChanged && user.value && ready.value && !offline.value) {
+      journeyChanged = false
+      void guarded(async () => {
+        await refreshWorkspace()
+        if (current.value) current.value = await request<Issue>('GET', `/issues/${current.value.id}`)
+      })
+    }
+  })
   onHide(() => {
     workspace.cancelAll()
   })
