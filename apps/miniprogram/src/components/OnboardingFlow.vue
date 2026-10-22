@@ -190,7 +190,7 @@ defineExpose({ clearDraft })
               <view class="selection-stack exploration-starts" role="group" aria-label="选择一个探索起点">
                 <SelectionCard v-for="choice in focusViews" :key="choice.value" :data-start="choice.value"
                   :title="choice.title" :detail="choice.detail || undefined" :icon="choice.icon || undefined"
-                  :selected="form.focus_response === choice.value" @select="chooseFocus(choice.value)" />
+                  radio :selected="form.focus_response === choice.value" @select="chooseFocus(choice.value)" />
               </view>
               <view class="free-writing">
                 <text class="free-writing-title">或者，用自己的话说</text>
@@ -242,7 +242,7 @@ defineExpose({ clearDraft })
               </view>
             </view>
           </view>
-          <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
+          <view v-else-if="step === 3" class="selection-stack"><SelectionCard v-for="item in supportStyles" :key="item.id" :title="item.title" :detail="item.detail" :icon="item.icon" radio :selected="!!form.support_style && canonicalSupportStyle(form.support_style) === item.id" @select="form.support_style = item.id" /></view>
           <view v-else class="reflection-summary">
             <view class="reflection-card reflection-record"><view class="reflection-mark"><SvgIcon name="compass" :size="24" /><text>你留下的线索，由你解释</text></view>
               <view v-if="selected.length" class="reflection-context"><text class="muted">这次想关注的方向</text><view class="chips"><text v-for="item in selected" :key="item.id" class="tag">{{ item.title }}</text></view></view>

@@ -53,7 +53,7 @@ defineEmits<{ select: [] }>()
 .selection-detail { display:block; font-size:12px; line-height:1.72; letter-spacing:.05px; margin-top:3px; color:var(--quiet-detail); }
 .selection-control {
   display:flex; align-items:center; justify-content:center; width:22px; height:22px; flex-shrink:0;
-  border:1px solid var(--quiet-control); border-radius:50%; background:transparent;
+  border:1px solid var(--quiet-control); border-radius:6px; background:transparent;
   transition:background-color 160ms var(--ease-out),border-color 160ms var(--ease-out),transform 160ms var(--ease-out);
 }
 .selection-control.checked { background:var(--quiet-check); border-color:var(--quiet-check); transform:scale(1); }
