@@ -62,6 +62,8 @@ export interface VisualContext {
   page: VisualPage
   category?: VisualCategory
   tags?: readonly string[]
+  /** Soft target for the source aspect ratio; preferred IDs still win. */
+  aspect?: number
   preferredIds?: readonly string[]
   excludeSourceGroups?: readonly string[]
 }
@@ -119,12 +121,18 @@ export function resolveVisual(
   if (preferred) return resolved(preferred, normalized, role)
 
   const requestedTags = new Set(context.tags || [])
+  const requestedAspect = context.aspect && Number.isFinite(context.aspect) && context.aspect > 0
+    ? context.aspect
+    : null
   const ranked = candidates
     .map(visual => {
       const tagScore = visual.tags.reduce((score, tag) => score + (requestedTags.has(tag) ? 10 : 0), 0)
       const categoryScore = context.category && visual.category === context.category ? 100 : 0
       const themeScore = visual.themeCompatibility.includes(normalized) ? 5 : 0
-      return { visual, score: categoryScore + tagScore + themeScore }
+      const aspectScore = requestedAspect
+        ? -Math.abs(visual.dimensions.aspectRatio - requestedAspect) * 10
+        : 0
+      return { visual, score: categoryScore + tagScore + themeScore + aspectScore }
     })
     .sort((left, right) => right.score - left.score || (left.visual.id < right.visual.id ? -1 : left.visual.id > right.visual.id ? 1 : 0))
   const best = ranked[0]?.visual

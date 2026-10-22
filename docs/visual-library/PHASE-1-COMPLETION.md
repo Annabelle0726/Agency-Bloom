@@ -22,7 +22,7 @@ The six files under `design/themes/references/` are byte-identical to `HEAD`. Re
 
 ## 5. Deterministic resolver
 
-`apps/miniprogram/src/visual-library.ts` exposes the exact contract `resolveVisual(context, theme, role, usedVisualIds)`. It filters page, role, theme, real variant, category, tags, preferred IDs, source groups, used IDs, and used original paths. Preferred IDs win first; otherwise ranking is deterministic and ties use stable ID comparison, not locale. It returns `null` when no legal candidate exists. It performs no network, model, filesystem, or image-generation work.
+`apps/miniprogram/src/visual-library.ts` exposes the exact contract `resolveVisual(context, theme, role, usedVisualIds)`. It filters page, role, theme, real variant, category, tags, preferred IDs, source groups, used IDs, and used original paths. An optional `aspect` value acts as a soft source-aspect ranking signal. Preferred IDs win first; otherwise ranking is deterministic and ties use stable ID comparison, not locale. It returns `null` when no legal candidate exists. It performs no network, model, filesystem, or image-generation work.
 
 ## 6. Discover integration
 
@@ -48,12 +48,12 @@ Within one screen, the resolver excludes used IDs and used original paths, so cr
 
 - `npm run check:visuals` — passed: 28 visuals, 22 deployed, 5 archived, 1 reference-only, 20 card-capable, 8 hero-capable, 28 runtime files, six references unchanged.
 - `npm run typecheck` — passed.
-- `npm run test:ui` — 19 files / 116 tests passed.
+- `npm run test:ui` — 19 files / 117 tests passed.
 - `npm run test:api` — 222 passed, 1 skipped.
 - `npm run test:tools` — 2 passed.
-- `npm run build:mp` — passed; 14 WXSS / 41 WXML compiler checks; production output 2,515,539 bytes / 341 files.
+- `npm run build:mp` — passed; 14 WXSS / 41 WXML compiler checks; production output 2,515,650 bytes / 341 files.
 
-Manifest validation covers paths, schema, source SHA-256/bytes, dimensions, frozen theme references, stale legacy references, duplicate runtime paths, and canonical/runtime identity. Resolver tests cover determinism, same-screen duplicate prevention, hero/card collisions, dark text-only fallback, all-theme fallback to `null`, and absence of network/model access.
+Manifest validation covers paths, schema, source SHA-256/bytes, dimensions, frozen theme references, stale legacy references, duplicate runtime paths, and canonical/runtime identity. Resolver tests cover determinism, the soft aspect preference, same-screen duplicate prevention, hero/card collisions, dark text-only fallback, all-theme fallback to `null`, and absence of network/model access.
 
 ## 12. Native acceptance
 

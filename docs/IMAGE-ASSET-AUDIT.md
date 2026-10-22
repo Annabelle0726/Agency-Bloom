@@ -133,7 +133,7 @@ Resolver contract:
 resolveVisual(context, theme, role, usedVisualIds)
 ```
 
-It filters by page, role, theme, real variant, category, tags, preferred IDs, excluded source groups, used IDs, and used original paths. It returns a preferred legal match, then a deterministic score-ranked match, then `null`. It never calls the network or a model.
+It filters by page, role, theme, real variant, category, tags, preferred IDs, excluded source groups, used IDs, and used original paths. The optional `aspect` value is a soft ranking signal, not a validity filter. It returns a preferred legal match, then a deterministic score-ranked match, then `null`. It never calls the network or a model.
 
 Testing:
 
@@ -144,7 +144,7 @@ Testing:
 - `npm run test:tools` — WeChat tooling tests.
 - `npm run build:mp` — uni-app production build plus bundled WXML/WXSS compiler checks.
 
-The resolver test suite covers deterministic results, same-screen diversity, source-sibling de-duplication, Discover hero/card collisions, dark text-only fallback, all-theme fallback to `null`, stable path lookup, and absence of `fetch`/DeepSeek/HTTP access.
+The resolver test suite covers deterministic results, the soft aspect preference, same-screen diversity, source-sibling de-duplication, Discover hero/card collisions, dark text-only fallback, all-theme fallback to `null`, stable path lookup, and absence of `fetch`/DeepSeek/HTTP access.
 
 ## 6. Native acceptance
 
@@ -186,7 +186,7 @@ Limitations recorded explicitly:
 | `apps/miniprogram/src/static/themes` | 327,450 | 12 |
 | `apps/miniprogram/src/static/visuals` | 157,887 | 13 |
 | Static total | **1,087,463** | 48 |
-| Production build `dist/build/mp-weixin` | **2,515,539** | 341 |
+| Production build `dist/build/mp-weixin` | **2,515,650** | 341 |
 
 The source library (25.2 MB) is outside the package. The build output is recorded here for size visibility; a separate Mini Program upload/package-limit check was not performed in this phase.
 

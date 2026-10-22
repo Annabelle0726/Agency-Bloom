@@ -113,7 +113,7 @@ resolveVisual(
 ): ResolvedVisual | null
 ```
 
-`VisualContext` contains `page`, optional `category`, optional `tags`, optional `preferredIds`, and optional `excludeSourceGroups`. `VisualRequest` adds the explicit `role` used by `resolveVisualSet`.
+`VisualContext` contains `page`, optional `category`, optional `tags`, optional `aspect` (a soft source-aspect preference), optional `preferredIds`, and optional `excludeSourceGroups`. `VisualRequest` adds the explicit `role` used by `resolveVisualSet`.
 
 The resolver:
 
@@ -122,7 +122,7 @@ The resolver:
 3. Requires the requested role and a real variant for the active theme.
 4. Applies category, tag, preferred-ID, excluded-source-group, and used-ID filters.
 5. Excludes any candidate whose `originalPath` is already used on the same screen. This prevents a crop of the same source from appearing twice.
-6. Returns the first valid preferred ID, otherwise ranks candidates by category, tag matches, and theme fit. Ties resolve by stable ID comparison, not locale.
+6. Returns the first valid preferred ID, otherwise ranks candidates by category, tag matches, theme fit, and closeness to the optional aspect preference. Ties resolve by stable ID comparison, not locale.
 7. Returns `null` when nothing legal is available. The UI must degrade to text-only or styling; it must not substitute an irrelevant image or repeat one.
 
 Page helpers:
@@ -199,7 +199,7 @@ Covered by `apps/miniprogram/tests/visual-library.test.ts` and `tools/validate-v
 - Same-screen duplicate detection, including source siblings.
 - Discover hero/card collision.
 - Theme-specific fallback and all-theme fallback to `null`.
-- Stable deterministic matching and preferred-ID behavior.
+- Stable deterministic matching, preferred-ID behavior, and the soft aspect preference.
 - No network/model access in the resolver module.
 - Canonical/runtime manifest byte identity.
 

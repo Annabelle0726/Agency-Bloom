@@ -83,6 +83,11 @@ describe('local visual resolver', () => {
     }
   })
 
+  it('uses an aspect preference as a deterministic soft ranking signal', () => {
+    expect(resolveVisual({ page: 'discover', category: 'direction' }, 'dawn', 'card-thumbnail')?.id).toBe('autumn_forest_path_01')
+    expect(resolveVisual({ page: 'discover', category: 'direction', aspect: 1.45 }, 'dawn', 'card-thumbnail')?.id).toBe('sunlit_meadow_path_01')
+  })
+
   it('keeps every page free of repeated images and hero/card duplicates', () => {
     for (const theme of themes) {
       const discover = resolveDiscoverVisuals(theme.id)
