@@ -31,12 +31,6 @@ export const feedbackOptions = [
   { id: 'change', label: '想法变了' },
 ] as const
 
-export const discoveryPrompts = [
-  { icon: 'compass', label: '辨认意愿', title: '如果少一点比较', question: '如果没有别人的赞许，我依然愿意把时间交给什么？' },
-  { icon: 'paths', label: '看见选择', title: '想要的自由，有什么模样', question: '现在的努力，会让我拥有哪一种具体的选择？为此付出的代价，我还愿意承担吗？' },
-  { icon: 'sun', label: '从体验出发', title: '什么让我想再来一次', question: '最近有没有一个时刻，让我感到投入、舒展，或愿意再经历一次？' },
-] as const
-
 export const todayLabel = new Date().toLocaleDateString('zh-CN', {
   month: 'long',
   day: 'numeric',

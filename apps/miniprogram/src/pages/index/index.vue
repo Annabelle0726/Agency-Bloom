@@ -77,6 +77,7 @@ const {
   draft,
   pendingText,
   sending,
+  creatingConversation,
   suggestion,
   insight,
   insightReaction,
@@ -144,6 +145,7 @@ const {
   logOut,
   deleteAccount,
   explorePrompt,
+  discovery,
   newChatStarters,
   todayLabel,
   greeting,
@@ -195,7 +197,7 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
         <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id"
                   @open-editor="openEditor()" @feedback="modal = 'feedback'" @chat="selectTab('chat')"
                   @resume="resumeExploration" @end="endIssue" />
-        <ChatView v-else-if="current && tab === 'chat'" :busy="busy" :sending="sending"
+        <ChatView v-else-if="(current || isDrafting) && tab === 'chat'" :busy="busy" :sending="sending"
                   :generating-summary="generatingSummary" :active-conversation="activeConversation"
                   :is-drafting="isDrafting" :chat-entry="chatEntry" :running-ids="runningIds"
                   :chat-menu-open="chatMenuOpen" :read-only-conversation="readOnlyConversation"
@@ -206,7 +208,7 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
                   :speaking-index="speakingIndex" :older-cursor="workspace.active.value.olderCursor.value"
                   :pending-text="pendingText" :suggestion="suggestion" :insight="insight"
                   :insight-reaction="insightReaction" :last-request-id="workspace.active.value.lastRequestId.value"
-                  :current-ended="!!current.ended_at" :phase-change="workspace.active.value.phaseChange.value"
+                  :current-ended="!!current?.ended_at" :phase-change="workspace.active.value.phaseChange.value"
                   @back="tab = 'now'" @history="showHistory"
                   @toggle-menu="chatMenuOpen ? closeChatMenu() : openChatMenu()" @menu-action="chatMenuAction"
                   @dismiss-error="workspace.active.value.error.value = ''; operations.clear('ai')"
@@ -216,14 +218,15 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
                   @edit-message="editMessage"
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />
-        <ChatComposer v-if="current && tab === 'chat'" :draft="draft" :sending="sending"
-                      :sending-started-at="workspace.active.value.sendingStartedAt.value" :generating-summary="generatingSummary"
+        <ChatComposer v-if="(current || isDrafting) && tab === 'chat'" :draft="draft" :sending="sending"
+                      :creating="creatingConversation" :sending-started-at="workspace.active.value.sendingStartedAt.value" :generating-summary="generatingSummary"
                       :read-only-conversation="readOnlyConversation" :active-conversation="activeConversation"
                       :is-drafting="isDrafting" :web-search-on="workspace.active.value.webSearchOn.value"
                       :chat-footer-note="chatFooterNote" @draft-change="updateDraft" @toggle-web="toggleWebSearch"
                       @send="sendChat" @cancel="cancelChat" />
-        <DiscoverView v-else-if="tab === 'discover'" :has-current="!!current" :theme-id="activeTheme.id" @explore="explorePrompt"
-                      @history="showHistory" />
+        <DiscoverView v-else-if="tab === 'discover'" :theme-id="activeTheme.id" :recommendations="discovery.recommendations.value"
+                      :loading="discovery.loading.value" :error="discovery.error.value" :loaded="discovery.loaded.value"
+                      @explore="explorePrompt" @dismiss="discovery.dismiss" @rotate="discovery.rotate" @retry="discovery.load" />
         <EmptyDashboard v-else-if="!current && tab !== 'settings'" :tab="tab" :busy="busy"
                         @onboarding="beginOnboarding" @history="showHistory" />
         <SettingsView v-else-if="tab === 'settings'" :user="user" :user-avatar="userAvatar"

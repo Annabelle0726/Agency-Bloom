@@ -133,3 +133,9 @@ Remaining limits: physical-device keyboard/font scaling and a disposable
 PostgreSQL migration run were not verified. Hosted migrations were not applied.
 
 Final native acceptance: the six-theme run and two repeated asynchronous-flow runs passed with zero runtime exceptions. Three timestamped reports were saved. The formal build was restored to its normal API target and verified to contain no localhost:8022 fixture URL.
+
+## PostgreSQL rollout correction (2026-10-22)
+
+The connected development service uses PostgreSQL, where SQLite startup upgrades do not run. The initial journey delivery omitted applying `20261022010000_personal_journey.sql` to this environment; consequently both timeline and candidate reads failed because `journey_records` was absent.
+
+Applied only that additive migration in a transaction with bounded lock/statement timeouts. Verified the expected columns and enabled RLS. Read-only checks of the actual journey list, candidate and detail handlers against the connected database then passed (13 accounts with saved explorations); no existing records were changed and no provider calls were made. The migration file remains idempotent for other deployments. Before starting a deployment with journey routes, verify that this migration is present in that deployment's database; an isolated SQLite test is not a deployment check.

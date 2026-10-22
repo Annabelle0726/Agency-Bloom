@@ -7,6 +7,7 @@ defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
 const props = defineProps<{
   draft: string
+  creating?: boolean
   sending: boolean
   sendingStartedAt: number
   generatingSummary: boolean
@@ -68,20 +69,20 @@ function onInput(event: Event) {
     <view v-else class="composer">
       <button class="web-toggle" :aria-pressed="webSearchOn"
               :aria-label="webSearchOn ? '已开启联网搜索' : '开启联网搜索'"
-              :class="{ on: webSearchOn }" :disabled="sending || readOnlyConversation"
+              :class="{ on: webSearchOn }" :disabled="creating || sending || readOnlyConversation"
               @click="emit('toggleWeb')"
               hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
         <SvgIcon name="compass" :size="15"/>
       </button>
-      <textarea v-model="localDraft" class="chat-input" :disabled="readOnlyConversation || (!activeConversation && !isDrafting)" :adjust-position="false" @input="onInput"
+      <textarea v-model="localDraft" class="chat-input" :disabled="creating || readOnlyConversation || (!activeConversation && !isDrafting)" :adjust-position="false" @input="onInput"
                                      :cursor-spacing="24" maxlength="2000" :auto-height="true"
                                      :placeholder="placeholder"/>
-      <button class="send-button" :disabled="!sending && (!draft.trim() || readOnlyConversation || (!activeConversation && !isDrafting))"
-              :aria-label="sending ? '停止回复' : '发送消息'" @click="sending ? emit('cancel') : emit('send')"
+      <button class="send-button" :disabled="creating || (!sending && (!draft.trim() || readOnlyConversation || (!activeConversation && !isDrafting)))"
+              :aria-label="sending ? '停止回复' : '发送消息'" @click="!creating && (sending ? emit('cancel') : emit('send'))"
               hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
         <SvgIcon :name="sending ? 'stop' : 'arrow-up'" light :size="21"/>
       </button>
     </view>
-    <text v-if="!sending" class="chat-disclosure">{{ chatFooterNote }}</text>
+    <text v-if="!sending" class="chat-disclosure">{{ creating ? '正在保存这段会话，输入会保留' : chatFooterNote }}</text>
   </view>
 </template>
