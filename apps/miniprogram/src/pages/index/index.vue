@@ -8,6 +8,7 @@ import AuthWelcome from '../../components/AuthWelcome.vue'
 import ConversationDrawer from '../../components/ConversationDrawer.vue'
 import PhaseChangeReview from '../../components/PhaseChangeReview.vue'
 import {themes} from '../../themes'
+import {resolveExploreVisual} from '../../visual-library'
 import AppTopbar from './views/AppTopbar.vue'
 import AppTabbar from './views/AppTabbar.vue'
 import HomeView from './views/HomeView.vue'
@@ -150,6 +151,7 @@ const {
 } = useIndexPage()
 
 provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
+const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
 </script>
 
 <template>
@@ -210,6 +212,7 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
                   @dismiss-error="workspace.active.value.error.value = ''; operations.clear('ai')"
                   @recover="recoverReply" @resume="resumeExploration" @select-mode="setChatMode"
                   @starter="useChatStarter" @load-older="loadOlderMessages"
+                  :explore-visual="exploreVisual"
                   @edit-message="editMessage"
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />

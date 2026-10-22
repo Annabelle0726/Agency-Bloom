@@ -11,6 +11,7 @@ import type { ChatEntry } from '../../chat-entry'
 import type { ChatMessage, Conversation, Insight, PhaseChange, Suggestion } from '../../domain'
 import type { SupportMode } from '../../onboarding'
 import type { ConversationMenuAction } from '../../conversation-action'
+import type { ResolvedVisual } from '../../visual-library'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
@@ -44,6 +45,7 @@ defineProps<{
   lastRequestId: string
   currentEnded: boolean
   phaseChange: PhaseChange | null
+  exploreVisual?: ResolvedVisual | null
 }>()
 
 const emit = defineEmits<{
@@ -103,6 +105,7 @@ const emit = defineEmits<{
       :sending="sending"
       :busy="busy"
       :starter-hint="starterHint"
+      :visual="exploreVisual || null"
       @starter="emit('starter', $event)"
     />
     <button v-if="olderCursor" class="text-button" :disabled="busy" @click="emit('loadOlder')">加载更早的消息</button>

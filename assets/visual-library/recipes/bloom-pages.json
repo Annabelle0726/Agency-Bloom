@@ -1,7 +1,7 @@
 [
   {
     "name": "mist-lake",
-    "source": "design/img/image-gen-1.png",
+    "source": "assets/visual-library/originals/rest/rest_misty_lake_meadow_01.png",
     "width": 750,
     "height": 940,
     "extract": null,
@@ -9,7 +9,7 @@
   },
   {
     "name": "mist-reading",
-    "source": "design/img/image-gen-5.png",
+    "source": "assets/visual-library/originals/reflection/reflection_window_lake_desk_01.png",
     "width": 750,
     "height": 940,
     "extract": null,
@@ -17,7 +17,7 @@
   },
   {
     "name": "forest-hero",
-    "source": "design/img/image-gen-2.png",
+    "source": "assets/visual-library/originals/direction/direction_forest_sunbeam_path_01.png",
     "width": 750,
     "height": 940,
     "extract": null,
@@ -25,7 +25,7 @@
   },
   {
     "name": "forest-reading",
-    "source": "design/img/image-gen-3.png",
+    "source": "assets/visual-library/originals/reflection/reflection_sunlit_desk_01.png",
     "width": 750,
     "height": 940,
     "extract": null,
@@ -33,7 +33,7 @@
   },
   {
     "name": "forest-path",
-    "source": "design/img/image-gen-2.png",
+    "source": "assets/visual-library/originals/direction/direction_forest_sunbeam_path_01.png",
     "width": 224,
     "height": 360,
     "extract": null,
@@ -41,7 +41,7 @@
   },
   {
     "name": "reading-corner",
-    "source": "design/img/image-gen-3.png",
+    "source": "assets/visual-library/originals/reflection/reflection_sunlit_desk_01.png",
     "width": 224,
     "height": 360,
     "extract": null,
@@ -49,7 +49,7 @@
   },
   {
     "name": "lake-reflection",
-    "source": "design/img/image-gen-4.png",
+    "source": "assets/visual-library/originals/reflection/reflection_lakeside_sunset_01.png",
     "width": 224,
     "height": 360,
     "extract": null,
@@ -57,7 +57,7 @@
   },
   {
     "name": "night-scene",
-    "source": "design/img/bloom-dark.png",
+    "source": "assets/visual-library/originals/rest/rest_night_lake_reading_01.png",
     "width": 750,
     "height": 940,
     "extract": null,
@@ -65,7 +65,7 @@
   },
   {
     "name": "night-landscape",
-    "source": "design/img/bloom-dark.png",
+    "source": "assets/visual-library/originals/rest/rest_night_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -78,7 +78,7 @@
   },
   {
     "name": "night-reading",
-    "source": "design/img/bloom-dark.png",
+    "source": "assets/visual-library/originals/rest/rest_night_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -91,7 +91,7 @@
   },
   {
     "name": "night-reflection",
-    "source": "design/img/bloom-dark.png",
+    "source": "assets/visual-library/originals/rest/rest_night_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -104,7 +104,7 @@
   },
   {
     "name": "dusk-scene",
-    "source": "design/img/bloom-dawn.png",
+    "source": "assets/visual-library/originals/rest/rest_dusk_lake_reading_01.png",
     "width": 750,
     "height": 940,
     "extract": null,
@@ -112,7 +112,7 @@
   },
   {
     "name": "dusk-landscape",
-    "source": "design/img/bloom-dawn.png",
+    "source": "assets/visual-library/originals/rest/rest_dusk_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -125,7 +125,7 @@
   },
   {
     "name": "dusk-reading",
-    "source": "design/img/bloom-dawn.png",
+    "source": "assets/visual-library/originals/rest/rest_dusk_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -138,7 +138,7 @@
   },
   {
     "name": "dusk-reflection",
-    "source": "design/img/bloom-dawn.png",
+    "source": "assets/visual-library/originals/rest/rest_dusk_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -151,7 +151,7 @@
   },
   {
     "name": "lavender-scene",
-    "source": "design/img/bloom-lavender.png",
+    "source": "assets/visual-library/originals/growth/growth_lavender_lake_reading_01.png",
     "width": 750,
     "height": 940,
     "extract": null,
@@ -159,7 +159,7 @@
   },
   {
     "name": "lavender-landscape",
-    "source": "design/img/bloom-lavender.png",
+    "source": "assets/visual-library/originals/growth/growth_lavender_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -172,7 +172,7 @@
   },
   {
     "name": "lavender-reading",
-    "source": "design/img/bloom-lavender.png",
+    "source": "assets/visual-library/originals/growth/growth_lavender_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -185,7 +185,7 @@
   },
   {
     "name": "lavender-reflection",
-    "source": "design/img/bloom-lavender.png",
+    "source": "assets/visual-library/originals/growth/growth_lavender_lake_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -198,7 +198,7 @@
   },
   {
     "name": "minimal-scene",
-    "source": "design/img/bloom-minimal.png",
+    "source": "assets/visual-library/originals/reflection/reflection_ivory_window_reading_01.png",
     "width": 750,
     "height": 940,
     "extract": null,
@@ -206,7 +206,7 @@
   },
   {
     "name": "minimal-landscape",
-    "source": "design/img/bloom-minimal.png",
+    "source": "assets/visual-library/originals/reflection/reflection_ivory_window_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -219,7 +219,7 @@
   },
   {
     "name": "minimal-reading",
-    "source": "design/img/bloom-minimal.png",
+    "source": "assets/visual-library/originals/reflection/reflection_ivory_window_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {
@@ -232,7 +232,7 @@
   },
   {
     "name": "minimal-reflection",
-    "source": "design/img/bloom-minimal.png",
+    "source": "assets/visual-library/originals/reflection/reflection_ivory_window_reading_01.png",
     "width": 224,
     "height": 360,
     "extract": {

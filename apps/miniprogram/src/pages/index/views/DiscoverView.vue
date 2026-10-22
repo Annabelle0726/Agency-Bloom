@@ -2,17 +2,18 @@
 import { computed } from 'vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
 import { discoveryPrompts } from '../data'
-import { resolvePageArt } from '../../../page-art'
+import { resolveDiscoverVisuals } from '../../../visual-library'
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 const props = defineProps<{ hasCurrent: boolean; themeId: string }>()
-const art = computed(() => resolvePageArt(props.themeId))
+const art = computed(() => resolveDiscoverVisuals(props.themeId))
+const cardSrc = (index: number) => art.value.cards[index]?.src || ''
 const emit = defineEmits<{ explore: [question: string]; history: [] }>()
 </script>
 
 <template>
   <view class="workspace discover-content bloom-content">
     <view class="bloom-hero" aria-hidden="true">
-      <image class="bloom-hero-image" :src="art.discover" mode="aspectFill" />
+      <image class="bloom-hero-image" :src="art.hero" mode="aspectFill" />
       <view class="bloom-hero-wash" />
     </view>
     <view class="section-intro bloom-intro">
@@ -22,9 +23,10 @@ const emit = defineEmits<{ explore: [question: string]; history: [] }>()
     </view>
     <view class="discovery-list">
       <button v-for="(prompt, index) in discoveryPrompts" :key="prompt.title"
-              class="discovery-card bloom-discovery-card" :data-discovery="index"
-              @click="emit('explore', prompt.question)" hover-class="pressed" :hover-start-time="0">
-        <image class="discovery-photo" :src="art.cards[index]" mode="aspectFill" aria-hidden="true" />
+              class="discovery-card bloom-discovery-card" :class="{ 'without-photo': !cardSrc(index) }"
+              :data-discovery="index" @click="emit('explore', prompt.question)"
+              hover-class="pressed" :hover-start-time="0">
+        <image v-if="cardSrc(index)" class="discovery-photo" :src="cardSrc(index)" mode="aspectFill" aria-hidden="true" />
         <view class="discovery-copy">
           <view class="discovery-heading">
             <SvgIcon :name="prompt.icon" :size="18" />

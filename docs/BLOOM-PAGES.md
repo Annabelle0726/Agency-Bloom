@@ -1,23 +1,104 @@
-# Discover and Plan visual update — 2026-10-21
+# Discover, Explore and Plan visual update
 
-The approved two-page reference guides this implementation: quiet nature photography, restrained image cards, Songti headings, theme-derived color and small 6–10px corners. Discover keeps all three original questions and their draft-entry actions. It consolidates three repeated chat hints into one line. Plan keeps user-confirmed text, decision fields, feedback, editing and exploration lifecycle actions. Empty decision fields appear as separate editable rows with gentle prompts; facts, constraints, hypotheses and unknowns keep separate labels. The empty next step and decision overview follow the supplied Plan reference, including the sprout mark, circular edit action, top-right decision image and row-level edit affordances. Multiline next steps display their first action line as a heading and remaining conditions as body copy, without changing stored text.
+Last updated: 2026-10-22. First published with the two-page Discover/Plan pass on 2026-10-21.
 
-Changed source files: apps/miniprogram/src/App.vue, bloom-pages.scss, page-art.ts, theme-preference.ts; pages/index/index.vue, useIndexPage.ts, views/DiscoverView.vue and views/PlanView.vue. Added tests: tests/page-art.test.ts and tests/theme-preference.test.ts. Resource exporter: tools/prepare-bloom-art.cjs.
+The approved two-page reference guides this implementation: quiet nature photography, frosted-glass cards over the imagery, Songti page titles, theme-derived color, and small 6–10px corners. Discover keeps all three original questions and their draft-entry actions. It consolidates the repeated chat hints into one line. Plan keeps user-confirmed text, decision fields, feedback, editing and exploration lifecycle actions. Empty decision fields appear as separate editable rows with gentle prompts; facts, constraints, hypotheses and unknowns keep separate labels. The empty next step and decision overview follow the supplied Plan reference, including the sprout mark, circular edit action, top-right decision image and row-level edit affordances. Multiline next steps display their first action line as a heading and remaining conditions as body copy, without changing stored text.
 
-Approved image-gen-1.png through image-gen-5.png and the reference remain unchanged in design/img. The original Morning Mist theme reference remains unchanged. Built-in image generation added bloom-dark.png, bloom-dawn.png, bloom-lavender.png and bloom-minimal.png. Prompts requested landscape 3:2 natural photographic reading places beside a mountain lake, an open book and ceramic cup in the lower right, quiet upper left for typeset headings, and no people, overlaid text, logos or UI. Themes respectively use midnight navy and moonlight; amber dusk; dusty grey-lilac lavender; and ivory architecture. These are illustrative atmosphere, not evidence of real places or people.
+## Source files
 
-Runtime assets are 23 JPEG derivatives under src/static/bloom, 602126 bytes total. Heroes are 750x940 and supporting crops 224x360, JPEG quality 73/MozJPEG. Recipes and sizes are in design/img/bloom-crops.json. Four generated theme heroes use an east crop to preserve the reading objects; the night landscape thumbnail retains mountain/moon detail. Generation occurs during development only.
+- `apps/miniprogram/src/pages/index/views/DiscoverView.vue`
+- `apps/miniprogram/src/pages/index/views/PlanView.vue`
+- `apps/miniprogram/src/pages/index/chat/ChatExploreVisual.vue`
+- `apps/miniprogram/src/pages/index/chat/ChatWelcome.vue`
+- `apps/miniprogram/src/visual-library.ts`
+- `apps/miniprogram/src/page-art.ts`
+- `apps/miniprogram/src/visual-manifest.json`
+- `apps/miniprogram/src/styles.scss`, `bloom-pages.scss`, `themes.scss`
+- `apps/miniprogram/src/pages/index/index.vue`, `useIndexPage.ts`, `views/HomeView.vue`
+- tests under `apps/miniprogram/tests/`, especially `visual-library.test.ts` and `page-art.test.ts`
 
-The theme-selection repair makes the per-account manual-choice flag reactive. Previously a cached computed value read nonreactive storage, while selecting an already-saved ID returned early. Manual selection now immediately stops time-of-day switching, including when that ID is already stored. A failed save does not set the manual flag. Storage failure keeps the successful choice for the current session.
+The Phase 1 source set is documented in:
 
-Validation: 16 frontend test files / 95 tests and TypeScript pass; uni-app WeChat production build and bundled checks pass (13 WXSS, 40 WXML). Native acceptance used a separate tourist project and a disposable database/API on localhost:8023, automation port 9441. No user account/database/budget/provider was used. Native iPhone 12/13 Pro reports 390x844, 47px status bar and 34px bottom inset. Six actual appearance selections, server values and stored flags pass; reload preserves the manual theme. Simulated failed saving preserves the previous state. Native card edit/save preserves constraints, feedback saves, and discovery enters an editable unsent draft. Long confirmed fields remain intact.
+- `assets/visual-library/README.md`
+- `assets/visual-manifest.json`
+- `assets/visual-manifest.schema.json`
+- `docs/image-asset-audit.csv`
+- `docs/image-asset-migration-map.md`
+- `docs/VISUAL-ASSET-SYSTEM.md`
 
-Browser supplementary checks at 320x568 and 430x932 passed for both pages with all images loaded and no horizontal overflow; isolated synthetic API responses were used. These are not native-device acceptance. Windows window capture timed out, preventing native simulator device switching to the narrow and larger sizes. Physical-device and system-font enlargement testing remain outstanding.
+The earlier `design/img` and `assets/gen-img` folders were migrated and removed after hash verification. Their old-to-new paths, stable IDs and SHA-256 values are in `docs/image-asset-migration-map.md`. The design reference is retained at `assets/visual-library/references/reference_bloom_pages_pair_01.png` and is excluded from app imagery.
 
-One independent visual review, without scoring, found no need to redo the layout. Refinements added a fixed top safety wash during scrolling, separated action/condition typography, widened long decision headings, and improved the night thumbnail. Existing press feedback remains; no continuous decorative animation was added. IDE screenshots are scaled to 323x699 despite the 390x844 reported device, so glyph artifacts are not interpreted as source typography defects.
+## Image library
 
-A final typography pass kept the serif face only on the page title and moved every small heading, label and body line to the shared sans stack. All non-title text uses weight 400; the page title is 24px (22px at 360px), cards and the next step are 16px (15px at 360px), section labels are 15px in the ink color (14px at 360px), decision-row labels are 14px in ink, and supporting copy is 12.5–14px. The Plan layout now uses a translucent empty-next-step card with the brand sprout, a circular edit action and two inline choices, plus a decision card with a larger top-right image and five icon rows; every row opens the editor and shows either its stored lines or a gentle empty prompt. Long body copy is softened without reducing contrast below the existing palette, and the history row's icon flex was fixed so the label aligns with the note icon. The English uppercase eyebrows remain as editorial markers.
+All photographic sources were generated by the project owner with ChatGPT; the owner confirmed deployment rights. The single UI reference is user-supplied and design-only.
 
-Evidence is in output/visual-bloom, output/plan-discover and the chat output folder. Baselines were rebuilt from Git HEAD view markup in separate copied source/output folders; working checkout sources were not reverted. Sass emits the existing legacy-JS-API deprecation warning. The final typography and Plan layout changes are included in the commit for this update; no push was made. Existing unrelated changes were preserved.
+| Measure | Current value |
+| --- | --- |
+| Source images | 28 / 25,224,949 bytes |
+| Deployed | 22 |
+| Archived | 5 |
+| Reference-only | 1 |
+| New card derivatives | 13 × 224x360 JPEG q73/MozJPEG, 157,887 bytes |
+| Legacy theme derivatives | 23 JPEG, 602,126 bytes |
+| Theme reference/atmosphere files | 12, 327,450 bytes |
+| Static asset total | 1,087,463 bytes |
 
-An earlier post-review H5 rerun timed out during browser navigation. The final rerun after the typography and Plan layout passes passed at 390x844 and 360x780 in light and dark themes, plus the empty Plan state in the forest theme at both widths, with isolated synthetic API responses, all images loaded and no horizontal overflow. This is H5 evidence only; native simulator and physical-device acceptance of the final spacing, weight and Plan-row layout remain outstanding. Earlier native captures cover the empty pages and the long-plan top/bottom after the safety-wash refinements.
+The six source images under `design/themes/references/` are untouched and byte-identical to the pre-migration Git state. Theme reference hashes are enforced by the validator.
+
+Cards use all six visual themes and the approved source groups. A card never repeats the page hero or another card's source on the same screen. The resolver excludes both used IDs and used original paths, so sibling crops count as duplicates. Dark is the explicit limitation: only three real night images exist, so dark Discover shows two cards and a text-only third card rather than reusing daylight imagery. Dark Plan and Explore reuse night sources across pages.
+
+## Runtime and theme behavior
+
+Runtime card paths are under `apps/miniprogram/src/static/visuals/{direction,reflection,growth,rest}/`. Hero and atmosphere paths remain under `apps/miniprogram/src/static/bloom/` and `static/themes/`.
+
+A theme change re-resolves local paths only. It does not change a visual ID, reorder cards, call a model, or generate an image. The resolver returns `null` when no legal image exists; the UI omits the image or keeps text/styling rather than substituting an irrelevant one. See `docs/VISUAL-ASSET-SYSTEM.md` for the manifest, resolver signature and per-page IDs.
+
+The theme-selection repair remains in place: the per-account manual-choice flag is reactive. Previously a cached computed value read nonreactive storage, while selecting an already-saved ID returned early. Manual selection now immediately stops time-of-day switching, including when that ID is already stored. A failed save does not set the manual flag. Storage failure keeps the successful choice for the current session.
+
+## Layout and typography
+
+The final typography pass kept the serif face only on the page title and moved every small heading, label and body line to the shared sans stack. All non-title text uses weight 400; the page title is 24px (22px at 360px), cards and the next step are 16px (15px at 360px), section labels are 15px in the ink color (14px at 360px), decision-row labels are 14px in ink, and supporting copy is 12.5–14px.
+
+The Plan layout uses a frosted-glass empty-next-step card with the brand sprout, a circular edit action and two inline choices, plus a decision card with a larger top-right image and five icon rows. Every row opens the editor and shows either its stored lines or a gentle empty prompt. Discover and Plan cards share the existing glass fill, border, inset and shadow tokens, with a 16px backdrop blur where supported and the translucent gradient as the fallback. Long body copy is softened without reducing contrast below the existing palette, and the history row's icon flex keeps the label aligned with the note icon. The English uppercase eyebrows remain as editorial markers.
+
+A fixed top safety wash is used during scrolling. Action and condition typography are separated, long decision headings are widened, and the night thumbnail retains mountain/moon detail. Existing press feedback remains; there is no continuous decorative animation. The Plan decision image is 78x104 (70x92 at narrow widths) and does not bury the edit action.
+
+## Validation and native acceptance
+
+Current checks:
+
+- `npm run check:visuals` passes.
+- `npm run typecheck` passes.
+- `npm run test:ui` passes the full frontend suite.
+- `npm run test:api` passes; one test is skipped.
+- `npm run test:tools` passes.
+- `npm run build:mp` passes the uni-app production build and bundled WXML/WXSS checks.
+
+Native acceptance used the **WeChat Developer Tools build output**, not H5. The simulator reported:
+
+```text
+model: iPhone 15 Pro Max
+window: 430x932, pixelRatio 3
+SDKVersion: 3.17.3
+```
+
+All six themes (light, dark, dawn, forest, lavender, minimal) were checked on Discover, the Explore welcome screen and Plan. The dark third Discover card is deliberately text-only. The Plan edit modal opens and closes, the Plan page scrolls correctly, the appearance modal applies selections, and the account theme was restored to `dawn`. A simulator refresh retained `dawn`. No new chat message was sent and no paid model call was made.
+
+The simulator screenshots are 323x699 because the IDE scales the 430x932 viewport. No visible horizontal overflow was found at 430px.
+
+Explicit limitations:
+
+- **320px native layout is unverified.** The available automation surface did not expose a device-size switch; `systemInfo` remained 430x932. Browser/H5 captures are not used as a native substitute.
+- **Physical-device hit targets remain unverified.** The automator cannot select uni-app custom components, so interactions were driven through the components' event emitters. Modal and tab transitions, scroll behavior and visual composition were verified; finger-coordinate hit geometry was not.
+- Dark cross-page reuse of night assets is intentional and documented in `docs/VISUAL-ASSET-SYSTEM.md`.
+
+Earlier H5 supplementary checks were part of the prior design pass; they remain historical browser evidence only and do not extend the native claims above.
+
+## Evidence
+
+- `docs/visual-library/contact-sheets/` — page-grouped source contact sheets.
+- `docs/visual-library/page-composition-preview.jpg` — real-image Dawn composition preview.
+- `docs/image-asset-migration-map.md` — complete old-to-new map with hashes.
+- `output/visual-native/` — local native simulator captures, including all six themes × Discover/Explore/Plan, the Plan edit modal, scrolled Plan, and the restored Dawn theme (not part of the app package).
+
+The final visual-library commit is limited to this work. Existing unrelated source changes are preserved.

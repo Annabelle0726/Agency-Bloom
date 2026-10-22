@@ -5,9 +5,11 @@ import { iconSources } from '../../../icons'
 import type { Card, Issue } from '../../../domain'
 import { editFields, prettyDate } from '../data'
 import { resolvePageArt, visibleDecisionFields } from '../../../page-art'
+import { resolvePlanVisual } from '../../../visual-library'
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 const props = defineProps<{ current: Issue; card: Card; themeId: string }>()
 const art = computed(() => resolvePageArt(props.themeId))
+const decisionVisual = computed(() => resolvePlanVisual(props.themeId))
 const hasFields = computed(() => visibleDecisionFields(props.card).length > 0)
 const sprout = computed(() => props.themeId === 'dark' ? '/static/brand-sprout-night.png' : '/static/brand-sprout.png')
 const fieldMeta: Record<(typeof editFields)[number]['key'], { icon: string; hint: string }> = {
@@ -67,7 +69,8 @@ const emit = defineEmits<{ openEditor: []; feedback: []; chat: []; resume: []; e
           <text class="card-title">{{ card.title || '这次探索，还可以继续' }}</text>
           <text v-if="!hasFields" class="decision-subtitle">不着急给出一个最终答案。</text>
         </view>
-        <image class="decision-photo" :src="art.cards[0]" mode="aspectFill" aria-hidden="true" />
+        <image v-if="decisionVisual" class="decision-photo" :src="decisionVisual.src" mode="aspectFill" aria-hidden="true" />
+        <view v-else class="decision-photo decision-photo-empty" aria-hidden="true" />
       </view>
       <view class="decision-rows">
         <button v-for="field in editFields" :key="field.key" class="decision-row"

@@ -1,0 +1,132 @@
+[
+  {
+    "id": "misty_lake_canoe_01",
+    "category": "direction",
+    "source": "assets/visual-library/originals/direction/direction_misty_lake_canoe_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Quiet lake departure; keep canoe and horizon."
+  },
+  {
+    "id": "window_seat_01",
+    "category": "reflection",
+    "source": "assets/visual-library/originals/reflection/reflection_window_seat_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Book, cup and window seat; keep the open book."
+  },
+  {
+    "id": "forest_path_green_01",
+    "category": "direction",
+    "source": "assets/visual-library/originals/direction/direction_forest_path_green_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Green forest path; keep the bend and white flowers."
+  },
+  {
+    "id": "autumn_forest_path_01",
+    "category": "direction",
+    "source": "assets/visual-library/originals/direction/direction_autumn_forest_path_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Autumn path and birds; keep the path and warm canopy."
+  },
+  {
+    "id": "forest_path_violet_01",
+    "category": "direction",
+    "source": "assets/visual-library/originals/direction/direction_forest_path_violet_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Portrait violet path; keep flowers and light."
+  },
+  {
+    "id": "forest_path_pink_01",
+    "category": "direction",
+    "source": "assets/visual-library/originals/direction/direction_forest_path_pink_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Sunlit path with pink flowers; keep the path direction."
+  },
+  {
+    "id": "moonlit_forest_01",
+    "category": "rest",
+    "source": "assets/visual-library/originals/rest/rest_moonlit_forest_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Real night forest; keep moon and path."
+  },
+  {
+    "id": "sunlit_window_book_01",
+    "category": "reflection",
+    "source": "assets/visual-library/originals/reflection/reflection_sunlit_window_book_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Window desk and book; keep the book and window light."
+  },
+  {
+    "id": "bluebell_forest_01",
+    "category": "growth",
+    "source": "assets/visual-library/originals/growth/growth_bluebell_forest_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Bluebells and old trees; keep flowers and soft light."
+  },
+  {
+    "id": "golden_desk_book_01",
+    "category": "reflection",
+    "source": "assets/visual-library/originals/reflection/reflection_golden_desk_book_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Golden window light; keep desk, book and cup."
+  },
+  {
+    "id": "moonlit_lake_01",
+    "category": "rest",
+    "source": "assets/visual-library/originals/rest/rest_moonlit_lake_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Real moonlit lake; keep moon and reflection."
+  },
+  {
+    "id": "sunlit_book_desk_01",
+    "category": "reflection",
+    "source": "assets/visual-library/originals/reflection/reflection_sunlit_book_desk_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "New 2026-10-22 image; keep book, daisies and coffee."
+  },
+  {
+    "id": "sunlit_meadow_path_01",
+    "category": "direction",
+    "source": "assets/visual-library/originals/direction/direction_sunlit_meadow_path_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "New 2026-10-22 image; keep sunbeams and meadow path."
+  }
+]
