@@ -12,6 +12,7 @@ import {resolveExploreVisual} from '../../visual-library'
 import AppTopbar from './views/AppTopbar.vue'
 import AppTabbar from './views/AppTabbar.vue'
 import HomeView from './views/HomeView.vue'
+import BloomMoment from './views/BloomMoment.vue'
 import PlanView from './views/PlanView.vue'
 import DiscoverView from './views/DiscoverView.vue'
 import EmptyDashboard from './views/EmptyDashboard.vue'
@@ -146,6 +147,8 @@ const {
   deleteAccount,
   explorePrompt,
   discovery,
+  bloomMoment,
+  chatAboutMoment,
   newChatStarters,
   todayLabel,
   greeting,
@@ -191,9 +194,19 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
         @privacy="modal = 'privacy'" @navigate="operations.clear('auth')" />
 
       <template v-else-if="screen === 'space'">
-        <HomeView v-if="current && tab === 'now'" :card="card" :current="current" :greeting="greeting"
+        <HomeView v-if="tab === 'now'" :card="card" :current="current" :greeting="greeting"
                   :today-label="todayLabel" @open-editor="openEditor()" @plan="selectTab('plan')"
-                  @feedback="modal = 'feedback'" @chat="selectTab('chat')" />
+                  @feedback="modal = 'feedback'" @chat="selectTab('chat')">
+          <template #moment>
+            <BloomMoment :moment="bloomMoment.moment.value" :day="bloomMoment.day.value" :theme-id="activeTheme.id"
+              :loading="bloomMoment.loading.value" :generating="bloomMoment.generating.value" :error="bloomMoment.error.value"
+              :personalize="bloomMoment.personalize.value" :can-personalize="!!user?.use_memory" :retained="!!user?.save_chat"
+              :consent-open="bloomMoment.consentOpen.value" :demo="config.ai_mode === 'demo'"
+              @open="bloomMoment.open" @dismiss="bloomMoment.dismiss" @chat="chatAboutMoment"
+              @personalize="bloomMoment.personalize.value = !bloomMoment.personalize.value"
+              @consent="bloomMoment.consent" @decline="bloomMoment.consentOpen.value = false" @recover="bloomMoment.load" />
+          </template>
+        </HomeView>
         <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id"
                   @open-editor="openEditor()" @feedback="modal = 'feedback'" @chat="selectTab('chat')"
                   @resume="resumeExploration" @end="endIssue" />

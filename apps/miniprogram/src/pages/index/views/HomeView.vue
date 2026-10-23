@@ -6,7 +6,7 @@ defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
 defineProps<{
   card: Card
-  current: Issue
+  current: Issue | null
   greeting: string
   todayLabel: string
 }>()
@@ -28,7 +28,8 @@ const emit = defineEmits<{
         <text class="hero-aside">{{ '远处有方向\n此刻也有生活' }}</text>
       </view>
     </view>
-    <button class="home-mission glass-card" data-home="mission" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0">
+    <slot name="moment" />
+    <button v-if="current" class="home-mission glass-card" data-home="mission" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0">
       <view class="mission-copy">
         <view class="mission-eyebrow"><view class="mission-dot" aria-hidden="true"/><text class="mission-label">此刻，我在意的</text></view>
         <text class="mission-title">{{ card.title || current.title || '一次还未命名的探索' }}</text>
@@ -36,7 +37,7 @@ const emit = defineEmits<{
       </view>
       <view class="mission-arrow" aria-hidden="true"><SvgIcon name="chevron" :size="15" tone="accent" /></view>
     </button>
-    <view class="home-focus-card glass-card">
+    <view v-if="current" class="home-focus-card glass-card">
       <view class="focus-card-heading"><text>今日聚焦</text><text>{{ todayLabel }}</text></view>
       <button class="focus-row" data-home="plan" @click="emit('plan')" hover-class="pressed" :hover-start-time="0">
         <view class="focus-symbol"><SvgIcon name="step" :size="18" tone="accent" /></view>
