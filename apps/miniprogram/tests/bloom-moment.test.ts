@@ -1,3 +1,4 @@
+import { approvedVisualSources } from './visual-source-assert'
 import { effectScope, ref } from 'vue'
 import { describe, it, expect, vi } from 'vitest'
 import { useBloomMoment, momentDraft, momentVisual, type MomentContent } from '../src/bloom-moment'
@@ -66,7 +67,7 @@ describe('Bloom Moment explicit interaction', () => {
     for (const theme of ['light', 'dark', 'dawn', 'forest', 'lavender', 'minimal']) {
       for (const kind of ['light', 'echo', 'perspective', 'experiment'] as const) {
         const art = momentVisual(kind, theme, '2026-10-23')
-        if (art) { expect(art.theme).toBe(theme); expect(art.src).toMatch(/^\/static\//) }
+        if (art) { expect(art.theme).toBe(theme); expect(approvedVisualSources.has(art.src)).toBe(true) }
       }
     }
   })

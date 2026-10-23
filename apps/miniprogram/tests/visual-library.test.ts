@@ -32,7 +32,11 @@ function sha256(file: string) {
   return createHash('sha256').update(readFileSync(file)).digest('hex')
 }
 function runtimeFile(src: string) {
-  return path.join(root, 'apps/miniprogram/src', src.replace(/^\//, ''))
+  const storage = JSON.parse(readFileSync(path.join(root, 'apps/miniprogram/src/visual-storage.json'), 'utf8'))
+  const key = src.startsWith(storage.publicBaseUrl) ? src.slice(storage.publicBaseUrl.length) : null
+  const local = key ? Object.keys(storage.objects).find(candidate => storage.objects[candidate] === key) : src
+  expect(local, 'Every remote URL must have a reviewed local source').toBeTruthy()
+  return path.join(root, 'apps/miniprogram/src', local!.replace(/^\//, ''))
 }
 
 describe('visual library contract', () => {

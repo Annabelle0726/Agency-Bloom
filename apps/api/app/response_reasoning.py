@@ -57,5 +57,9 @@ def public_payload(payload):
     """Never return legacy raw reasoning artifacts from stored messages."""
     if not isinstance(payload, dict):
         return None
-    return {k: v for k, v in payload.items()
+    clean = {k: v for k, v in payload.items()
             if k not in {"thinking_steps", "reasoning_content", "reasoning", "chain_of_thought"}}
+    visual_id = clean.get("visual_id")
+    if visual_id is not None and (not isinstance(visual_id, str) or not re.fullmatch(r"[a-z0-9_]{1,80}", visual_id)):
+        clean.pop("visual_id", None)
+    return clean

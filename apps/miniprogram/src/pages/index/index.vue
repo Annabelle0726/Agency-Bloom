@@ -227,7 +227,7 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
                   @dismiss-error="workspace.active.value.error.value = ''; operations.clear('ai')"
                   @recover="recoverReply" @resume="resumeExploration" @select-mode="setChatMode"
                   @starter="useChatStarter" @load-older="loadOlderMessages"
-                  :explore-visual="exploreVisual"
+                  :explore-visual="exploreVisual" :theme-id="activeTheme.id"
                   @edit-message="editMessage"
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />

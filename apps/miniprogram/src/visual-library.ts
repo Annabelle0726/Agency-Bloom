@@ -86,7 +86,18 @@ export function resolveVisualPath(id: string, theme: string, role: VisualRole = 
   const visual = getVisual(id)
   if (!visual || !visual.deploy || visual.status !== 'deployed') return null
   if (!visual.visualRole.includes(role)) return null
-  return variantFor(visual, normalizeTheme(theme), role)
+  const normalized = normalizeTheme(theme)
+  return visual.themeCompatibility.includes(normalized) ? variantFor(visual, normalized, role) : null
+}
+
+// Theme changes resolve the stored ID locally; incompatible variants are hidden.
+export function resolveStoredVisual(id: string | null | undefined, theme: string): ResolvedVisual | null {
+  if (!id) return null
+  const visual = getVisual(id)
+  if (!visual || !visual.intendedPage.includes('explore')) return null
+  const src = resolveVisualPath(id, theme)
+  return src ? { id, category: visual.category, src, description: visual.description,
+    theme: normalizeTheme(theme), role: 'card-thumbnail' } : null
 }
 
 export function resolveVisual(

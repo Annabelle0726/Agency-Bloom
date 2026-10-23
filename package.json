@@ -16,7 +16,7 @@
     "dev:api": "uv run --directory apps/api uvicorn app.main:app --reload --reload-dir app --host 127.0.0.1 --port 8000",
     "test:api": "uv run --directory apps/api pytest",
     "test:ui": "npm --prefix apps/miniprogram test",
-    "build:mp": "npm --prefix apps/miniprogram run build:mp-weixin && node tools/check-wechat.mjs build --if-available",
+    "build:mp": "npm --prefix apps/miniprogram run build:mp-weixin && node tools/prune-visual-cloud-build.cjs && node tools/check-wechat.mjs build --if-available",
     "check:mp": "node tools/check-wechat.mjs build",
     "check:mp:dev": "node tools/check-wechat.mjs dev",
     "check:mp:watch": "node tools/verify-wechat-watch.mjs",
@@ -24,7 +24,7 @@
     "db:link": "supabase link --project-ref ycombbpglsmbvjlrjtgc",
     "lint:api": "uv run --directory apps/api ruff check app tests",
     "visuals:storage": "node tools/prepare-visual-storage.cjs",
-    "test:visuals": "node --test tools/ingest-visual-library.test.mjs tools/prepare-visual-storage.test.mjs"
+    "test:visuals": "node --test tools/ingest-visual-library.test.mjs tools/prepare-visual-storage.test.mjs tools/prune-visual-cloud-build.test.cjs"
   },
   "devDependencies": {
     "sharp": "^0.35.5"

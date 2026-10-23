@@ -1,0 +1,22 @@
+{
+  "cloudObjects": 48,
+  "cloudState": "verified-and-enabled",
+  "workingBuildBytes": 1924933,
+  "stagedBuildBytes": 1884765,
+  "removedOutputBytes": 119996405,
+  "removedTopLevelItems": 109,
+  "liveProvider": "deepseek",
+  "model": "deepseek-v4-pro",
+  "paidRequests": 2,
+  "estimatedCostMicro": 52857,
+  "selectedIds": [
+    "forest_path_green_01",
+    "forest_sunbeam_path_01"
+  ],
+  "canonicalUsedMicroBefore": 664327,
+  "canonicalUsedMicroAfter": 664327,
+  "environmentBytesUnchanged": true,
+  "simulatorVerified": false,
+  "physicalDeviceVerified": false,
+  "deviceBlocker": "Developer Tools Tool.getInfo returns version only; SDKVersion is absent. App commands do not return, so no remote-debug QR or device session was established."
+}

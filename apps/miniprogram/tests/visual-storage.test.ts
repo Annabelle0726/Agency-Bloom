@@ -1,3 +1,4 @@
+import storage from '../src/visual-storage.json'
 import { describe, expect, it } from 'vitest'
 import { resolveStoredVisualPath, resolveVisualStorageUrl, type VisualStorageConfig } from '../src/visual-storage'
 
@@ -11,7 +12,7 @@ const config: VisualStorageConfig = {
 }
 describe('reviewed visual storage paths', () => {
   it('keeps local assets active until manual uploads have been verified', () => {
-    expect(resolveStoredVisualPath(local)).toBe(local)
+    expect(resolveStoredVisualPath(local)).toBe(storage.enabled && storage.verifiedAt ? base + 'growth/growth_handcraft_stitching_01.jpg' : local)
     expect(resolveVisualStorageUrl(local, { ...config, enabled: false })).toBeNull()
     expect(resolveVisualStorageUrl(local, { ...config, verifiedAt: null })).toBeNull()
   })

@@ -11,6 +11,7 @@ from .pricing import price_usage
 from .psychology import select_strategy
 from .response_reasoning import evidence_catalog, ground_reasoning
 from .schemas import AIOutput
+from .visual_selection import parse_visual_output
 
 SYSTEM_PROMPT = """你是 Bloom，帮助成年人理解现实处境、探索和比较职业选择、形成用户确认的决策卡，推进实际尝试。
 先识别用户当前意图，再决定回应方式。已有职业卡片和支持偏好只是背景，不能把每句话拉回职业规划。
@@ -106,7 +107,7 @@ def parse_output(content, *, allow_text):
         if not allow_text or structured:
             raise ProviderOutputError('output_invalid') from None
         return AIOutput(reply=text)
-    return AIOutput.model_validate(data)
+    return parse_visual_output(data)
 
 
 def messages_for(
@@ -121,6 +122,7 @@ def messages_for(
     conversation_context=None,
     history=None,
     web_results=None,
+    visual_selection=None,
 ):
     mode = {"clarify": "discover", "act": "experiment"}.get(support_style, support_style)
     styles = {
@@ -168,6 +170,16 @@ def messages_for(
             '不把搜索结果写入 confirmed 或 constraints，不因搜索结果建议用户修改卡片。'
         )
         context['web_search_results'] = web_results
+    if visual_selection:
+        context['visual_selection'] = visual_selection
+        system += (
+            '\n本轮附带经过审核的 visual_selection 图库候选。'
+            '用户明确要配图或换图且有合适候选时，从候选中选一个 id 写入 visual_id；'
+            '普通交流只在图片确实有帮助时选择，否则为 null。'
+            '这是从现有图库选图，不是生成新的图片；不得声称已画出或生成全新图像。'
+            '只输出候选 id 或 null，不输出路径、URL、文件名或选图理由。'
+            '配图不能替代正文、改变事实或自动修改用户的卡片与记忆。'
+        )
     recent = history if history is not None else [m.model_dump() for m in body.history[-8:]]
     if body.task == "chat":
         context["response_evidence"] = evidence_catalog(context, recent, body.message)

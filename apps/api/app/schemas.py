@@ -5,6 +5,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     StringConstraints,
     ValidationError,
     field_validator,
@@ -147,6 +148,9 @@ class ChatInput(StrictModel):
     dismissed_changes: list[Annotated[str, StringConstraints(max_length=80)]] = Field(default=[], max_length=40)
     # Per-turn opt-in: web grounding runs only when the user asked for it.
     web_search: bool = False
+    visible_visual_ids: list[
+        Annotated[str, StringConstraints(pattern=r"^[a-z0-9_]{1,80}$")]
+    ] = Field(default=[], max_length=40)
 
 
 class ConversationChatInput(ChatInput):
@@ -305,6 +309,8 @@ class AIOutput(StrictModel):
     # Normalize and truncate instead of rejecting: optional naming metadata must
     # never make an otherwise valid chat reply fail schema validation.
     conversation_title: str | None = None
+    visual_id: str | None = None
+    _visual_selection_invalid: bool = PrivateAttr(default=False)
 
     @model_validator(mode='after')
     def normalize_optional_text(self):

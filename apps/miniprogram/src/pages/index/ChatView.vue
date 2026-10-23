@@ -46,6 +46,7 @@ defineProps<{
   currentEnded: boolean
   phaseChange: PhaseChange | null
   exploreVisual?: ResolvedVisual | null
+  themeId: string
 }>()
 
 const emit = defineEmits<{
@@ -117,6 +118,7 @@ const emit = defineEmits<{
       :is-last="index === messages.length - 1"
       :speaking="speakingIndex === index"
       :user-avatar="userAvatar"
+      :theme-id="themeId"
       :editable="!busy && !sending && !readOnlyConversation && (!userSaveChat || !!message.id)"
       @edit="emit('editMessage', index)"
     />

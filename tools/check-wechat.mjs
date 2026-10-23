@@ -6,7 +6,13 @@ const root = path.resolve(import.meta.dirname, '..')
 const mode = process.argv[2] || 'build'
 const optional = process.argv.includes('--if-available')
 const install = process.env.WECHAT_DEVTOOLS_HOME || path.dirname(process.env.WECHAT_DEVTOOLS_CLI || 'C:\\Software\\Tencent\\微信web开发者工具\\cli.bat')
-const binaries = path.join(install, 'resources', 'app.asar.unpacked', 'node_modules', 'wcc-exec')
+const compilerCandidates = [
+  path.join(install, 'resources', 'app.asar.unpacked', 'node_modules', 'wcc-exec'),
+  path.join(install, 'code', 'package.nw', 'node_modules', 'wcc-exec'),
+]
+const binaries = (await Promise.all(compilerCandidates.map(async directory =>
+  await exists(path.join(directory, 'wcsc.exe')) && await exists(path.join(directory, 'wcc.exe')) ? directory : null,
+))).find(Boolean) || compilerCandidates[0]
 const output = path.join(root, 'apps', 'miniprogram', 'dist', mode, 'mp-weixin')
 const evidence = path.join(root, 'output', 'wechat', mode)
 

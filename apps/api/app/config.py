@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     max_output_tokens: int = Field(default=4096, ge=256, le=4096)
     daily_chat_limit: int = Field(default=30, ge=1, le=200)
     ai_timeout_seconds: float = Field(default=45, gt=0, le=120)
+    # Reviewed-library selections ride on the existing chat request.
+    visual_selection_enabled: bool = True
 
     @model_validator(mode="after")
     def production_guard(self):

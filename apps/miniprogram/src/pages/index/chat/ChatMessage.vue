@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { responseReasoning, reasoningLabels } from '../../../response-reasoning'
 import CompanionAvatar from '../../../components/CompanionAvatar.vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
+import ChatVisual from './ChatVisual.vue'
 import type { ChatMessage } from '../../../domain'
 import ModalShell from '../modals/ModalShell.vue'
 
@@ -15,6 +16,7 @@ const props = defineProps<{
   speaking: boolean
   userAvatar: string
   editable: boolean
+  themeId: string
 }>()
 const emit = defineEmits<{ edit: [] }>()
 const selecting = ref(false), actionsOpen = ref(false)
@@ -40,6 +42,7 @@ watch(() => [props.message.id, props.message.content, props.message.payload?.rea
     <view class="message-content">
       <text v-if="message.role === 'assistant'" class="message-name">Bloom</text>
       <text class="message-bubble" @longpress.stop="actionsOpen = true">{{ message.content }}</text>
+      <ChatVisual v-if="message.role === 'assistant'" :visual-id="message.payload?.visual_id" :theme-id="themeId" />
       <view v-if="message.role === 'assistant' && explanations.length" class="response-reasoning">
         <button class="reasoning-toggle" :aria-expanded="open" aria-label="查看回应思路"
                 @click="open = !open" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">

@@ -1,0 +1,574 @@
+{
+  "deleted": [
+    {
+      "name": "adaptive",
+      "files": 5,
+      "bytes": 188017
+    },
+    {
+      "name": "agency-window-after-toggle.png",
+      "files": 1,
+      "bytes": 93479
+    },
+    {
+      "name": "ai-diagnostics",
+      "files": 12,
+      "bytes": 136485
+    },
+    {
+      "name": "api-error.log",
+      "files": 1,
+      "bytes": 399
+    },
+    {
+      "name": "api.log",
+      "files": 1,
+      "bytes": 0
+    },
+    {
+      "name": "apply-guardrails.py",
+      "files": 1,
+      "bytes": 21323
+    },
+    {
+      "name": "auth-gems",
+      "files": 1,
+      "bytes": 161075
+    },
+    {
+      "name": "auto-theme",
+      "files": 2,
+      "bytes": 216340
+    },
+    {
+      "name": "avatar-entry",
+      "files": 8,
+      "bytes": 390816
+    },
+    {
+      "name": "brand-header-qa.cjs",
+      "files": 1,
+      "bytes": 1141
+    },
+    {
+      "name": "chat-avatar-crop.png",
+      "files": 1,
+      "bytes": 18152
+    },
+    {
+      "name": "chat-avatar-crop2.png",
+      "files": 1,
+      "bytes": 66711
+    },
+    {
+      "name": "chat-bot-dot-old.png",
+      "files": 1,
+      "bytes": 11554
+    },
+    {
+      "name": "chat-bot-dot-old2.png",
+      "files": 1,
+      "bytes": 20220
+    },
+    {
+      "name": "chat-bot-dot-old3.png",
+      "files": 1,
+      "bytes": 69667
+    },
+    {
+      "name": "chat-consent",
+      "files": 6,
+      "bytes": 268929
+    },
+    {
+      "name": "chat-entry-qa",
+      "files": 2,
+      "bytes": 124454
+    },
+    {
+      "name": "chat-entry-smoke.cjs",
+      "files": 1,
+      "bytes": 1627
+    },
+    {
+      "name": "chat-error",
+      "files": 5,
+      "bytes": 143549
+    },
+    {
+      "name": "chat-error-api.log",
+      "files": 1,
+      "bytes": 2434
+    },
+    {
+      "name": "chat-error-build.log",
+      "files": 1,
+      "bytes": 2974
+    },
+    {
+      "name": "chat-layout",
+      "files": 4,
+      "bytes": 182934
+    },
+    {
+      "name": "chat-layout-crop.png",
+      "files": 1,
+      "bytes": 82200
+    },
+    {
+      "name": "chat-status-qa",
+      "files": 341,
+      "bytes": 2515337
+    },
+    {
+      "name": "chat-status-qa-inspect.cjs",
+      "files": 1,
+      "bytes": 3783
+    },
+    {
+      "name": "chat-status-qa-out",
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "name": "chat-status-qa-simple.cjs",
+      "files": 1,
+      "bytes": 690
+    },
+    {
+      "name": "chat-status-qa-smoke.cjs",
+      "files": 1,
+      "bytes": 647
+    },
+    {
+      "name": "chat-status-qa2",
+      "files": 341,
+      "bytes": 2515337
+    },
+    {
+      "name": "chat-status-qa2-out",
+      "files": 4,
+      "bytes": 118104
+    },
+    {
+      "name": "chat-status-qa3",
+      "files": 341,
+      "bytes": 2515539
+    },
+    {
+      "name": "chat-status-screen.png",
+      "files": 1,
+      "bytes": 211793
+    },
+    {
+      "name": "chat-stream",
+      "files": 9,
+      "bytes": 475767
+    },
+    {
+      "name": "chat-stream-api-current.log",
+      "files": 1,
+      "bytes": 367
+    },
+    {
+      "name": "chat-stream-api-final.log",
+      "files": 1,
+      "bytes": 2434
+    },
+    {
+      "name": "chat-stream-api-tests.log",
+      "files": 1,
+      "bytes": 17492
+    },
+    {
+      "name": "chat-stream-build-qa.log",
+      "files": 1,
+      "bytes": 2974
+    },
+    {
+      "name": "chat-stream-debug.cjs",
+      "files": 1,
+      "bytes": 779
+    },
+    {
+      "name": "chat-stream-lint.log",
+      "files": 1,
+      "bytes": 4278
+    },
+    {
+      "name": "companion",
+      "files": 2,
+      "bytes": 106230
+    },
+    {
+      "name": "conversations",
+      "files": 389,
+      "bytes": 3470355
+    },
+    {
+      "name": "dedupe-check",
+      "files": 2,
+      "bytes": 277296
+    },
+    {
+      "name": "dependency-audit.json",
+      "files": 1,
+      "bytes": 41558
+    },
+    {
+      "name": "dev-pids.json",
+      "files": 1,
+      "bytes": 38
+    },
+    {
+      "name": "devtools-2400.png",
+      "files": 1,
+      "bytes": 104554
+    },
+    {
+      "name": "devtools-window-large.png",
+      "files": 1,
+      "bytes": 93468
+    },
+    {
+      "name": "devtools-window-moved.png",
+      "files": 1,
+      "bytes": 89142
+    },
+    {
+      "name": "devtools-window.png",
+      "files": 1,
+      "bytes": 89143
+    },
+    {
+      "name": "devtools-zoomout.png",
+      "files": 1,
+      "bytes": 205
+    },
+    {
+      "name": "drawer-cta",
+      "files": 3,
+      "bytes": 107955
+    },
+    {
+      "name": "find-simulator-window.ps1",
+      "files": 1,
+      "bytes": 1868
+    },
+    {
+      "name": "fix-journey-navigation.py",
+      "files": 1,
+      "bytes": 1437
+    },
+    {
+      "name": "gem-button",
+      "files": 13,
+      "bytes": 1055946
+    },
+    {
+      "name": "gesture-inspect.cjs",
+      "files": 1,
+      "bytes": 2558
+    },
+    {
+      "name": "guard-provider-output.py",
+      "files": 1,
+      "bytes": 1516
+    },
+    {
+      "name": "harden-journey.py",
+      "files": 1,
+      "bytes": 2916
+    },
+    {
+      "name": "harden-reasoning-history.py",
+      "files": 1,
+      "bytes": 3665
+    },
+    {
+      "name": "home-glass",
+      "files": 435,
+      "bytes": 11550513
+    },
+    {
+      "name": "home-refinements",
+      "files": 375,
+      "bytes": 2956377
+    },
+    {
+      "name": "image-audit",
+      "files": 26,
+      "bytes": 2611666
+    },
+    {
+      "name": "improve-ai-conversation.py",
+      "files": 1,
+      "bytes": 6394
+    },
+    {
+      "name": "inspect-journey-flow.cjs",
+      "files": 1,
+      "bytes": 792
+    },
+    {
+      "name": "journey-final-checks.py",
+      "files": 1,
+      "bytes": 2075
+    },
+    {
+      "name": "journey-input-check.py",
+      "files": 1,
+      "bytes": 882
+    },
+    {
+      "name": "journey-inspect.cjs",
+      "files": 1,
+      "bytes": 381
+    },
+    {
+      "name": "journey-more-tests.py",
+      "files": 1,
+      "bytes": 1985
+    },
+    {
+      "name": "journey-refresh-queue.py",
+      "files": 1,
+      "bytes": 1244
+    },
+    {
+      "name": "journey-reliability.py",
+      "files": 1,
+      "bytes": 2159
+    },
+    {
+      "name": "journey-theme-parity.py",
+      "files": 1,
+      "bytes": 3918
+    },
+    {
+      "name": "list-devtools-windows.ps1",
+      "files": 1,
+      "bytes": 1875
+    },
+    {
+      "name": "list-windows.ps1",
+      "files": 1,
+      "bytes": 1740
+    },
+    {
+      "name": "login",
+      "files": 150,
+      "bytes": 1056001
+    },
+    {
+      "name": "message-edit",
+      "files": 6,
+      "bytes": 279461
+    },
+    {
+      "name": "navigation",
+      "files": 12,
+      "bytes": 1006026
+    },
+    {
+      "name": "onboarding-step1",
+      "files": 316,
+      "bytes": 3644380
+    },
+    {
+      "name": "onboarding-step2",
+      "files": 15,
+      "bytes": 2923061
+    },
+    {
+      "name": "onboarding-step3",
+      "files": 503,
+      "bytes": 22770144
+    },
+    {
+      "name": "onboarding-titles",
+      "files": 53,
+      "bytes": 11953108
+    },
+    {
+      "name": "online-badge",
+      "files": 3,
+      "bytes": 82201
+    },
+    {
+      "name": "opening",
+      "files": 17,
+      "bytes": 2545291
+    },
+    {
+      "name": "opening-button",
+      "files": 301,
+      "bytes": 2369013
+    },
+    {
+      "name": "opening-button-qa.cjs",
+      "files": 1,
+      "bytes": 4238
+    },
+    {
+      "name": "perspective",
+      "files": 334,
+      "bytes": 2853375
+    },
+    {
+      "name": "plan-discover",
+      "files": 28,
+      "bytes": 14702904
+    },
+    {
+      "name": "playwright",
+      "files": 36,
+      "bytes": 3369666
+    },
+    {
+      "name": "polish-journey.py",
+      "files": 1,
+      "bytes": 1274
+    },
+    {
+      "name": "qa-current.png",
+      "files": 1,
+      "bytes": 6571
+    },
+    {
+      "name": "qa-window.png",
+      "files": 1,
+      "bytes": 114748
+    },
+    {
+      "name": "qa2-home.png",
+      "files": 1,
+      "bytes": 172095
+    },
+    {
+      "name": "qa2-inspect-dot.cjs",
+      "files": 1,
+      "bytes": 4255
+    },
+    {
+      "name": "qa2-inspect-waiting.cjs",
+      "files": 1,
+      "bytes": 2265
+    },
+    {
+      "name": "qa2-simple.cjs",
+      "files": 1,
+      "bytes": 584
+    },
+    {
+      "name": "qa3-inspect-dot.cjs",
+      "files": 1,
+      "bytes": 4287
+    },
+    {
+      "name": "refactor-native",
+      "files": 6,
+      "bytes": 374333
+    },
+    {
+      "name": "refine-journey-review.py",
+      "files": 1,
+      "bytes": 1086
+    },
+    {
+      "name": "scope-journey.py",
+      "files": 1,
+      "bytes": 1312
+    },
+    {
+      "name": "screen-with-devtools.png",
+      "files": 1,
+      "bytes": 102827
+    },
+    {
+      "name": "scroll-action.cjs",
+      "files": 1,
+      "bytes": 483
+    },
+    {
+      "name": "settings-gems",
+      "files": 13,
+      "bytes": 708610
+    },
+    {
+      "name": "simplify-ai-prompt.py",
+      "files": 1,
+      "bytes": 5444
+    },
+    {
+      "name": "stage-brand-commit.py",
+      "files": 1,
+      "bytes": 1755
+    },
+    {
+      "name": "stage-journey.py",
+      "files": 1,
+      "bytes": 2880
+    },
+    {
+      "name": "stream-inspect.cjs",
+      "files": 1,
+      "bytes": 2389
+    },
+    {
+      "name": "themes",
+      "files": 181,
+      "bytes": 1639801
+    },
+    {
+      "name": "ui-error.log",
+      "files": 1,
+      "bytes": 1760
+    },
+    {
+      "name": "ui.log",
+      "files": 1,
+      "bytes": 2096
+    },
+    {
+      "name": "visual-bloom",
+      "files": 942,
+      "bytes": 13015778
+    },
+    {
+      "name": "visual-native",
+      "files": 36,
+      "bytes": 1088096
+    },
+    {
+      "name": "wire-journey.py",
+      "files": 1,
+      "bytes": 1155
+    }
+  ],
+  "kept": [
+    "ai-env-before.sha256",
+    "ai-ledger-audit.json",
+    "apply-bloom-moment.py",
+    "bloom-moment-transfer.py",
+    "chat-wait",
+    "deepseek",
+    "discovery",
+    "exploration",
+    "header-actions",
+    "journey",
+    "live-eval-env-before.sha256",
+    "live-eval-ledger-before.json",
+    "live-evaluation-preflight",
+    "moments",
+    "native-sdk",
+    "nav-only.patch",
+    "opening-commit-check",
+    "plan-polish",
+    "reasoning-summary",
+    "theme-completion",
+    "visual-storage-upload",
+    "wechat"
+  ],
+  "bytes": 119996405
+}

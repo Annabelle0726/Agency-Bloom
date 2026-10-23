@@ -19,11 +19,11 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from . import ai, web_search
+from . import ai, visual_selection, web_search
 from .config import Settings
 from .conversations import before_message, cancel_pending, context_for, edit_anchor, register_routes
-from .journey import register_journey_routes
 from .discovery import register_discovery_routes
+from .journey import register_journey_routes
 from .local_schema import upgrade_local
 from .models import (
     AIRequest,
@@ -632,6 +632,17 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                 sources_web_error = False
         else:
             sources_web_error = None
+        request_theme = user.theme
+        visual_candidates, visual_payload = [], None
+        if (settings.visual_selection_enabled and body.task == "chat"
+                and not visual_selection.should_omit_visuals(body.message)):
+            try:
+                visual_candidates, visual_payload = visual_selection.visual_context_for_chat(
+                    user_theme=request_theme, message=body.message,
+                    context=context, visible_visual_ids=body.visible_visual_ids,
+                )
+            except (OSError, KeyError, TypeError, ValueError):
+                logging.getLogger("agency.ai").warning("visual_candidates_unavailable")
         prompt = ai.messages_for(
             item.card,
             issue_view(db, item)["feedback"][:5],
@@ -644,6 +655,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             conversation_context=context,
             history=history,
             web_results=web_results,
+            visual_selection=visual_payload,
         )
         if sources is not None:
             supplied = json.loads(prompt[1]['content'].split('：', 1)[1])
@@ -712,6 +724,23 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                     raise asyncio.CancelledError()
             generation = await task
             result, actual_cost = generation.output, generation.cost_micro
+            # Only a manifest-approved candidate ID survives to response/storage.
+            if body.task == "chat" and visual_payload:
+                try:
+                    manifest = visual_selection.load_manifest()
+                    used_ids = body.visible_visual_ids
+                    decision = visual_selection.validate_selection(
+                        result.visual_id, visual_candidates, theme=request_theme,
+                        used_visual_ids=used_ids,
+                        used_source_groups=visual_selection.group_for_used(used_ids, manifest),
+                        used_original_paths=visual_selection.original_paths_for_used(used_ids, manifest),
+                        malformed=getattr(result, "_visual_selection_invalid", False),
+                    )
+                    result = result.model_copy(update={"visual_id": decision.visual_id})
+                except (OSError, KeyError, TypeError, ValueError):
+                    result = result.model_copy(update={"visual_id": None})
+            else:
+                result = result.model_copy(update={"visual_id": None})
             saved_ids = {}
             with sessions.begin() as done:
                 done.execute(
@@ -792,6 +821,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                             else None,
                             "insight": result.insight.model_dump() if result.insight else None,
                             "request_id": str(body.request_id),
+                            "visual_id": result.visual_id,
                             "reasoning_summary": [p.model_dump() for p in result.reasoning_summary] if result.reasoning_summary else None,
                         },
                     )

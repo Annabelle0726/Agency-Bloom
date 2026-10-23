@@ -24,7 +24,7 @@ export interface ReasoningPoint {
   text: string
   evidence?: { source_id: string; quote: string }[]
 }
-export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; reasoning_summary?: ReasoningPoint[]; web_sources?: WebSource[] | null } | null }
+export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; reasoning_summary?: ReasoningPoint[]; web_sources?: WebSource[] | null; visual_id?: string | null } | null }
 export interface ConversationSummary { overview: string; decisions: string[]; open_questions: string[]; next_steps: string[] }
 export interface Conversation {
   dismissed_change_ids?: string[]
@@ -77,6 +77,7 @@ export interface ChatResponse {
   tail_line?: string | null
   reasoning_summary?: ReasoningPoint[] | null
   web_sources?: WebSource[] | null
+  visual_id?: string | null
 }
 
 export const concerns = [

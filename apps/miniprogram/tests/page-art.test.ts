@@ -1,3 +1,4 @@
+import { approvedVisualSources } from './visual-source-assert'
 import { describe, expect, it } from 'vitest'
 import { resolvePageArt, visibleDecisionFields } from '../src/page-art'
 import { themes } from '../src/themes'
@@ -14,7 +15,7 @@ describe('reflection page presentation', () => {
     for (const theme of themes) {
       const art = resolvePageArt(theme.id)
       expect([art.discover, art.plan, ...art.cards]).toHaveLength(5)
-      for (const src of [art.discover, art.plan, ...art.cards]) expect(src).toMatch(/^\/static\/bloom\/[\w-]+\.jpg$/)
+      for (const src of [art.discover, art.plan, ...art.cards]) expect(approvedVisualSources.has(src)).toBe(true)
     }
     expect(resolvePageArt('unknown')).toEqual(resolvePageArt('light'))
     expect(resolvePageArt('dark').discover).not.toEqual(resolvePageArt('light').discover)

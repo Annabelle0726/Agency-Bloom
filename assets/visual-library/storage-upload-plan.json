@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "bucket": "visual-library",
   "publicBaseUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/",
-  "state": "pending-manual-upload",
-  "verifiedAt": null,
+  "state": "verified",
+  "verifiedAt": "2026-10-23T04:43:18.153Z",
   "objects": [
     {
       "visualId": "choices_garden_forked_steps_01",

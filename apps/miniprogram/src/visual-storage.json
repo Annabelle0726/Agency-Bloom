@@ -1,7 +1,7 @@
 {
-  "enabled": false,
+  "enabled": true,
   "publicBaseUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/",
-  "verifiedAt": null,
+  "verifiedAt": "2026-10-23T04:43:18.153Z",
   "objects": {
     "/static/visuals/choices/choices_garden_forked_steps_01.jpg": "choices/choices_garden_forked_steps_01.jpg",
     "/static/visuals/choices/choices_misty_lake_canoe_01.jpg": "choices/choices_misty_lake_canoe_01.jpg",
