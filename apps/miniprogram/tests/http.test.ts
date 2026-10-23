@@ -56,3 +56,13 @@ it.each([
   }, () => '', () => {}, '')
   await expect(api.request('POST', '/conversations/id/chat').promise).rejects.toMatchObject({ kind: 'model', message })
 })
+
+it.each([
+  ['/speech/config',404,{},'朗读接口尚未就绪，请更新并重启后端'],
+  ['/conversations/id/speech',403,{},'这条回复的朗读授权已失效，请重新打开会话后再试'],
+  ['/conversations/id/speech',503,{code:'speech_setup_required'},'朗读服务缺少数据库配置，需要完成语音表迁移'],
+  ['/conversations/id/speech',503,{code:'untrusted-private-error',message:'private database connection'},'朗读服务暂时不可用，请稍后重试'],
+])('explains speech failures safely for %s %s',async(path,status,detail,message)=>{
+  const api=createApi((options:any)=>{options.success({statusCode:status,data:{detail}});return {abort(){}}},()=>'',()=>{},'',()=>{})
+  await expect(api.request('POST',path).promise).rejects.toMatchObject({status,message})
+})

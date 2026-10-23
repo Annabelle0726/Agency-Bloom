@@ -27,6 +27,15 @@ const modelErrors: Record<string, string> = {
   internal_error: '服务处理这次回复时出现错误；输入已保留',
 }
 interface Diagnostic { kind: ErrorKind; status: number; method: string; route: string }
+function speechFailure(path: string, status: number, code: unknown): string {
+  if (!(path.startsWith('/speech/') || /^\/conversations\/[^/]+\/speech$/.test(path))) return ''
+  if (code === 'speech_setup_required') return '朗读服务缺少数据库配置，需要完成语音表迁移'
+  if (code === 'speech_storage_unavailable') return '朗读服务暂时无法读取音频缓存，请稍后重试'
+  if (status === 404) return path.startsWith('/speech/') ? '朗读接口尚未就绪，请更新并重启后端' : '这条回复已更新或删除，请重新打开会话后再试'
+  if (status === 403) return '这条回复的朗读授权已失效，请重新打开会话后再试'
+  if (status >= 500) return '朗读服务暂时不可用，请稍后重试'
+  return '朗读暂时未能完成，请稍后重试'
+}
 export function createApi(transport: Transport, token: () => string, unauthorized: () => void, base: string,
   diagnostic: (event: Diagnostic) => void = event => { if (import.meta.env.DEV) console.warn('[Agency Bloom request]', event) }) {
   return {
@@ -62,12 +71,12 @@ export function createApi(transport: Transport, token: () => string, unauthorize
               const safeDetail = [402, 409, 429].includes(status) && typeof response.data?.detail === 'string' ? response.data.detail.slice(0, 180) : ''
               const code = response.data?.detail?.code
               const modelMessage = typeof code === 'string' && Object.prototype.hasOwnProperty.call(modelErrors, code) ? modelErrors[code] : 'AI 服务暂时没有完成回复，请稍后再试'
-              const message = kind === 'auth' ? '登录已失效，请重新登录' : kind === 'model' ? modelMessage : safeDetail || (status === 422 ? '请检查填写内容后再试' : '服务暂时没有完成操作，请稍后再试')
+              const message = kind === 'auth' ? '登录已失效，请重新登录' : kind === 'model' ? modelMessage : safeDetail || speechFailure(path, status, code) || (status === 422 ? '请检查填写内容后再试' : '服务暂时没有完成操作，请稍后再试')
               report(kind, status)
               reject(new ApiError(message, status, false, kind))
             }
         }
-        task = transport({ url: base.replace(/\/$/, '') + path, method, data, header, timeout: path.endsWith('/chat') || path === '/moments/open' ? 65000 : 15000,
+        task = transport({ url: base.replace(/\/$/, '') + path, method, data, header, timeout: path.endsWith('/chat') || path.endsWith('/speech') || path === '/moments/open' ? 65000 : 15000,
           ...(onEvent ? { enableChunked: true, dataType: 'text' } : {}),
           success(response) {
             if (settled) return

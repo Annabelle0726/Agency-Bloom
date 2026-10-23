@@ -23,6 +23,7 @@ from app.main import create_app  # noqa: E402
 
 calls = 0
 consent_failures = 0
+speech_download_failures = 0
 stream_fixture = None
 
 
@@ -82,6 +83,8 @@ fixture_dir = tempfile.TemporaryDirectory(prefix="agency-conversation-qa-")
 app = create_app(_env_file=None, environment="development", allow_dev_auth=True,
                  database_url="sqlite:///" + str(Path(fixture_dir.name) / "synthetic.db"),
                  ai_mode="deepseek", deepseek_api_key="mock-only", wechat_app_id="", wechat_app_secret="",
+                 tts_mode="mock", tts_paid_enabled=False,
+                 cors_origins=['http://127.0.0.1:5173', 'http://localhost:5173', 'http://127.0.0.1:5189'],
                  ai_transport=httpx.MockTransport(provider), ai_timeout_seconds=120)
 
 
@@ -112,6 +115,22 @@ async def consent_failure_fixture(request, call_next):
         if body.get("ai_consent") is True:
             consent_failures -= 1
             return JSONResponse({"detail": "Synthetic consent save failure"}, status_code=503)
+    return await call_next(request)
+
+
+@app.post('/qa/fail-next-speech-download')
+def fail_speech_download():
+    global speech_download_failures
+    speech_download_failures = 1
+    return {'armed': True}
+
+
+@app.middleware('http')
+async def speech_failure_fixture(request, call_next):
+    global speech_download_failures
+    if speech_download_failures and request.url.path.startswith('/api/speech/audio/'):
+        speech_download_failures -= 1
+        return JSONResponse({'detail': 'Synthetic audio network failure'}, status_code=503)
     return await call_next(request)
 
 

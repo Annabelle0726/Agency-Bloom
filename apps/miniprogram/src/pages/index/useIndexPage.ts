@@ -11,6 +11,7 @@ import {navigationItems, themeForSession, themeStyle, themeNavSvg} from '../../t
 import type {ThemeId, SpaceTab} from '../../themes'
 import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary} from '../../domain'
 import {ApiError, createApi} from '../../http'
+import {createNativeSpeech} from '../../native-speech'
 import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
@@ -121,7 +122,7 @@ export function useIndexPage() {
   const error = computed({ get: () => operations.errors.data, set: value => { operations.errors.data = value } })
   const authError = computed(() => operations.errors.auth)
   const chatError = computed(() => workspace.active.value.error.value || operations.errors.ai)
-  const composerError = computed(() => offline.value ? '网络连接已断开，输入仍保留，恢复网络后可以继续' : chatError.value || error.value)
+  const composerError = computed(() => offline.value ? '网络连接已断开，输入仍保留，恢复网络后可以继续' : chatError.value || speech.error.value || error.value)
   const offline = computed(() => !!operations.errors.init)
   const toast = ref('')
   const form = reactive<Onboarding>(newOnboarding())
@@ -207,6 +208,15 @@ export function useIndexPage() {
   const runningIds = computed(() => Object.entries(workspace.sessions).filter(([, session]) => session.sending.value).map(([id]) => id))
   const messages = computed({ get: () => workspace.active.value.messages.value, set: value => { workspace.active.value.messages.value = value } })
   const draft = computed({ get: () => workspace.active.value.draft.value, set: value => { workspace.active.value.draft.value = value } })
+  const api = createApi(options => uni.request({...options, success: options.success, fail: options.fail}),
+      () => token.value, clearSession, import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api')
+  const speech = createNativeSpeech(api, () => token.value, () => workspace.activeId.value,
+      import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api')
+  watch(() => [workspace.activeId.value, tab.value, user.value?.save_chat, user.value?.id], () => speech.stop())
+  watch(() => messages.value.map(message => message.id + ':' + message.content).join('\n'), () => speech.stop())
+  onHide(speech.stop)
+  onUnmounted(speech.reset)
+
   const pendingText = computed({ get: () => workspace.active.value.pendingText.value, set: value => { workspace.active.value.pendingText.value = value } })
   const creatingConversation = computed(() => creatingDrafts.value.includes(workspace.activeId.value))
   const sending = computed(() => workspace.active.value.sending.value)
@@ -383,6 +393,7 @@ export function useIndexPage() {
   }
 
   function clearSession() {
+    speech.reset()
     conversationAction.value = null
     for (const key of creatingDrafts.value) draftCreationCancelled.add(key)
     creatingDrafts.value = []
@@ -419,8 +430,6 @@ export function useIndexPage() {
     workspace.active.value.draft.value = momentDraft(content)
   }
 
-  const api = createApi(options => uni.request({...options, success: options.success, fail: options.fail}),
-      () => token.value, clearSession, import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api')
 
   async function request<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) {
     return api.request<T>(method, path, data).promise
@@ -980,6 +989,7 @@ export function useIndexPage() {
   }
 
   return {
+    speech,
     user,
     demoCredential,
     userAvatar,

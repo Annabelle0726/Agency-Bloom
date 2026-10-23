@@ -90,6 +90,11 @@ The user-selected `design/themes/references/mist.png` is authoritative for Morni
 
 ## Privacy, credentials, and budget
 
+- Read Aloud is a separate, revocable consent and an explicit per-reply action. Only visible final assistant reply text may reach TTS; never send private reasoning, system instructions, context payloads or arbitrary client text. Unretained replies require a server-issued, expiring proof. Never auto-read or auto-retry uncertain synthesis.
+- First-use speech disclosure belongs in a compact inline notice above the composer, with an explicit enable action and a skip action. Keep the draft, textarea and keyboard available; do not open a pre-playback modal. Detailed consent management can remain in Settings. A missing speech database migration must return a safe, actionable setup error instead of an undifferentiated failure.
+- Keep TTS behind its independent provider interface. Mock is the default; credentials alone must not enable Tencent calls. `AGENCY_TTS_PAID_ENABLED` stays false unless the user explicitly authorizes enabling the real service. TTS usage limits and cache are independent of DeepSeek's unchanged budget.
+- Speech errors follow the composer-adjacent exception rule. Stop playback, abort pending downloads, destroy audio contexts and remove temporary files when switching conversations, hiding/leaving the page, logging out or revoking speech consent. Check native playback callbacks, not just button labels; never claim real-device acceptance from a simulator.
+
 - Keep secrets in ignored backend environment files. Never put provider keys, database passwords, or server secrets in frontend variables, committed files, logs, screenshots, or reports.
 - Do not delete databases, accounts, environment configuration, usage history, or budget ledgers.
 - Keep the total running budget at CNY 500/month and the AI allocation at CNY 100/month unless the user changes them.

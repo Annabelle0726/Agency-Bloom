@@ -23,6 +23,7 @@ const emit = defineEmits<{
   direction: []
   memories: []
   privacy: []
+  speech: []
   logout: []
   deleteAccount: []
   chooseAvatar: [event: { detail: { avatarUrl?: string } }]
@@ -100,6 +101,7 @@ const emit = defineEmits<{
     </view>
     <view class="settings-group">
       <text class="group-label">我的记录</text>
+      <button class="setting-row speech-settings" @click="emit('speech')" hover-class="pressed"><view><text class="setting-title">朗读与语音隐私</text><text class="setting-description">按需播放、查看说明或撤回授权</text></view><SvgIcon name="volume" :size="17" /></button>
       <button class="setting-row current-direction" @click="emit('direction')"><view><text class="setting-title">当前方向与初始资料</text><text class="setting-description">查看、修改阶段目标，管理初始快照</text></view><SvgIcon name="chevron" :size="17" /></button>
       <button class="setting-row" @click="emit('memories')"><view><text class="setting-title">整理长期记忆</text><text class="setting-description">{{ user?.use_memory ? '已启用 · 可编辑、停用、合并或删除' : '尚未用于回复 · 由你确认和管理' }}</text></view><SvgIcon name="chevron" :size="17" /></button>
       <button class="setting-row" @click="emit('privacy')" hover-class="pressed" :hover-start-time="0"

@@ -22,6 +22,9 @@ import SettingsView from './views/SettingsView.vue'
 import EntryStatus from './views/EntryStatus.vue'
 import ChatView from './ChatView.vue'
 import ChatComposer from './chat/ChatComposer.vue'
+import SpeechConsentNotice from './chat/SpeechConsentNotice.vue'
+import SpeechConsentModal from './modals/SpeechConsentModal.vue'
+import {SPEECH_KEY} from '../../speech'
 import EditCardModal from './modals/EditCardModal.vue'
 import ExperimentModal from './modals/ExperimentModal.vue'
 import FeedbackModal from './modals/FeedbackModal.vue'
@@ -34,6 +37,7 @@ import EditMessageModal from './modals/EditMessageModal.vue'
 import {useIndexPage} from './useIndexPage'
 
 const {
+  speech,
   user,
   demoCredential,
   userAvatar,
@@ -162,6 +166,7 @@ const {
 onPageScroll(handleChatScroll)
 
 provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
+provide(SPEECH_KEY, speech)
 const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
 const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.value || !!chatError.value))
 </script>
@@ -233,7 +238,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                   @edit-message="editMessage"
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />
-        <view v-if="tab === 'chat'" id="chat-bottom" :style="{height:`${1 + (workspace.active.value.selectedQuote.value ? 96 : 0) + (composerError ? 128 : 0)}px`}" />
+        <view v-if="tab === 'chat'" id="chat-bottom" :style="{height:`${1 + (workspace.active.value.selectedQuote.value ? 96 : 0) + (composerError ? 128 : 0) + (speech.consentOpen.value && speech.activeKey.value ? 180 : 0)}px`}" />
         <ChatComposer v-if="(current || isDrafting) && tab === 'chat' && !modal" :draft="draft" :sending="sending"
                       :creating="creatingConversation" :sending-started-at="workspace.active.value.sendingStartedAt.value" :generating-summary="generatingSummary"
                       :read-only-conversation="readOnlyConversation" :active-conversation="activeConversation"
@@ -241,9 +246,11 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                       :selected-quote="workspace.active.value.selectedQuote.value" @clear-quote="workspace.active.value.selectedQuote.value = ''"
                       :error="composerError" :recoverable="!!workspace.active.value.errorRequestId.value"
                       :recovery-busy="busy || sending || offline" @recover="recoverReply"
-                      @dismiss-error="workspace.active.value.error.value = ''; workspace.active.value.errorRequestId.value = ''; operations.clear('ai'); error = ''"
+                      @dismiss-error="workspace.active.value.error.value = ''; workspace.active.value.errorRequestId.value = ''; operations.clear('ai'); error = ''; speech.dismissError()"
                       :chat-footer-note="chatFooterNote" @draft-change="updateDraft" @toggle-web="toggleWebSearch"
-                      @send="sendChat" @cancel="cancelChat" @focus="messageSelectionOpen = false" />
+                      @send="sendChat" @cancel="cancelChat" @focus="messageSelectionOpen = false">
+          <template #notice><SpeechConsentNotice /></template>
+        </ChatComposer>
         <DiscoverView v-else-if="tab === 'discover'" :theme-id="activeTheme.id" :recommendations="discovery.recommendations.value"
                       :loading="discovery.loading.value" :error="discovery.error.value" :loaded="discovery.loaded.value"
                       @explore="explorePrompt" @dismiss="discovery.dismiss" @rotate="discovery.rotate" @retry="discovery.load">
@@ -260,6 +267,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
         <EmptyDashboard v-else-if="!current && tab !== 'settings' && tab !== 'now'" :tab="tab" :busy="busy"
                         @onboarding="beginOnboarding" @history="showHistory" />
         <SettingsView v-else-if="tab === 'settings'" :user="user" :user-avatar="userAvatar"
+                      @speech="speech.manage()"
                       :avatar-busy="avatarBusy" :active-theme="activeTheme" :busy="busy" :usage="usage"
                       :ai-mode="config.ai_mode" @appearance="modal = 'appearance'" @toggle-save="toggleSaveChat"
                       @toggle-ai="toggleAIConsent" @support="modal = 'support'" @direction="drawer = 'direction'"
@@ -307,6 +315,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                           @create-issue="beginAnotherExploration" @select-issue="selectExploration" @generate="generateSummary" @reviewed="reviewSummary"
                           @new-chat="startNewChat"
                           @changed="changedConversation" @deleted="deletedConversation" @user-changed="user = $event" @context-changed="workspace.cancelAll()" />
+      <SpeechConsentModal />
       <view v-if="toast" class="toast">{{ toast }}</view>
     </view>
   </view>

@@ -65,6 +65,7 @@ const multiline = computed(() => localDraft.value.length > WEB_LINE_BUDGET)
 
 <template>
   <view class="composer-dock">
+    <slot name="notice" />
     <view v-if="error" class="composer-error" role="alert">
       <view class="composer-error-row">
         <text class="composer-error-message">{{ error }}</text>

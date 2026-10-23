@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .pricing import model_rates
@@ -40,6 +40,19 @@ class Settings(BaseSettings):
     ai_timeout_seconds: float = Field(default=45, gt=0, le=120)
     # Reviewed-library selections ride on the existing chat request.
     visual_selection_enabled: bool = True
+    # Independent, opt-in speech service. Credentials alone never enable billing.
+    tts_mode: Literal['mock', 'tencent'] = 'mock'
+    tts_paid_enabled: bool = False
+    tts_secret_id: SecretStr = SecretStr('')
+    tts_secret_key: SecretStr = SecretStr('')
+    tts_voice_type: int = Field(default=101001, gt=0)
+    tts_region: str = 'ap-guangzhou'
+    tts_timeout_seconds: float = Field(default=12, gt=0, le=30)
+    tts_max_chars: int = Field(default=1200, ge=1, le=3000)
+    tts_daily_chars: int = Field(default=3000, ge=1, le=30000)
+    tts_global_daily_chars: int = Field(default=10000, ge=1, le=100000)
+    tts_daily_requests: int = Field(default=20, ge=1, le=100)
+    tts_cache_seconds: int = Field(default=3600, ge=60, le=86400)
 
     @model_validator(mode="after")
     def production_guard(self):

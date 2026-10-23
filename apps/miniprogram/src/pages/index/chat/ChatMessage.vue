@@ -11,6 +11,7 @@ import type { ChatMessage } from '../../../domain'
 import type { BloomStatus } from '../../../bloom-status'
 import SelectableReply from './SelectableReply.vue'
 import ModalShell from '../modals/ModalShell.vue'
+import ReadAloud from './ReadAloud.vue'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
@@ -56,6 +57,7 @@ watch(() => [props.message.id, props.message.content, props.message.payload?.rea
       <text v-else class="message-bubble" @longpress.stop="actionsOpen = true">{{ message.content }}</text>
       <view v-if="message.role === 'assistant'" class="message-tools">
         <button class="message-copy" aria-label="复制这条回复" @click="copy" hover-class="pressed"><SvgIcon name="copy" tone="muted" :size="14" /><text>复制</text></button>
+        <ReadAloud :message="message" />
       </view>
       <ChatVisual v-if="message.role === 'assistant'" :visual-id="message.payload?.visual_id" :theme-id="themeId" />
       <view v-if="message.role === 'assistant' && explanations.length" class="response-reasoning">

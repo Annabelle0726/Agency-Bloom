@@ -147,3 +147,11 @@ docs/                  产品、设计、接入与验收记录
 **以英文版条款为准。**
 
 其他说明：[产品约定](docs/PRODUCT.md) · [设计说明](docs/DESIGN.md) · [接入说明](docs/SETUP.md) · [微信原生验收证据](docs/WECHAT_VALIDATION.md)
+
+## 可选朗读（Read Aloud）
+
+对话中，每条 AI 最终回复下方提供「朗读」入口，点击后才处理；首次在输入框上方轻量告知，可选「启用并朗读」或「先不听」，不弹窗、不隐藏输入框。播放时支持暂停、继续、停止及 0.8 / 1 / 1.25 / 1.5 倍速，切换会话或离开页面即停止。「我的 → 朗读与语音隐私」可以撤回授权并清除服务端音频缓存。
+
+仓库默认 `AGENCY_TTS_MODE=mock`、`AGENCY_TTS_PAID_ENABLED=false`，用于不产生真实调用的开发测试；Mock 播放本地提示音，不是真实人声。当前本机环境已根据明确授权切换为腾讯云真实朗读。腾讯云凭证只放在后端忽略提交的 `apps/api/.env`：`AGENCY_TTS_SECRET_ID` / `AGENCY_TTS_SECRET_KEY`。配置凭证不会自动开启付费；只有明确允许后才设置 `AGENCY_TTS_MODE=tencent` 与 `AGENCY_TTS_PAID_ENABLED=true`。修改环境配置后需重启后端。不要把凭证填入小程序或提交到 Git。
+
+真实语音接口使用可替换 Provider；仅用户主动点击时合成。PostgreSQL 部署需先执行 `20261023030000_read_aloud.sql`，否则朗读会提示数据库配置缺失。精品与大模型音色比较、接口、额度、缓存和验收流程见 [Read Aloud 文档](docs/READ_ALOUD.md)。真机需要可访问的 HTTPS API，并将域名加入微信的 request 与 downloadFile 合法域名，手机无法访问开发电脑的 `127.0.0.1`。

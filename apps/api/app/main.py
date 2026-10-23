@@ -37,6 +37,7 @@ from .models import (
     Feedback,
     Issue,
     Message,
+    SpeechAudio,
     User,
     now,
 )
@@ -53,6 +54,7 @@ from .schemas import (
     Preferences,
     WechatLogin,
 )
+from .speech import SpeechService
 
 
 class HealthProbeLogFilter(logging.Filter):
@@ -118,7 +120,7 @@ def issue_view(db, item):
     }
 
 
-def create_app(ai_transport=None, wechat_transport=None, web_search_transport=None, evaluation_guard=None, perspective_prototype=None, **overrides):
+def create_app(ai_transport=None, wechat_transport=None, web_search_transport=None, evaluation_guard=None, perspective_prototype=None, tts_transport=None, **overrides):
     settings = Settings(**overrides)
     if evaluation_guard is not None and (not isinstance(ai_transport, httpx.MockTransport)
             or settings.deepseek_base_url != "https://offline.invalid"
@@ -140,14 +142,21 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             connection.execute("PRAGMA foreign_keys=ON")
 
     sessions = sessionmaker(engine, expire_on_commit=False)
+    speech = SpeechService(settings, sessions, tts_transport)
 
     @asynccontextmanager
     async def lifespan(app):
         if settings.environment == "development" and sqlite:
             Base.metadata.create_all(engine)
             upgrade_local(engine)
-        yield
-        engine.dispose()
+        sweeper = asyncio.create_task(speech.sweep())
+        try:
+            yield
+        finally:
+            sweeper.cancel()
+            with suppress(asyncio.CancelledError):
+                await sweeper
+            engine.dispose()
 
     app = FastAPI(
         title="Agency Bloom API",
@@ -254,6 +263,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             "dev_auth": settings.allow_dev_auth and settings.environment == "development",
             "wechat_auth": bool(settings.wechat_app_id and settings.wechat_app_secret),
             "ai_mode": settings.ai_mode,
+            "speech_mode": settings.tts_mode,
             "privacy_version": "2026-10-16",
         }
 
@@ -336,6 +346,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             )
         if values.get("save_chat") is False or values.get("ai_consent") is False:
             purge_moments(db, user.id)
+            db.execute(delete(SpeechAudio).where(SpeechAudio.user_id == user.id))
         if values.get("save_chat") is False:
             ids = select(Issue.id).where(Issue.user_id == user.id)
             db.execute(delete(Message).where(Message.issue_id.in_(ids)))
@@ -910,6 +921,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                 | ({"supplied_context": sources} if sources else {})
                 | ({"web_sources": web_results} if web_results else {})
                 | saved_ids
+                | ({'speech_proof': speech.proof(user.id, conversation.id, key, result.reply)}
+                   if body.task == 'chat' and conversation and not saved_ids else {})
             )
         except asyncio.CancelledError:
             logging.getLogger("agency.ai").info("generation_cancelled")
@@ -971,6 +984,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     register_discovery_routes(app, authenticated, db_dependency, owned, issue_view)
     register_journey_routes(app, authenticated, db_dependency, owned)
     register_routes(app, authenticated, db_dependency, owned, run_chat)
+    speech.register(app, authenticated)
     return app
 
 

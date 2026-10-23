@@ -26,6 +26,8 @@ const emit = defineEmits<{ close: [] }>()
     <text class="body-copy">AI 对话在你单独同意后调用 DeepSeek，部署版本使用 Supabase 托管
       PostgreSQL，可能在境外区域；正式内测前需确定实际部署区域并更新说明，当前本地演示使用本机 SQLite，固定示例回复不调用模型
     </text>
+    <text class="field-label">可选的朗读</text>
+    <text class="body-copy">朗读有独立授权，只在你点击时处理所选 AI 最终回复。真实语音使用腾讯云，不发送原始思考内容或系统指令；音频临时私密缓存，到期清理，可在「我的 → 朗读与语音隐私」撤回并删除缓存。Mock 试听不向腾讯云发送文字</text>
     <text class="field-label">关于建议</text>
     <text class="body-copy">
       这里提供理解处境、澄清选择和探索下一步的支持，不提供心理诊断或治疗，模型生成的内容可能不准确，关键事实需要核实，下一步由你决定
