@@ -45,7 +45,8 @@
 .journey-page .journey-more { display:flex; margin:0 auto 10px; }
 .journey-page .journey-pending-entry { display:flex; align-items:center; justify-content:space-between; gap:15px; text-align:left; width:100%; padding:16px 0; background:transparent; border-top:1px solid var(--line); border-bottom:1px solid var(--line); border-radius:0; font-size:14px; line-height:1.8; }
 .journey-page .journey-direction { display:flex; align-items:center; justify-content:space-between; width:100%; gap:15px; padding:16px; background:linear-gradient(125deg,var(--soft),var(--paper)); text-align:left; margin:10px 0; }
-.journey-page .journey-direction > view { flex:1; min-width:0; }
+.journey-page .journey-direction-copy { flex:1 1 0%; min-width:0; }
+.journey-page .journey-direction-arrow { flex:0 0 20px; width:20px; display:flex; align-items:center; justify-content:center; }
 .journey-page .journey-direction-text { display:block; margin-top:4px; font-size:14px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere; }
 .journey-page .journey-future-empty { padding:10px 0; }
 .journey-page .journey-empty { display:block; padding:20px 0; color:var(--muted); font-size:14px; line-height:1.9; white-space:pre-wrap; }
