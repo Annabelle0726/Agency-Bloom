@@ -77,6 +77,11 @@ WeChat simulator rendering is the primary UI acceptance target. H5 screenshots a
 
 Keep the experience quiet, readable, and responsive. Prefer immediate press feedback, restrained motion, and compact spacing. Respect the status bar, capsule, keyboard, fixed composer, and bottom safe area. Prevent duplicate submissions. Do not add decorative space that obscures useful content. New product copy should avoid unnecessary terminal full stops.
 
+- Chat exceptions must appear in a compact, theme-aware notice immediately above the composer, including while the keyboard is open. Do not place the only actionable error at the top of a long transcript, or rely on an avatar status dot alone.
+- Keep the draft and composer available after a failure. Show the actual safe error category and an explicit recovery action when available; never retry a model request automatically.
+- Clear a chat exception when a successful reply or verified recovery resolves it. Starting another attempt, editing a draft, switching conversations, or waiting for a timer is not proof of recovery. Error content and its request reference must remain isolated by conversation; a late result must not clear another conversation's error.
+- Native acceptance must cover failure after an overflowing transcript, the notice above the input, preserved drafts, failed recovery, and automatic removal after successful recovery or a successful subsequent reply.
+
 Morning Mist is the default outside the authenticated personal space. Theme changes require authentication and must persist without changing privacy settings. Preserve the saved `light` and `dark` IDs for existing accounts.
 
 Inside the authenticated personal space, when the account has never picked a theme manually, the theme follows the time of day quietly via `themeByTimeOfDay`: morning mist in the early morning (5–9), forest through the day, evening smoke near dusk (16–18), quiet night from 19:00. The first manual pick in the appearance sheet writes a per-account local flag (`agency.theme.manual.v1:<userId>`), after which no automatic switching happens. The `dawn` ID, its files, and stored preferences are unchanged; only its display strings were renamed to Evening Smoke / 暮烟 to match the dusk artwork. Do not rename theme IDs.
@@ -95,4 +100,4 @@ The user-selected `design/themes/references/mist.png` is authoritative for Morni
 
 Write repository documentation in English, with Chinese user-facing setup documentation in `README_zh.md`. Use English Git commit messages. Commit or push only when the user requests it; a commit request does not authorize a push. Before committing, inspect the staged diff, check for sensitive data, and state what was verified and what remains unverified.
 
-# All codes should have no errors!
+# All codes should have **no-errors**! UI Max (use oil-ui skill), no worktree
