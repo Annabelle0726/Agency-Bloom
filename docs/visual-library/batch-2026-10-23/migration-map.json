@@ -1,0 +1,186 @@
+{
+  "date": "2026-10-23",
+  "pendingFiles": 22,
+  "newSelectableImages": 20,
+  "existingRelocated": 1,
+  "duplicateArchived": 1,
+  "moves": [
+    {
+      "action": "existing-reclassified",
+      "id": "misty_lake_canoe_01",
+      "oldPath": "assets/visual-library/originals/direction/direction_misty_lake_canoe_01.jfif",
+      "newPath": "assets/visual-library/originals/choices/choices_misty_lake_canoe_01.jfif",
+      "sha256": "d33f2e96858fd517503cbdcc6151f62388674c1b5b6a28f7cce706210065a860"
+    },
+    {
+      "action": "existing-reclassified",
+      "id": "autumn_forest_path_01",
+      "oldPath": "assets/visual-library/originals/direction/direction_autumn_forest_path_01.jfif",
+      "newPath": "assets/visual-library/originals/transition/transition_autumn_forest_path_01.jfif",
+      "sha256": "41b07013d6d20c6b9ef5270940c49045b3145059e9061dc52fa29569dc2d69e1"
+    },
+    {
+      "action": "existing-reclassified",
+      "id": "forest_path_violet_01",
+      "oldPath": "assets/visual-library/originals/direction/direction_forest_path_violet_01.jfif",
+      "newPath": "assets/visual-library/originals/growth/growth_forest_path_violet_01.jfif",
+      "sha256": "48da5eb2647ef518976c4c46f981a9dee22aec07f2e64fa5d393bb147e719eb8"
+    },
+    {
+      "action": "existing-relocated",
+      "id": "bluebell_forest_01",
+      "oldPath": "assets/visual-library/originals/rest/rest.jfif",
+      "previousManifestPath": "assets/visual-library/originals/growth/growth_bluebell_forest_01.jfif",
+      "newPath": "assets/visual-library/originals/rest/rest_bluebell_forest_01.jfif",
+      "sha256": "89866c7b0f8c33092623b6897dcc4e9d8a4588698f24bb6446cdf6b597d2b0f2"
+    },
+    {
+      "action": "new-import",
+      "id": "choices_garden_forked_steps_01",
+      "oldPath": "assets/visual-library/originals/choices/661313485a8cd4536ab19f767ff9545a.png",
+      "newPath": "assets/visual-library/originals/choices/choices_garden_forked_steps_01.png",
+      "sha256": "cee0a9c508e41279def6f4d5398f56070445c7b60363b731518432444d60377e"
+    },
+    {
+      "action": "new-import",
+      "id": "choices_window_notebook_01",
+      "oldPath": "assets/visual-library/originals/choices/db3fb00b39b849a5debb8e68d41bd9f0.png",
+      "newPath": "assets/visual-library/originals/choices/choices_window_notebook_01.png",
+      "sha256": "8dbe2a6f460f1288f010ef65cc9978119c0140751c084a9d156ae7bdd5448db9"
+    },
+    {
+      "action": "new-import",
+      "id": "choices_mountain_forked_path_01",
+      "oldPath": "assets/visual-library/originals/choices/f76bab6b48598053919638ed226066fa.png",
+      "newPath": "assets/visual-library/originals/choices/choices_mountain_forked_path_01.png",
+      "sha256": "cd06c071223eacb7878b4c8dc364af68b61e2b6cadbc749568463127a8165391"
+    },
+    {
+      "action": "new-import",
+      "id": "connection_garden_conversation_01",
+      "oldPath": "assets/visual-library/originals/connection/11a8c99d-5108-4da8-a083-429f35aac852.png",
+      "newPath": "assets/visual-library/originals/connection/connection_garden_conversation_01.png",
+      "sha256": "4158267d1f898dafab377bc29f60d8e5d1bb522fa72e99174eb47d2303a29d1a"
+    },
+    {
+      "action": "new-import",
+      "id": "connection_window_tea_conversation_01",
+      "oldPath": "assets/visual-library/originals/connection/3aa04edb4f2a7404c9fe725a44134449.png",
+      "newPath": "assets/visual-library/originals/connection/connection_window_tea_conversation_01.png",
+      "sha256": "d1eacc7d88bd59c8e90002153074311303e2e2e07059ea30c7f111cb6437c187"
+    },
+    {
+      "action": "new-import",
+      "id": "growth_pottery_wheel_01",
+      "oldPath": "assets/visual-library/originals/growth/0859d0556eea49c9e00a25eee56b02a8.png",
+      "newPath": "assets/visual-library/originals/growth/growth_pottery_wheel_01.png",
+      "sha256": "0141854a8015dbfc49140637a548dea8c72900ba182576a344878554173afd7c"
+    },
+    {
+      "action": "new-import",
+      "id": "growth_sunlit_design_collage_01",
+      "oldPath": "assets/visual-library/originals/growth/2857d79972bf885dd0c9254faef5fdcb.png",
+      "newPath": "assets/visual-library/originals/growth/growth_sunlit_design_collage_01.png",
+      "sha256": "e1c909736702570d24fb51992fe3c71e9f47679338500fd6aa2fbc2372299a0f"
+    },
+    {
+      "action": "new-import",
+      "id": "growth_sunlit_dance_practice_01",
+      "oldPath": "assets/visual-library/originals/growth/43c478cee1c8083e68690b7b7dbe9d3f.png",
+      "newPath": "assets/visual-library/originals/growth/growth_sunlit_dance_practice_01.png",
+      "sha256": "40a5229f22b7a0880f8b2945faad527f22f5d432f5c37a9e6869565e9df01f70"
+    },
+    {
+      "action": "new-import",
+      "id": "growth_window_design_study_01",
+      "oldPath": "assets/visual-library/originals/growth/4e3b6138e9587478700e71eadd554438.png",
+      "newPath": "assets/visual-library/originals/growth/growth_window_design_study_01.png",
+      "sha256": "ee56168c3ef712d9773d7e47ca02cb5d5ca1d64d8ef72dad69c7e4d841876677"
+    },
+    {
+      "action": "new-import",
+      "id": "growth_handcraft_stitching_01",
+      "oldPath": "assets/visual-library/originals/growth/5279a483f5859bef0e6a0fb9208ca8d3.png",
+      "newPath": "assets/visual-library/originals/growth/growth_handcraft_stitching_01.png",
+      "sha256": "77c2117bdb523638e19053d1be4cd6211ce759db35152e92cef02eb9b0419812"
+    },
+    {
+      "action": "new-import",
+      "id": "growth_sunset_canoe_journey_01",
+      "oldPath": "assets/visual-library/originals/growth/94c1dce395682386c962d43501abc45a.png",
+      "newPath": "assets/visual-library/originals/growth/growth_sunset_canoe_journey_01.png",
+      "sha256": "3899d8c44d2988a11b4b91b87d4aed90667777683074aa124e7edd55f0630420"
+    },
+    {
+      "action": "new-import",
+      "id": "reflection_lakeside_sky_lantern_01",
+      "oldPath": "assets/visual-library/originals/reflection/7313b00f1744bb36ded39de4e2010d9c.png",
+      "newPath": "assets/visual-library/originals/reflection/reflection_lakeside_sky_lantern_01.png",
+      "sha256": "90c7a1d035b39febb682918a89bbccd10d02e67cd81e5b76b87c7cd6dac95325"
+    },
+    {
+      "action": "new-import",
+      "id": "reflection_sunset_mountain_journal_01",
+      "oldPath": "assets/visual-library/originals/reflection/fde401221592b4e907e8f04af111df01.png",
+      "newPath": "assets/visual-library/originals/reflection/reflection_sunset_mountain_journal_01.png",
+      "sha256": "19e7bf5556d532d1e7274a7492bc6d48b1a04347d54c7e3ca29c7aa47f18a1d8"
+    },
+    {
+      "action": "new-import",
+      "id": "rest_mountain_paper_plane_01",
+      "oldPath": "assets/visual-library/originals/rest/01321b82750385073f9aae1a123c052b.png",
+      "newPath": "assets/visual-library/originals/rest/rest_mountain_paper_plane_01.png",
+      "sha256": "a33a116eef56ee752d44c606d753c54832aecaf079f5e9df822509b145a9ef4b"
+    },
+    {
+      "action": "new-import",
+      "id": "transition_sunlit_new_home_01",
+      "oldPath": "assets/visual-library/originals/transition/65eed1d499407f47582bc52addc42985.png",
+      "newPath": "assets/visual-library/originals/transition/transition_sunlit_new_home_01.png",
+      "sha256": "68ce1ffc82aa968bae944e9887210af0b25cc3f47c19a2477ccba84898867585"
+    },
+    {
+      "action": "new-import",
+      "id": "transition_storm_to_sunrise_01",
+      "oldPath": "assets/visual-library/originals/transition/76e749112757266ee39a59bf8a0cbeac.png",
+      "newPath": "assets/visual-library/originals/transition/transition_storm_to_sunrise_01.png",
+      "sha256": "76da8883c9c16712ffc541c80e24ccb257b063b26e73193695e3e778dd892d0c"
+    },
+    {
+      "action": "new-import",
+      "id": "transition_sunrise_station_suitcase_01",
+      "oldPath": "assets/visual-library/originals/transition/8b587c2d243e8d48a0353638091b68cb.png",
+      "newPath": "assets/visual-library/originals/transition/transition_sunrise_station_suitcase_01.png",
+      "sha256": "e765e3a620bf5ee72f2a3a4c4e5dfaec69e41090af15f36c2dedb4d3c9203c5b"
+    },
+    {
+      "action": "new-import",
+      "id": "transition_golden_station_departure_01",
+      "oldPath": "assets/visual-library/originals/transition/Gemini_Generated_Image_c5b4w4c5b4w4c5b4.jfif",
+      "newPath": "assets/visual-library/originals/transition/transition_golden_station_departure_01.jfif",
+      "sha256": "6d18da152eb3e6dd55241c7059045b9e371b018bfa60ce92de26ee02e361a5c9"
+    },
+    {
+      "action": "new-import",
+      "id": "transition_open_door_journey_01",
+      "oldPath": "assets/visual-library/originals/transition/c5ef92ea88c9583d2902f3a82b0ee2c2.png",
+      "newPath": "assets/visual-library/originals/transition/transition_open_door_journey_01.png",
+      "sha256": "f65a6b910c082b4440bd0fdc77062f9023c4b7f3c0eb8d344e1b7b7735bea7e6"
+    },
+    {
+      "action": "new-import",
+      "id": "transition_quiet_platform_walk_01",
+      "oldPath": "assets/visual-library/originals/transition/d250b0dbad5453c7eedcedd2da853736.png",
+      "newPath": "assets/visual-library/originals/transition/transition_quiet_platform_walk_01.png",
+      "sha256": "db23c952988d94dd078cec3127959501bf335ea4866423adebfc2c4e7c9fb86c"
+    },
+    {
+      "action": "duplicate-archived",
+      "id": "connection_window_tea_conversation_duplicate_01",
+      "duplicateOf": "connection_window_tea_conversation_01",
+      "oldPath": "assets/visual-library/originals/connection/91a972fd70aef384c3d32bb1ec62a12d.png",
+      "newPath": "assets/visual-library/originals/connection/connection_window_tea_conversation_duplicate_01.png",
+      "sha256": "d1eacc7d88bd59c8e90002153074311303e2e2e07059ea30c7f111cb6437c187"
+    }
+  ]
+}

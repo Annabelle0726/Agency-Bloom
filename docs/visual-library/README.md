@@ -1,3 +1,7 @@
+# Current inventory — 2026-10-23
+
+See [applied local ingestion and manual upload handoff](LOCAL-INGESTION-2026-10-23.md): 48 originals across seven categories, 42 deployed and 6 archived. The older Phase 1 contact sheets and report below are historical evidence.
+
 # Visual library evidence
 
 This folder contains committed visual-review evidence for the Mini Program asset library. It is documentation only; no file here is loaded by the app.

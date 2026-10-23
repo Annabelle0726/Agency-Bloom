@@ -1,0 +1,5 @@
+# Inbox contents are local working files until a reviewed apply imports them.
+*
+!.gitignore
+!README.md
+!descriptions.template.json

@@ -1,0 +1,43 @@
+{
+  "removedAt": "2026-10-23",
+  "reason": "User intentionally deleted this reference; do not restore it.",
+  "visuals": [
+    {
+      "id": "reference_bloom_pages_pair_01",
+      "category": "reference",
+      "description": "两张手机页面的 UI 设计参考截图，包含文字与界面元素；仅设计参考，不可作为内容图部署。",
+      "tags": [
+        "UI参考",
+        "手机页面",
+        "设计参考",
+        "不部署",
+        "reference",
+        "ui"
+      ],
+      "mood": [
+        "documentation"
+      ],
+      "intendedPage": [
+        "reference-only"
+      ],
+      "visualRole": [
+        "reference-only"
+      ],
+      "themeCompatibility": [],
+      "source": "user-supplied-design-reference",
+      "originalPath": "assets/visual-library/references/reference_bloom_pages_pair_01.png",
+      "sourceSha256": "89e3f1d0bdfe9f6875e8471f04e95e177512885fd085b72b6b4f472b89f5155e",
+      "sourceBytes": 1801009,
+      "dimensions": {
+        "width": 1024,
+        "height": 1536,
+        "aspectRatio": 0.6667
+      },
+      "status": "reference-only",
+      "deploy": false,
+      "sourceGroup": "reference",
+      "runtimeVariants": {},
+      "heroVariants": {}
+    }
+  ]
+}

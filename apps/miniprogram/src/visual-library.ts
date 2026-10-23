@@ -1,18 +1,17 @@
 import manifest from './visual-manifest.json'
+import { resolveStoredVisualPath } from './visual-storage'
 import { pageArtVisualIds, resolvePageArt } from './page-art'
 import { resolveTheme } from './themes'
 import type { ThemeId } from './themes'
 
 export type VisualCategory =
-  | 'direction'
-  | 'reflection'
-  | 'growth'
   | 'choices'
-  | 'rest'
-  | 'experiment'
   | 'connection'
-  | 'abstract'
-  | 'reference'
+  | 'direction'
+  | 'growth'
+  | 'reflection'
+  | 'rest'
+  | 'transition'
 export type VisualPage = 'discover' | 'explore' | 'plan' | 'shared' | 'reference-only'
 export type VisualRole =
   | 'hero'
@@ -98,6 +97,7 @@ export function resolveVisual(
 ): ResolvedVisual | null {
   const normalized = normalizeTheme(theme)
   const used = new Set(usedVisualIds)
+  const usedGroups = new Set(usedVisualIds.map(id => byId.get(id)?.sourceGroup).filter(Boolean))
   const usedSources = new Set(
     usedVisualIds
       .map(id => byId.get(id)?.originalPath)
@@ -113,6 +113,7 @@ export function resolveVisual(
     .filter(visual => Boolean(variantFor(visual, normalized, role)))
     .filter(visual => !used.has(visual.id))
     .filter(visual => !usedSources.has(visual.originalPath))
+    .filter(visual => !usedGroups.has(visual.sourceGroup))
     .filter(visual => !excludedGroups.has(visual.sourceGroup))
 
   const preferred = (context.preferredIds || [])
@@ -226,7 +227,8 @@ export function resolvePlanVisual(theme: string): ResolvedVisual | null {
 
 function variantFor(visual: VisualEntry, theme: ThemeId, role: VisualRole): string | null {
   const isHero = role === 'hero' || role === 'page-background'
-  return (isHero ? visual.heroVariants[theme] : visual.runtimeVariants[theme]) || null
+  const localPath = (isHero ? visual.heroVariants[theme] : visual.runtimeVariants[theme]) || null
+  return localPath ? resolveStoredVisualPath(localPath) : null
 }
 
 function resolved(visual: VisualEntry, theme: ThemeId, role: VisualRole): ResolvedVisual {

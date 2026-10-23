@@ -1,8 +1,8 @@
 [
   {
     "id": "misty_lake_canoe_01",
-    "category": "direction",
-    "source": "assets/visual-library/originals/direction/direction_misty_lake_canoe_01.jfif",
+    "category": "choices",
+    "source": "assets/visual-library/originals/choices/choices_misty_lake_canoe_01.jfif",
     "width": 224,
     "height": 360,
     "position": "attention",
@@ -31,8 +31,8 @@
   },
   {
     "id": "autumn_forest_path_01",
-    "category": "direction",
-    "source": "assets/visual-library/originals/direction/direction_autumn_forest_path_01.jfif",
+    "category": "transition",
+    "source": "assets/visual-library/originals/transition/transition_autumn_forest_path_01.jfif",
     "width": 224,
     "height": 360,
     "position": "attention",
@@ -41,8 +41,8 @@
   },
   {
     "id": "forest_path_violet_01",
-    "category": "direction",
-    "source": "assets/visual-library/originals/direction/direction_forest_path_violet_01.jfif",
+    "category": "growth",
+    "source": "assets/visual-library/originals/growth/growth_forest_path_violet_01.jfif",
     "width": 224,
     "height": 360,
     "position": "attention",
@@ -81,8 +81,8 @@
   },
   {
     "id": "bluebell_forest_01",
-    "category": "growth",
-    "source": "assets/visual-library/originals/growth/growth_bluebell_forest_01.jfif",
+    "category": "rest",
+    "source": "assets/visual-library/originals/rest/rest_bluebell_forest_01.jfif",
     "width": 224,
     "height": 360,
     "position": "attention",
@@ -128,5 +128,211 @@
     "position": "attention",
     "quality": 73,
     "note": "New 2026-10-22 image; keep sunbeams and meadow path."
+  },
+  {
+    "id": "choices_garden_forked_steps_01",
+    "category": "choices",
+    "source": "assets/visual-library/originals/choices/choices_garden_forked_steps_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "choices_window_notebook_01",
+    "category": "choices",
+    "source": "assets/visual-library/originals/choices/choices_window_notebook_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "choices_mountain_forked_path_01",
+    "category": "choices",
+    "source": "assets/visual-library/originals/choices/choices_mountain_forked_path_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "connection_garden_conversation_01",
+    "category": "connection",
+    "source": "assets/visual-library/originals/connection/connection_garden_conversation_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "connection_window_tea_conversation_01",
+    "category": "connection",
+    "source": "assets/visual-library/originals/connection/connection_window_tea_conversation_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "growth_pottery_wheel_01",
+    "category": "growth",
+    "source": "assets/visual-library/originals/growth/growth_pottery_wheel_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "growth_sunlit_design_collage_01",
+    "category": "growth",
+    "source": "assets/visual-library/originals/growth/growth_sunlit_design_collage_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "growth_sunlit_dance_practice_01",
+    "category": "growth",
+    "source": "assets/visual-library/originals/growth/growth_sunlit_dance_practice_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "growth_window_design_study_01",
+    "category": "growth",
+    "source": "assets/visual-library/originals/growth/growth_window_design_study_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "growth_handcraft_stitching_01",
+    "category": "growth",
+    "source": "assets/visual-library/originals/growth/growth_handcraft_stitching_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "growth_sunset_canoe_journey_01",
+    "category": "growth",
+    "source": "assets/visual-library/originals/growth/growth_sunset_canoe_journey_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "reflection_lakeside_sky_lantern_01",
+    "category": "reflection",
+    "source": "assets/visual-library/originals/reflection/reflection_lakeside_sky_lantern_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "reflection_sunset_mountain_journal_01",
+    "category": "reflection",
+    "source": "assets/visual-library/originals/reflection/reflection_sunset_mountain_journal_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Reviewed portrait crop preserves the traveler, writing hand and journal; original bytes unchanged.",
+    "crop": {
+      "left": 180,
+      "top": 0,
+      "width": 637,
+      "height": 1024
+    }
+  },
+  {
+    "id": "rest_mountain_paper_plane_01",
+    "category": "rest",
+    "source": "assets/visual-library/originals/rest/rest_mountain_paper_plane_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "transition_sunlit_new_home_01",
+    "category": "transition",
+    "source": "assets/visual-library/originals/transition/transition_sunlit_new_home_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "transition_storm_to_sunrise_01",
+    "category": "transition",
+    "source": "assets/visual-library/originals/transition/transition_storm_to_sunrise_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "transition_sunrise_station_suitcase_01",
+    "category": "transition",
+    "source": "assets/visual-library/originals/transition/transition_sunrise_station_suitcase_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "transition_golden_station_departure_01",
+    "category": "transition",
+    "source": "assets/visual-library/originals/transition/transition_golden_station_departure_01.jfif",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "transition_open_door_journey_01",
+    "category": "transition",
+    "source": "assets/visual-library/originals/transition/transition_open_door_journey_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
+  },
+  {
+    "id": "transition_quiet_platform_walk_01",
+    "category": "transition",
+    "source": "assets/visual-library/originals/transition/transition_quiet_platform_walk_01.png",
+    "width": 224,
+    "height": 360,
+    "position": "attention",
+    "quality": 73,
+    "note": "Visually reviewed 2026-10-23; original bytes preserved."
   }
 ]

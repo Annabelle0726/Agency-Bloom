@@ -10,12 +10,16 @@ const runtime = path.join(root, 'apps/miniprogram/src/static/visuals')
 ;(async () => {
   const recipe = JSON.parse(await fs.readFile(recipePath, 'utf8'))
   const outputs = []
-  for (const item of recipe) {
+  const onlyId = process.argv[2] === '--id' ? process.argv[3] : null
+  if (onlyId && !recipe.some(item => item.id === onlyId)) throw new Error('Unknown visual ID: ' + onlyId)
+  for (const item of recipe.filter(item => !onlyId || item.id === onlyId)) {
     const source = path.join(root, item.source)
     const output = path.join(runtime, item.category, `${path.basename(item.source, path.extname(item.source))}.jpg`)
     await fs.access(source)
     await fs.mkdir(path.dirname(output), { recursive: true })
-    await sharp(source)
+    const image = sharp(source).rotate()
+    if (item.crop) image.extract(item.crop)
+    await image
       .resize(item.width, item.height, { fit: 'cover', position: item.position || 'attention' })
       .jpeg({ quality: item.quality || 73, mozjpeg: true })
       .toFile(output)
