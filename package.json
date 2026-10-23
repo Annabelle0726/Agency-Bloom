@@ -22,7 +22,9 @@
     "check:mp:watch": "node tools/verify-wechat-watch.mjs",
     "typecheck": "npm --prefix apps/miniprogram run typecheck",
     "db:link": "supabase link --project-ref ycombbpglsmbvjlrjtgc",
-    "lint:api": "uv run --directory apps/api ruff check app tests"
+    "lint:api": "uv run --directory apps/api ruff check app tests",
+    "visuals:storage": "node tools/prepare-visual-storage.cjs",
+    "test:visuals": "node --test tools/ingest-visual-library.test.mjs tools/prepare-visual-storage.test.mjs"
   },
   "devDependencies": {
     "sharp": "^0.35.5"

@@ -1,6 +1,8 @@
 # Visual asset system
 
-Status: **Phase 1 complete; Phase 2 contract designed only, not implemented.** Last updated 2026-10-22.
+Status: **Seven-category local ingestion complete; manual cloud upload pending.** Last updated 2026-10-23.
+
+Current inventory: **48 originals, 42 deployed, 6 archived**. See [applied rename map and upload handoff](visual-library/LOCAL-INGESTION-2026-10-23.md). Existing visual IDs and all six frozen theme references are preserved. Runtime URLs are prepared but remain local until manual uploads pass HTTP/MIME/content-hash verification. Sections with Phase 1 counts below are historical baselines; the canonical manifest is the current source of truth. AI image selection remains unimplemented in main.
 
 Phase 1 replaces ad-hoc page imagery with a provenance-tracked source library, an explicit runtime manifest, and a deterministic resolver. It keeps the existing visual language: quiet nature photography, reading corners, soft paper surfaces, and restrained theme-derived color. Imagery supports the page; it does not replace the page's primary action or add explanatory text.
 
@@ -24,7 +26,7 @@ Phase 1 non-goals:
 - No automatic deletion of archived masters.
 - No physical-device acceptance substitute using H5 screenshots.
 
-## 2. Source and runtime layout
+## 2. Phase 1 source and runtime layout (historical baseline)
 
 ```text
 assets/visual-library/
@@ -66,7 +68,7 @@ Every entry includes:
 | Field | Meaning |
 | --- | --- |
 | `id` | Stable snake_case ID; never derived from the opaque original filename |
-| `category` | `direction`, `reflection`, `growth`, `rest`, `choices`, `experiment`, `connection`, `abstract`, or `reference` |
+| `category` | `choices`, `connection`, `direction`, `growth`, `reflection`, `rest`, or `transition` |
 | `description` | Human-readable Chinese description used by future selection prompts |
 | `tags`, `mood` | Search/ranking vocabulary |
 | `intendedPage` | `discover`, `explore`, `plan`, `shared`, `reference-only` |

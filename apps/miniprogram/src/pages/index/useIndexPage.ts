@@ -13,6 +13,7 @@ import {ApiError, createApi} from '../../http'
 import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
+import {useBloomMoment, momentDraft} from '../../bloom-moment'
 import {useDiscovery} from '../../use-discovery'
 import {discoveryStateKey} from '../../discovery'
 import type {DiscoveryRecommendation} from '../../discovery'
@@ -355,6 +356,19 @@ export function useIndexPage() {
   }
 
   const discovery = useDiscovery(user, request, notify)
+  const bloomMoment = useBloomMoment(user, request, requestId)
+  watch(() => [user.value?.id, tab.value, screen.value], () => {
+    if (user.value && screen.value === 'space' && tab.value === 'now') void bloomMoment.load()
+  }, { flush: 'post' })
+  onShow(() => { if (user.value && screen.value === 'space' && tab.value === 'now') void bloomMoment.load() })
+  function chatAboutMoment() {
+    const content = bloomMoment.moment.value?.content
+    if (!content || !user.value) return
+    // A separate draft; no old conversation, memory or card is silently changed.
+    current.value = null
+    startNewChat()
+    workspace.active.value.draft.value = momentDraft(content)
+  }
 
   const api = createApi(options => uni.request({...options, success: options.success, fail: options.fail}),
       () => token.value, clearSession, import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api')
@@ -1030,6 +1044,8 @@ export function useIndexPage() {
     deleteAccount,
     explorePrompt,
     discovery,
+    bloomMoment,
+    chatAboutMoment,
     newChatStarters,
     todayLabel,
     greeting,

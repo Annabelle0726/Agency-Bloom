@@ -45,7 +45,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
         "category": {
-          "enum": ["direction", "reflection", "growth", "choices", "rest", "experiment", "connection", "abstract", "reference"]
+          "enum": ["choices", "connection", "direction", "growth", "reflection", "rest", "transition"]
         },
         "description": { "type": "string", "minLength": 1 },
         "tags": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },

@@ -1,0 +1,696 @@
+{
+  "reviewedAt": "2026-10-23",
+  "authorization": "User requested actual local classification, semantic renaming and ingestion. All images were visually inspected.",
+  "approvals": [
+    {
+      "index": 1,
+      "id": "choices_garden_forked_steps_01",
+      "description": "花园里的石阶分成两条路，远处是晨光中的山谷与湖泊",
+      "tags": [
+        "choice",
+        "forked-path",
+        "garden",
+        "steps",
+        "possibility"
+      ],
+      "mood": [
+        "hopeful",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "forest"
+      ],
+      "file": "661313485a8cd4536ab19f767ff9545a.png",
+      "category": "choices",
+      "sourceSha256": "cee0a9c508e41279def6f4d5398f56070445c7b60363b731518432444d60377e",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "choices-garden-forked-steps"
+    },
+    {
+      "index": 2,
+      "id": "choices_window_notebook_01",
+      "description": "湖景窗前放着翻开的空白笔记本、杯子和两张植物卡片",
+      "tags": [
+        "choice",
+        "notebook",
+        "window",
+        "values",
+        "reflection"
+      ],
+      "mood": [
+        "quiet",
+        "reflective"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "minimal"
+      ],
+      "file": "db3fb00b39b849a5debb8e68d41bd9f0.png",
+      "category": "choices",
+      "sourceSha256": "8dbe2a6f460f1288f010ef65cc9978119c0140751c084a9d156ae7bdd5448db9",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "choices-window-notebook"
+    },
+    {
+      "index": 3,
+      "id": "choices_mountain_forked_path_01",
+      "description": "山间小径在野花旁分岔，日出照亮远处的云海",
+      "tags": [
+        "choice",
+        "forked-path",
+        "mountains",
+        "new-beginning"
+      ],
+      "mood": [
+        "hopeful",
+        "grounded"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "forest"
+      ],
+      "file": "f76bab6b48598053919638ed226066fa.png",
+      "category": "choices",
+      "sourceSha256": "cd06c071223eacb7878b4c8dc364af68b61e2b6cadbc749568463127a8165391",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "choices-mountain-forked-path"
+    },
+    {
+      "index": 4,
+      "id": "connection_garden_conversation_01",
+      "description": "两位女性坐在花园桌旁交谈，树荫与柔和阳光落在花丛间",
+      "tags": [
+        "connection",
+        "conversation",
+        "garden",
+        "support",
+        "friendship"
+      ],
+      "mood": [
+        "warm",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "forest"
+      ],
+      "file": "11a8c99d-5108-4da8-a083-429f35aac852.png",
+      "category": "connection",
+      "sourceSha256": "4158267d1f898dafab377bc29f60d8e5d1bb522fa72e99174eb47d2303a29d1a",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "connection-garden-conversation"
+    },
+    {
+      "index": 5,
+      "id": "connection_window_tea_conversation_01",
+      "description": "窗边两人隔着木桌喝茶交谈，桌上有笔记本与花瓶",
+      "tags": [
+        "connection",
+        "conversation",
+        "tea",
+        "window",
+        "listening"
+      ],
+      "mood": [
+        "warm",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "minimal"
+      ],
+      "file": "3aa04edb4f2a7404c9fe725a44134449.png",
+      "category": "connection",
+      "sourceSha256": "d1eacc7d88bd59c8e90002153074311303e2e2e07059ea30c7f111cb6437c187",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "connection-window-tea-conversation"
+    },
+    {
+      "index": 7,
+      "id": "growth_pottery_wheel_01",
+      "description": "手艺人在明亮工作室用拉坯机制作陶碗，身旁放着已完成的器物",
+      "tags": [
+        "growth",
+        "pottery",
+        "craft",
+        "practice",
+        "learning"
+      ],
+      "mood": [
+        "grounded",
+        "warm"
+      ],
+      "themeCompatibility": [
+        "light",
+        "forest",
+        "minimal"
+      ],
+      "file": "0859d0556eea49c9e00a25eee56b02a8.png",
+      "category": "growth",
+      "sourceSha256": "0141854a8015dbfc49140637a548dea8c72900ba182576a344878554173afd7c",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "growth-pottery-wheel"
+    },
+    {
+      "index": 8,
+      "id": "growth_sunlit_design_collage_01",
+      "description": "女性在阳光窗边整理照片、材料与设计拼贴，桌面铺着笔记和草图",
+      "tags": [
+        "growth",
+        "design",
+        "collage",
+        "practice",
+        "learning"
+      ],
+      "mood": [
+        "hopeful",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "forest",
+        "minimal"
+      ],
+      "file": "2857d79972bf885dd0c9254faef5fdcb.png",
+      "category": "growth",
+      "sourceSha256": "e1c909736702570d24fb51992fe3c71e9f47679338500fd6aa2fbc2372299a0f",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "growth-sunlit-design-collage"
+    },
+    {
+      "index": 9,
+      "id": "growth_sunlit_dance_practice_01",
+      "description": "女性在落地窗旁练习舞蹈，柔和阳光照在木地板上",
+      "tags": [
+        "growth",
+        "dance",
+        "practice",
+        "movement",
+        "experience"
+      ],
+      "mood": [
+        "hopeful",
+        "grounded"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "minimal"
+      ],
+      "file": "43c478cee1c8083e68690b7b7dbe9d3f.png",
+      "category": "growth",
+      "sourceSha256": "40a5229f22b7a0880f8b2945faad527f22f5d432f5c37a9e6869565e9df01f70",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "growth-sunlit-dance-practice"
+    },
+    {
+      "index": 10,
+      "id": "growth_window_design_study_01",
+      "description": "女性在窗边查阅电脑并书写设计笔记，灵感墙上贴着照片与草图",
+      "tags": [
+        "growth",
+        "design",
+        "study",
+        "desk",
+        "learning"
+      ],
+      "mood": [
+        "reflective",
+        "warm"
+      ],
+      "themeCompatibility": [
+        "light",
+        "forest",
+        "minimal"
+      ],
+      "file": "4e3b6138e9587478700e71eadd554438.png",
+      "category": "growth",
+      "sourceSha256": "ee56168c3ef712d9773d7e47ca02cb5d5ca1d64d8ef72dad69c7e4d841876677",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "growth-window-design-study"
+    },
+    {
+      "index": 11,
+      "id": "growth_handcraft_stitching_01",
+      "description": "绿衣女手艺人在阳光工作台缝制器物，灵感墙贴满植物照片与草图",
+      "tags": [
+        "growth",
+        "handcraft",
+        "stitching",
+        "practice",
+        "learning"
+      ],
+      "mood": [
+        "grounded",
+        "warm"
+      ],
+      "themeCompatibility": [
+        "light",
+        "forest",
+        "minimal"
+      ],
+      "file": "5279a483f5859bef0e6a0fb9208ca8d3.png",
+      "category": "growth",
+      "sourceSha256": "77c2117bdb523638e19053d1be4cd6211ce759db35152e92cef02eb9b0419812",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "growth-handcraft-stitching"
+    },
+    {
+      "index": 12,
+      "id": "growth_sunset_canoe_journey_01",
+      "description": "背着行囊的旅人坐在独木舟上伸手触碰湖水，落日映照山谷",
+      "tags": [
+        "growth",
+        "canoe",
+        "journey",
+        "experience",
+        "lake"
+      ],
+      "mood": [
+        "hopeful",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn"
+      ],
+      "file": "94c1dce395682386c962d43501abc45a.png",
+      "category": "growth",
+      "sourceSha256": "3899d8c44d2988a11b4b91b87d4aed90667777683074aa124e7edd55f0630420",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "growth-sunset-canoe-journey"
+    },
+    {
+      "index": 13,
+      "id": "reflection_lakeside_sky_lantern_01",
+      "description": "暮色中的女性坐在山坡湖畔放飞天灯，书本与灯笼放在身旁",
+      "tags": [
+        "reflection",
+        "lantern",
+        "lake",
+        "letting-go",
+        "review"
+      ],
+      "mood": [
+        "reflective",
+        "warm"
+      ],
+      "themeCompatibility": [
+        "dawn",
+        "lavender"
+      ],
+      "file": "7313b00f1744bb36ded39de4e2010d9c.png",
+      "category": "reflection",
+      "sourceSha256": "90c7a1d035b39febb682918a89bbccd10d02e67cd81e5b76b87c7cd6dac95325",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "reflection-lakeside-sky-lantern"
+    },
+    {
+      "index": 14,
+      "id": "reflection_sunset_mountain_journal_01",
+      "description": "旅人坐在山顶写日记，身边摊着地图，眺望夕阳下的湖泊",
+      "tags": [
+        "reflection",
+        "journal",
+        "mountains",
+        "review",
+        "possibility"
+      ],
+      "mood": [
+        "reflective",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "lavender"
+      ],
+      "file": "fde401221592b4e907e8f04af111df01.png",
+      "category": "reflection",
+      "sourceSha256": "19e7bf5556d532d1e7274a7492bc6d48b1a04347d54c7e3ca29c7aa47f18a1d8",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "reflection-sunset-mountain-journal"
+    },
+    {
+      "index": 15,
+      "id": "rest_mountain_paper_plane_01",
+      "description": "女性坐在野花盛开的山坡放飞纸飞机，面向晨光里的山湖",
+      "tags": [
+        "rest",
+        "paper-plane",
+        "letting-go",
+        "pause",
+        "mountains"
+      ],
+      "mood": [
+        "quiet",
+        "hopeful"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "lavender"
+      ],
+      "file": "01321b82750385073f9aae1a123c052b.png",
+      "category": "rest",
+      "sourceSha256": "a33a116eef56ee752d44c606d753c54832aecaf079f5e9df822509b145a9ef4b",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "rest-mountain-paper-plane"
+    },
+    {
+      "index": 17,
+      "id": "transition_sunlit_new_home_01",
+      "description": "女性站在新家的窗边，搬家纸箱、扶手椅与绿植迎着城市晨光",
+      "tags": [
+        "transition",
+        "moving-home",
+        "new-beginning",
+        "window"
+      ],
+      "mood": [
+        "hopeful",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "minimal"
+      ],
+      "file": "65eed1d499407f47582bc52addc42985.png",
+      "category": "transition",
+      "sourceSha256": "68ce1ffc82aa968bae944e9887210af0b25cc3f47c19a2477ccba84898867585",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "transition-sunlit-new-home"
+    },
+    {
+      "index": 18,
+      "id": "transition_storm_to_sunrise_01",
+      "description": "插画从风暴山谷经过新生树木过渡到阳光云海，人物呈现不同旅程阶段",
+      "tags": [
+        "transition",
+        "illustration",
+        "storm",
+        "new-beginning",
+        "change"
+      ],
+      "mood": [
+        "reflective",
+        "hopeful"
+      ],
+      "themeCompatibility": [
+        "dawn"
+      ],
+      "file": "76e749112757266ee39a59bf8a0cbeac.png",
+      "category": "transition",
+      "sourceSha256": "76da8883c9c16712ffc541c80e24ccb257b063b26e73193695e3e778dd892d0c",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "transition-storm-to-sunrise"
+    },
+    {
+      "index": 19,
+      "id": "transition_sunrise_station_suitcase_01",
+      "description": "女性拉着行李箱站在安静站台，身旁是列车与老钟，晨光照亮山湖",
+      "tags": [
+        "transition",
+        "station",
+        "suitcase",
+        "departure",
+        "new-beginning"
+      ],
+      "mood": [
+        "hopeful",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn"
+      ],
+      "file": "8b587c2d243e8d48a0353638091b68cb.png",
+      "category": "transition",
+      "sourceSha256": "e765e3a620bf5ee72f2a3a4c4e5dfaec69e41090af15f36c2dedb4d3c9203c5b",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "transition-sunrise-station-suitcase"
+    },
+    {
+      "index": 20,
+      "id": "transition_golden_station_departure_01",
+      "description": "金色阳光照进老车站，旅人拿着旅行包站在列车旁，身后有人相拥告别",
+      "tags": [
+        "transition",
+        "station",
+        "departure",
+        "farewell",
+        "journey"
+      ],
+      "mood": [
+        "warm",
+        "reflective"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn"
+      ],
+      "file": "Gemini_Generated_Image_c5b4w4c5b4w4c5b4.jfif",
+      "category": "transition",
+      "sourceSha256": "6d18da152eb3e6dd55241c7059045b9e371b018bfa60ce92de26ee02e361a5c9",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "transition-golden-station-departure"
+    },
+    {
+      "index": 21,
+      "id": "transition_open_door_journey_01",
+      "description": "打开的木门外是一片晨光山谷，门边放着旅行包与外套",
+      "tags": [
+        "transition",
+        "open-door",
+        "journey",
+        "new-beginning"
+      ],
+      "mood": [
+        "hopeful",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn",
+        "forest",
+        "minimal"
+      ],
+      "file": "c5ef92ea88c9583d2902f3a82b0ee2c2.png",
+      "category": "transition",
+      "sourceSha256": "f65a6b910c082b4440bd0fdc77062f9023c4b7f3c0eb8d344e1b7b7735bea7e6",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "transition-open-door-journey"
+    },
+    {
+      "index": 22,
+      "id": "transition_quiet_platform_walk_01",
+      "description": "女性提着旅行包沿安静站台向前走，日出照亮远山和铁轨",
+      "tags": [
+        "transition",
+        "platform",
+        "departure",
+        "next-step",
+        "journey"
+      ],
+      "mood": [
+        "hopeful",
+        "quiet"
+      ],
+      "themeCompatibility": [
+        "light",
+        "dawn"
+      ],
+      "file": "d250b0dbad5453c7eedcedd2da853736.png",
+      "category": "transition",
+      "sourceSha256": "db23c952988d94dd078cec3127959501bf335ea4866423adebfc2c4e7c9fb86c",
+      "approved": true,
+      "intendedPage": [
+        "discover",
+        "explore",
+        "plan"
+      ],
+      "visualRole": [
+        "card-thumbnail",
+        "section-illustration"
+      ],
+      "sourceGroup": "transition-quiet-platform-walk"
+    }
+  ]
+}

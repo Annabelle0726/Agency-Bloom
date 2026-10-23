@@ -37,7 +37,8 @@ const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'))
 assert(schema.title === 'Agency Bloom visual manifest', 'Unexpected manifest schema title')
 assert(manifest.schemaVersion === 1, 'schemaVersion must be 1')
 assert(Array.isArray(manifest.visuals), 'visuals must be an array')
-assert(manifest.visuals.length === 28, `Expected 28 visuals, found ${manifest.visuals.length}`)
+assert(manifest.visuals.length > 0, 'Visual library must not be empty')
+const allowedCategories = new Set(schema.$defs.visual.properties.category.enum)
 assert(JSON.stringify(manifest.themes) === JSON.stringify(themes), 'Theme list or order changed')
 assert(fs.existsSync(runtimeCopy), 'Missing runtime manifest copy')
 if (fs.existsSync(runtimeCopy)) {
@@ -64,6 +65,7 @@ for (const visual of manifest.visuals) {
   for (const field of ['id', 'category', 'description', 'tags', 'mood', 'intendedPage', 'visualRole', 'themeCompatibility', 'source', 'originalPath', 'sourceSha256', 'sourceBytes', 'dimensions', 'status', 'deploy', 'sourceGroup', 'runtimeVariants', 'heroVariants']) {
     assert(Object.prototype.hasOwnProperty.call(visual, field), `${label}: missing ${field}`)
   }
+  assert(allowedCategories.has(visual.category), label + ': invalid category')
   assert(/^[a-z0-9_]+$/.test(visual.id), `${label}: invalid id`)
   assert(!ids.has(visual.id), `${label}: duplicate id`)
   ids.add(visual.id)
@@ -117,11 +119,15 @@ for (const visual of manifest.visuals) {
   }
 }
 
-assert(statusCounts.deployed === 22, `Expected 22 deployed visuals, found ${statusCounts.deployed}`)
-assert(statusCounts.archived === 5, `Expected 5 archived visuals, found ${statusCounts.archived}`)
-assert(statusCounts['reference-only'] === 1, `Expected 1 reference-only visual, found ${statusCounts['reference-only']}`)
-assert(manifest.visuals.filter(visual => visual.status === 'deployed' && Object.keys(visual.runtimeVariants).length > 0).length === 20, 'Expected 20 card-capable visuals')
-assert(manifest.visuals.filter(visual => visual.status === 'deployed' && Object.keys(visual.heroVariants).length > 0).length === 8, 'Expected 8 hero-capable visuals')
+// Validate actual source coverage as the library grows.
+const sourceRoot = path.join(root, 'assets/visual-library/originals')
+const sourceFiles = walk(sourceRoot).filter(file => /\.(png|jpe?g|jfif)$/i.test(file))
+const registeredSources = manifest.visuals.filter(visual => visual.originalPath.startsWith('assets/visual-library/originals/'))
+assert(sourceFiles.length === registeredSources.length, 'Source inventory and manifest counts differ')
+for (const file of sourceFiles) assert(originalPaths.has(path.relative(root, file).replaceAll('\\', '/')), 'Unregistered original: ' + file)
+const deployedHashes = manifest.visuals.filter(visual => visual.deploy).map(visual => visual.sourceSha256)
+assert(new Set(deployedHashes).size === deployedHashes.length, 'Byte-identical images must not be deployed twice')
+assert([...allowedCategories].sort().join(',') === ['choices', 'connection', 'direction', 'growth', 'reflection', 'rest', 'transition'].sort().join(','), 'Expected exactly seven semantic categories')
 
 const oldPathPattern = /(?:^|[^a-z0-9_-])(?:design[\\/]img|assets[\\/]gen-img)(?:[\\/]|$)/i
 for (const relative of ['apps/miniprogram/src', 'apps/api', 'tools']) {

@@ -1,0 +1,838 @@
+{
+  "schemaVersion": 1,
+  "bucket": "visual-library",
+  "publicBaseUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/",
+  "state": "pending-manual-upload",
+  "verifiedAt": null,
+  "objects": [
+    {
+      "visualId": "choices_garden_forked_steps_01",
+      "category": "choices",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "forest"
+      ],
+      "localPath": "/static/visuals/choices/choices_garden_forked_steps_01.jpg",
+      "key": "choices/choices_garden_forked_steps_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/choices/choices_garden_forked_steps_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 14180,
+      "sha256": "b62e9f11ebd80799c72a827073d5894f014d23ceb3eca58e572daa74a5dcd2d4",
+      "sourceSha256": "cee0a9c508e41279def6f4d5398f56070445c7b60363b731518432444d60377e",
+      "uploadFile": "output/visual-storage-upload/choices/choices_garden_forked_steps_01.jpg"
+    },
+    {
+      "visualId": "misty_lake_canoe_01",
+      "category": "choices",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "forest",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/choices/choices_misty_lake_canoe_01.jpg",
+      "key": "choices/choices_misty_lake_canoe_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/choices/choices_misty_lake_canoe_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 10033,
+      "sha256": "a8b385006d0c380c9d854259e44ae0ccb666467c2c484d33a4074b4b06dd28cd",
+      "sourceSha256": "d33f2e96858fd517503cbdcc6151f62388674c1b5b6a28f7cce706210065a860",
+      "uploadFile": "output/visual-storage-upload/choices/choices_misty_lake_canoe_01.jpg"
+    },
+    {
+      "visualId": "choices_mountain_forked_path_01",
+      "category": "choices",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "forest"
+      ],
+      "localPath": "/static/visuals/choices/choices_mountain_forked_path_01.jpg",
+      "key": "choices/choices_mountain_forked_path_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/choices/choices_mountain_forked_path_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 14085,
+      "sha256": "c83799e38e415533a5556ff6bd099c81eb29f969ed42214b1f89120d4a35679f",
+      "sourceSha256": "cd06c071223eacb7878b4c8dc364af68b61e2b6cadbc749568463127a8165391",
+      "uploadFile": "output/visual-storage-upload/choices/choices_mountain_forked_path_01.jpg"
+    },
+    {
+      "visualId": "choices_window_notebook_01",
+      "category": "choices",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/choices/choices_window_notebook_01.jpg",
+      "key": "choices/choices_window_notebook_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/choices/choices_window_notebook_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 9595,
+      "sha256": "7578c65f863bdb71298146382c9cf0189c441f5aea19f4fd35e0d6a35bb54921",
+      "sourceSha256": "8dbe2a6f460f1288f010ef65cc9978119c0140751c084a9d156ae7bdd5448db9",
+      "uploadFile": "output/visual-storage-upload/choices/choices_window_notebook_01.jpg"
+    },
+    {
+      "visualId": "connection_garden_conversation_01",
+      "category": "connection",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "forest"
+      ],
+      "localPath": "/static/visuals/connection/connection_garden_conversation_01.jpg",
+      "key": "connection/connection_garden_conversation_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/connection/connection_garden_conversation_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 18438,
+      "sha256": "03e0df99aacdef380dcedc6b1fb760e03c63c4ae305aa2f5358b7e05b0ffc6af",
+      "sourceSha256": "4158267d1f898dafab377bc29f60d8e5d1bb522fa72e99174eb47d2303a29d1a",
+      "uploadFile": "output/visual-storage-upload/connection/connection_garden_conversation_01.jpg"
+    },
+    {
+      "visualId": "connection_window_tea_conversation_01",
+      "category": "connection",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/connection/connection_window_tea_conversation_01.jpg",
+      "key": "connection/connection_window_tea_conversation_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/connection/connection_window_tea_conversation_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 11881,
+      "sha256": "cc49f4530f3c3f3c254ed48add4c273a92a29eb75cf540ccb59cfb82bc80baf4",
+      "sourceSha256": "d1eacc7d88bd59c8e90002153074311303e2e2e07059ea30c7f111cb6437c187",
+      "uploadFile": "output/visual-storage-upload/connection/connection_window_tea_conversation_01.jpg"
+    },
+    {
+      "visualId": "forest_path_green_01",
+      "category": "direction",
+      "role": "card",
+      "themes": [
+        "forest",
+        "light"
+      ],
+      "localPath": "/static/visuals/direction/direction_forest_path_green_01.jpg",
+      "key": "direction/direction_forest_path_green_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/direction/direction_forest_path_green_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 16290,
+      "sha256": "0a325eb79b17acb721d8436eb3b4d36381205825d97c484b2e2abe11fa44fa50",
+      "sourceSha256": "cc177df9723c35d634a2b4cfda623bb88cd9920995f160ff304062c5c6bf357c",
+      "uploadFile": "output/visual-storage-upload/direction/direction_forest_path_green_01.jpg"
+    },
+    {
+      "visualId": "forest_path_pink_01",
+      "category": "direction",
+      "role": "card",
+      "themes": [
+        "forest",
+        "dawn",
+        "light"
+      ],
+      "localPath": "/static/visuals/direction/direction_forest_path_pink_01.jpg",
+      "key": "direction/direction_forest_path_pink_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/direction/direction_forest_path_pink_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 15320,
+      "sha256": "1eb35ae4eaf6bc53377a38e9d1f26dd81cb5c972608c8fa9b377f47a500ad373",
+      "sourceSha256": "862d957a7d64fe889c626708436a97fa196ca948f0f62f97a9dfee5d4eb289df",
+      "uploadFile": "output/visual-storage-upload/direction/direction_forest_path_pink_01.jpg"
+    },
+    {
+      "visualId": "forest_sunbeam_path_01",
+      "category": "direction",
+      "role": "card",
+      "themes": [
+        "light",
+        "forest"
+      ],
+      "localPath": "/static/bloom/forest-path.jpg",
+      "key": "direction/direction_forest_sunbeam_path_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/direction/direction_forest_sunbeam_path_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 17027,
+      "sha256": "600af13d78461179847997df773193662876b562c5938bcfd94bc70554b6a0cc",
+      "sourceSha256": "4bcc087f8397a4585e5081cac9bae8e87e4d68d3727d898d2dc4719d06eb4cd5",
+      "uploadFile": "output/visual-storage-upload/direction/direction_forest_sunbeam_path_01.jpg"
+    },
+    {
+      "visualId": "forest_sunbeam_path_01",
+      "category": "direction",
+      "role": "hero",
+      "themes": [
+        "forest"
+      ],
+      "localPath": "/static/bloom/forest-hero.jpg",
+      "key": "direction/direction_forest_sunbeam_path_01_hero.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/direction/direction_forest_sunbeam_path_01_hero.jpg",
+      "mime": "image/jpeg",
+      "bytes": 116405,
+      "sha256": "07d872ece5f7fc9712474dec229dc00950bc25b83b6a878487e22ed950c3b114",
+      "sourceSha256": "4bcc087f8397a4585e5081cac9bae8e87e4d68d3727d898d2dc4719d06eb4cd5",
+      "uploadFile": "output/visual-storage-upload/direction/direction_forest_sunbeam_path_01_hero.jpg"
+    },
+    {
+      "visualId": "sunlit_meadow_path_01",
+      "category": "direction",
+      "role": "card",
+      "themes": [
+        "light",
+        "forest",
+        "dawn",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/direction/direction_sunlit_meadow_path_01.jpg",
+      "key": "direction/direction_sunlit_meadow_path_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/direction/direction_sunlit_meadow_path_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 12881,
+      "sha256": "dbd8428c6ee45cd9b0afb93fc27198d1110225097cc9c4d2addb7d73e25cc3cc",
+      "sourceSha256": "01e5996895dd3939384fa8ee1113b2704e37493533a4f28e9522865441075426",
+      "uploadFile": "output/visual-storage-upload/direction/direction_sunlit_meadow_path_01.jpg"
+    },
+    {
+      "visualId": "forest_path_violet_01",
+      "category": "growth",
+      "role": "card",
+      "themes": [
+        "forest",
+        "lavender"
+      ],
+      "localPath": "/static/visuals/growth/growth_forest_path_violet_01.jpg",
+      "key": "growth/growth_forest_path_violet_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_forest_path_violet_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 16471,
+      "sha256": "089489154d7c11633ba81e52ab3e32adee4d3af74dda999007283a41514b1169",
+      "sourceSha256": "48da5eb2647ef518976c4c46f981a9dee22aec07f2e64fa5d393bb147e719eb8",
+      "uploadFile": "output/visual-storage-upload/growth/growth_forest_path_violet_01.jpg"
+    },
+    {
+      "visualId": "growth_handcraft_stitching_01",
+      "category": "growth",
+      "role": "card",
+      "themes": [
+        "light",
+        "forest",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/growth/growth_handcraft_stitching_01.jpg",
+      "key": "growth/growth_handcraft_stitching_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_handcraft_stitching_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 15332,
+      "sha256": "953efccda3787073f2f16201a1e88f730b9f7c700816cf6ad843fcc52577e3d5",
+      "sourceSha256": "77c2117bdb523638e19053d1be4cd6211ce759db35152e92cef02eb9b0419812",
+      "uploadFile": "output/visual-storage-upload/growth/growth_handcraft_stitching_01.jpg"
+    },
+    {
+      "visualId": "lavender_lake_reading_01",
+      "category": "growth",
+      "role": "card",
+      "themes": [
+        "lavender"
+      ],
+      "localPath": "/static/bloom/lavender-reading.jpg",
+      "key": "growth/growth_lavender_lake_reading_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_lavender_lake_reading_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 10705,
+      "sha256": "5df2becbec8debb56e8d928489e2780b53bb5f87a870570a3e078954b5aa2bfd",
+      "sourceSha256": "e5f6b67acdb9a8ec1cc61d697572d894a41b70e78240426f34bd1799a49ec97e",
+      "uploadFile": "output/visual-storage-upload/growth/growth_lavender_lake_reading_01.jpg"
+    },
+    {
+      "visualId": "lavender_lake_reading_01",
+      "category": "growth",
+      "role": "hero",
+      "themes": [
+        "lavender"
+      ],
+      "localPath": "/static/bloom/lavender-scene.jpg",
+      "key": "growth/growth_lavender_lake_reading_01_hero.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_lavender_lake_reading_01_hero.jpg",
+      "mime": "image/jpeg",
+      "bytes": 57892,
+      "sha256": "b919e3e2c210ef2e2eff1d8b0ec22540ed014ad1ce2c1c502e0b34b5b650b1da",
+      "sourceSha256": "e5f6b67acdb9a8ec1cc61d697572d894a41b70e78240426f34bd1799a49ec97e",
+      "uploadFile": "output/visual-storage-upload/growth/growth_lavender_lake_reading_01_hero.jpg"
+    },
+    {
+      "visualId": "growth_pottery_wheel_01",
+      "category": "growth",
+      "role": "card",
+      "themes": [
+        "light",
+        "forest",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/growth/growth_pottery_wheel_01.jpg",
+      "key": "growth/growth_pottery_wheel_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_pottery_wheel_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 12433,
+      "sha256": "3266c83848a68cacc1a9ed8930c528cce78f421b289a75973be25ea1f4426746",
+      "sourceSha256": "0141854a8015dbfc49140637a548dea8c72900ba182576a344878554173afd7c",
+      "uploadFile": "output/visual-storage-upload/growth/growth_pottery_wheel_01.jpg"
+    },
+    {
+      "visualId": "growth_sunlit_dance_practice_01",
+      "category": "growth",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/growth/growth_sunlit_dance_practice_01.jpg",
+      "key": "growth/growth_sunlit_dance_practice_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_sunlit_dance_practice_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 9858,
+      "sha256": "d60a0a3d89a020ca36db72f0b95d5f723e5a71b10c872b999794e55d7609656e",
+      "sourceSha256": "40a5229f22b7a0880f8b2945faad527f22f5d432f5c37a9e6869565e9df01f70",
+      "uploadFile": "output/visual-storage-upload/growth/growth_sunlit_dance_practice_01.jpg"
+    },
+    {
+      "visualId": "growth_sunlit_design_collage_01",
+      "category": "growth",
+      "role": "card",
+      "themes": [
+        "light",
+        "forest",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/growth/growth_sunlit_design_collage_01.jpg",
+      "key": "growth/growth_sunlit_design_collage_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_sunlit_design_collage_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 13980,
+      "sha256": "52ed87ddfd81e746875bb763a9e03eeb549694b5c4e605b3ae0eeb840e57ff41",
+      "sourceSha256": "e1c909736702570d24fb51992fe3c71e9f47679338500fd6aa2fbc2372299a0f",
+      "uploadFile": "output/visual-storage-upload/growth/growth_sunlit_design_collage_01.jpg"
+    },
+    {
+      "visualId": "growth_sunset_canoe_journey_01",
+      "category": "growth",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn"
+      ],
+      "localPath": "/static/visuals/growth/growth_sunset_canoe_journey_01.jpg",
+      "key": "growth/growth_sunset_canoe_journey_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_sunset_canoe_journey_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 11513,
+      "sha256": "fb7cece7e18a34db250de265dfe9fea6c2158da38089b893279eadc1c05a06c6",
+      "sourceSha256": "3899d8c44d2988a11b4b91b87d4aed90667777683074aa124e7edd55f0630420",
+      "uploadFile": "output/visual-storage-upload/growth/growth_sunset_canoe_journey_01.jpg"
+    },
+    {
+      "visualId": "growth_window_design_study_01",
+      "category": "growth",
+      "role": "card",
+      "themes": [
+        "light",
+        "forest",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/growth/growth_window_design_study_01.jpg",
+      "key": "growth/growth_window_design_study_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/growth/growth_window_design_study_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 12396,
+      "sha256": "71c5d047b307593f9d3ca25b02898caad864e3cba94cf19ccbf404d16287dcdc",
+      "sourceSha256": "ee56168c3ef712d9773d7e47ca02cb5d5ca1d64d8ef72dad69c7e4d841876677",
+      "uploadFile": "output/visual-storage-upload/growth/growth_window_design_study_01.jpg"
+    },
+    {
+      "visualId": "golden_desk_book_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "dawn",
+        "light",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/reflection/reflection_golden_desk_book_01.jpg",
+      "key": "reflection/reflection_golden_desk_book_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_golden_desk_book_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 8746,
+      "sha256": "d603774b9865fb7a093b92b25ab93f7bbab0f38460493f234fbce829c612939d",
+      "sourceSha256": "beed076073305293df62b8651e1afc9c88f38874de67f360f38695430e4d58d3",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_golden_desk_book_01.jpg"
+    },
+    {
+      "visualId": "ivory_window_reading_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "minimal"
+      ],
+      "localPath": "/static/bloom/minimal-reading.jpg",
+      "key": "reflection/reflection_ivory_window_reading_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_ivory_window_reading_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 8097,
+      "sha256": "8f860c3580f6fb8074a0fd0ab24fc41dd690f9402ada9cabab335cd6b8b1eac3",
+      "sourceSha256": "d4fa1b08f6260a14c489752123cd1ebb050283f5ea7817b35cecb8345769fd50",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_ivory_window_reading_01.jpg"
+    },
+    {
+      "visualId": "ivory_window_reading_01",
+      "category": "reflection",
+      "role": "hero",
+      "themes": [
+        "minimal"
+      ],
+      "localPath": "/static/bloom/minimal-scene.jpg",
+      "key": "reflection/reflection_ivory_window_reading_01_hero.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_ivory_window_reading_01_hero.jpg",
+      "mime": "image/jpeg",
+      "bytes": 47106,
+      "sha256": "cbd3042c897780f7dd5cdec70273f34b1861c3b62e40db002ddd14f9f0f35c4b",
+      "sourceSha256": "d4fa1b08f6260a14c489752123cd1ebb050283f5ea7817b35cecb8345769fd50",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_ivory_window_reading_01_hero.jpg"
+    },
+    {
+      "visualId": "reflection_lakeside_sky_lantern_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "dawn",
+        "lavender"
+      ],
+      "localPath": "/static/visuals/reflection/reflection_lakeside_sky_lantern_01.jpg",
+      "key": "reflection/reflection_lakeside_sky_lantern_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_lakeside_sky_lantern_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 11276,
+      "sha256": "12e63e97e3ee31e1acad5fab1603f4edb07a1fdf425175f66d50f94b576616ec",
+      "sourceSha256": "90c7a1d035b39febb682918a89bbccd10d02e67cd81e5b76b87c7cd6dac95325",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_lakeside_sky_lantern_01.jpg"
+    },
+    {
+      "visualId": "lakeside_sunset_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "light",
+        "forest"
+      ],
+      "localPath": "/static/bloom/lake-reflection.jpg",
+      "key": "reflection/reflection_lakeside_sunset_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_lakeside_sunset_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 12520,
+      "sha256": "2c10d4a51c90f8e4fbf0a635a4055dfa02213e8416af5f1b1991bea6579eedee",
+      "sourceSha256": "476c36241e6ffe0bb9f9a155a2b98a49e1839ed6cc21caa726e75c3ebf13ebd7",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_lakeside_sunset_01.jpg"
+    },
+    {
+      "visualId": "sunlit_book_desk_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "minimal",
+        "forest",
+        "lavender"
+      ],
+      "localPath": "/static/visuals/reflection/reflection_sunlit_book_desk_01.jpg",
+      "key": "reflection/reflection_sunlit_book_desk_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_sunlit_book_desk_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 10241,
+      "sha256": "9b6b11c654e1041de1d690c8c7eb7565f07448c4a33121f85ec0551e79f16aab",
+      "sourceSha256": "60a915aea2edb22219452fc477dcdd648e80c1124ff40b3f7d3bc6ded4a97f4a",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_sunlit_book_desk_01.jpg"
+    },
+    {
+      "visualId": "sunlit_desk_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "light",
+        "forest"
+      ],
+      "localPath": "/static/bloom/reading-corner.jpg",
+      "key": "reflection/reflection_sunlit_desk_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_sunlit_desk_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 13748,
+      "sha256": "fc963aec1ce6123c5f084b4877095640c0480ce7e1acfde6ccb458c0d79aa0d0",
+      "sourceSha256": "a96654ac9b74f2ce851f47bacdbec8b2bb06f0e9d5057eae7f14dde04113266e",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_sunlit_desk_01.jpg"
+    },
+    {
+      "visualId": "sunlit_desk_01",
+      "category": "reflection",
+      "role": "hero",
+      "themes": [
+        "forest"
+      ],
+      "localPath": "/static/bloom/forest-reading.jpg",
+      "key": "reflection/reflection_sunlit_desk_01_hero.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_sunlit_desk_01_hero.jpg",
+      "mime": "image/jpeg",
+      "bytes": 80547,
+      "sha256": "0b3b263ecb00d533321025dc2cc13ed307a0dabe4dcadb78169d7e19e5c86fb3",
+      "sourceSha256": "a96654ac9b74f2ce851f47bacdbec8b2bb06f0e9d5057eae7f14dde04113266e",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_sunlit_desk_01_hero.jpg"
+    },
+    {
+      "visualId": "sunlit_window_book_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "light",
+        "minimal",
+        "forest",
+        "lavender"
+      ],
+      "localPath": "/static/visuals/reflection/reflection_sunlit_window_book_01.jpg",
+      "key": "reflection/reflection_sunlit_window_book_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_sunlit_window_book_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 14385,
+      "sha256": "24343483938a3baa89200769b6e356057f0038907ee5a1d96965aa1547efc8e9",
+      "sourceSha256": "04c158063c97105b660a8f5d8d4e124d10f9ee73a00e26ccfd1d79888be0e9b8",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_sunlit_window_book_01.jpg"
+    },
+    {
+      "visualId": "reflection_sunset_mountain_journal_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "lavender"
+      ],
+      "localPath": "/static/visuals/reflection/reflection_sunset_mountain_journal_01.jpg",
+      "key": "reflection/reflection_sunset_mountain_journal_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_sunset_mountain_journal_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 11120,
+      "sha256": "fdafa6568516e126a797ed633154726bf73be8aceba539880b8d4dfb6c06b9e7",
+      "sourceSha256": "19e7bf5556d532d1e7274a7492bc6d48b1a04347d54c7e3ca29c7aa47f18a1d8",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_sunset_mountain_journal_01.jpg"
+    },
+    {
+      "visualId": "window_lake_desk_01",
+      "category": "reflection",
+      "role": "hero",
+      "themes": [
+        "light"
+      ],
+      "localPath": "/static/bloom/mist-reading.jpg",
+      "key": "reflection/reflection_window_lake_desk_01_hero.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_window_lake_desk_01_hero.jpg",
+      "mime": "image/jpeg",
+      "bytes": 45087,
+      "sha256": "2584b28bd35aa9495199d7bbe1f7c56d5ad0335e79056cdab6e8427539169cb8",
+      "sourceSha256": "8e87ece0caaf2c26ac496e21bbbf41bc8f96ab2aeab76a672cb9b86e4c97920c",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_window_lake_desk_01_hero.jpg"
+    },
+    {
+      "visualId": "window_seat_01",
+      "category": "reflection",
+      "role": "card",
+      "themes": [
+        "light",
+        "minimal",
+        "dawn",
+        "lavender",
+        "forest"
+      ],
+      "localPath": "/static/visuals/reflection/reflection_window_seat_01.jpg",
+      "key": "reflection/reflection_window_seat_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/reflection/reflection_window_seat_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 6852,
+      "sha256": "b29799c6c5f51383ab91656f5ef343ff77b961bbc943268f2f30306237c992e3",
+      "sourceSha256": "0ec299df856f7cace224c764a80737668fe574e9c12b34910120d1104a3e1b86",
+      "uploadFile": "output/visual-storage-upload/reflection/reflection_window_seat_01.jpg"
+    },
+    {
+      "visualId": "bluebell_forest_01",
+      "category": "rest",
+      "role": "card",
+      "themes": [
+        "forest",
+        "lavender"
+      ],
+      "localPath": "/static/visuals/rest/rest_bluebell_forest_01.jpg",
+      "key": "rest/rest_bluebell_forest_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_bluebell_forest_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 14935,
+      "sha256": "1ee28ec4c5938f616ef9f264765d96d0621e1ab375532e548ec7853312a1fb23",
+      "sourceSha256": "89866c7b0f8c33092623b6897dcc4e9d8a4588698f24bb6446cdf6b597d2b0f2",
+      "uploadFile": "output/visual-storage-upload/rest/rest_bluebell_forest_01.jpg"
+    },
+    {
+      "visualId": "dusk_lake_reading_01",
+      "category": "rest",
+      "role": "card",
+      "themes": [
+        "dawn"
+      ],
+      "localPath": "/static/bloom/dusk-reading.jpg",
+      "key": "rest/rest_dusk_lake_reading_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_dusk_lake_reading_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 7994,
+      "sha256": "c13a3325502891e0427e11f30721cc4b80b3b181ac45ec384b3b1440984da81b",
+      "sourceSha256": "7b69a44be73c3ca28af8f0989978401f2d3950cf2aa695161cedefb4a0a7f66f",
+      "uploadFile": "output/visual-storage-upload/rest/rest_dusk_lake_reading_01.jpg"
+    },
+    {
+      "visualId": "dusk_lake_reading_01",
+      "category": "rest",
+      "role": "hero",
+      "themes": [
+        "dawn"
+      ],
+      "localPath": "/static/bloom/dusk-scene.jpg",
+      "key": "rest/rest_dusk_lake_reading_01_hero.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_dusk_lake_reading_01_hero.jpg",
+      "mime": "image/jpeg",
+      "bytes": 41099,
+      "sha256": "96869745607b8b24eab5c4317e28ef2f106d08bb360bf49bbb740d56209da340",
+      "sourceSha256": "7b69a44be73c3ca28af8f0989978401f2d3950cf2aa695161cedefb4a0a7f66f",
+      "uploadFile": "output/visual-storage-upload/rest/rest_dusk_lake_reading_01_hero.jpg"
+    },
+    {
+      "visualId": "misty_lake_meadow_01",
+      "category": "rest",
+      "role": "hero",
+      "themes": [
+        "light"
+      ],
+      "localPath": "/static/bloom/mist-lake.jpg",
+      "key": "rest/rest_misty_lake_meadow_01_hero.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_misty_lake_meadow_01_hero.jpg",
+      "mime": "image/jpeg",
+      "bytes": 48705,
+      "sha256": "c7d97f3d25cc9c636655026d92e030854c5f7ea06b3a6d5d37ba77897d8211d8",
+      "sourceSha256": "0da5afeae7ae861ce53567a24e283b8fcc3e478bfacd3b65d68f0b86caf3e0fb",
+      "uploadFile": "output/visual-storage-upload/rest/rest_misty_lake_meadow_01_hero.jpg"
+    },
+    {
+      "visualId": "moonlit_forest_01",
+      "category": "rest",
+      "role": "card",
+      "themes": [
+        "dark"
+      ],
+      "localPath": "/static/visuals/rest/rest_moonlit_forest_01.jpg",
+      "key": "rest/rest_moonlit_forest_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_moonlit_forest_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 10750,
+      "sha256": "fcf485e8fa0274d35d5f661d69a4d699e820c57d35de418723dd7af50c5be2a9",
+      "sourceSha256": "078592448da5f311c750ed1c6adf202483d602328f9381de816918bdff8cca65",
+      "uploadFile": "output/visual-storage-upload/rest/rest_moonlit_forest_01.jpg"
+    },
+    {
+      "visualId": "moonlit_lake_01",
+      "category": "rest",
+      "role": "card",
+      "themes": [
+        "dark"
+      ],
+      "localPath": "/static/visuals/rest/rest_moonlit_lake_01.jpg",
+      "key": "rest/rest_moonlit_lake_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_moonlit_lake_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 6155,
+      "sha256": "fe9e7a097eeb142e1821b577809df6939a29bb1ff743590f76d8482fad75ef22",
+      "sourceSha256": "def41937fcb162e6db9f3c73a9cbe8d2993e32f319ec30b29d63661ea25958b8",
+      "uploadFile": "output/visual-storage-upload/rest/rest_moonlit_lake_01.jpg"
+    },
+    {
+      "visualId": "rest_mountain_paper_plane_01",
+      "category": "rest",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "lavender"
+      ],
+      "localPath": "/static/visuals/rest/rest_mountain_paper_plane_01.jpg",
+      "key": "rest/rest_mountain_paper_plane_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_mountain_paper_plane_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 10890,
+      "sha256": "a289444ef1e30f9fe03e9ef76a1b69871e371650913897af2fc0f37aef14aa7d",
+      "sourceSha256": "a33a116eef56ee752d44c606d753c54832aecaf079f5e9df822509b145a9ef4b",
+      "uploadFile": "output/visual-storage-upload/rest/rest_mountain_paper_plane_01.jpg"
+    },
+    {
+      "visualId": "night_lake_reading_01",
+      "category": "rest",
+      "role": "card",
+      "themes": [
+        "dark"
+      ],
+      "localPath": "/static/bloom/night-reading.jpg",
+      "key": "rest/rest_night_lake_reading_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_night_lake_reading_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 8290,
+      "sha256": "1c328d9d4f80c496e78c4c328bc2ac421898415097600312857b4802150b68c2",
+      "sourceSha256": "d6666fd470f9dc83f43cdeb9d59a0335d3282a132dca6bc6f8d2d6a28205da11",
+      "uploadFile": "output/visual-storage-upload/rest/rest_night_lake_reading_01.jpg"
+    },
+    {
+      "visualId": "night_lake_reading_01",
+      "category": "rest",
+      "role": "hero",
+      "themes": [
+        "dark"
+      ],
+      "localPath": "/static/bloom/night-scene.jpg",
+      "key": "rest/rest_night_lake_reading_01_hero.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/rest/rest_night_lake_reading_01_hero.jpg",
+      "mime": "image/jpeg",
+      "bytes": 48379,
+      "sha256": "db6fb4427fa82db1fc1af48b87c426c7577c4050cef52bbb56ca8fb96520ab7e",
+      "sourceSha256": "d6666fd470f9dc83f43cdeb9d59a0335d3282a132dca6bc6f8d2d6a28205da11",
+      "uploadFile": "output/visual-storage-upload/rest/rest_night_lake_reading_01_hero.jpg"
+    },
+    {
+      "visualId": "autumn_forest_path_01",
+      "category": "transition",
+      "role": "card",
+      "themes": [
+        "forest",
+        "dawn"
+      ],
+      "localPath": "/static/visuals/transition/transition_autumn_forest_path_01.jpg",
+      "key": "transition/transition_autumn_forest_path_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/transition/transition_autumn_forest_path_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 14828,
+      "sha256": "46b7ecd85f6341efe11d5fb890c983d26f1c5bf921c9e973900784d0660e3b66",
+      "sourceSha256": "41b07013d6d20c6b9ef5270940c49045b3145059e9061dc52fa29569dc2d69e1",
+      "uploadFile": "output/visual-storage-upload/transition/transition_autumn_forest_path_01.jpg"
+    },
+    {
+      "visualId": "transition_golden_station_departure_01",
+      "category": "transition",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn"
+      ],
+      "localPath": "/static/visuals/transition/transition_golden_station_departure_01.jpg",
+      "key": "transition/transition_golden_station_departure_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/transition/transition_golden_station_departure_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 16030,
+      "sha256": "e5839816ecf5bd3c431d1f59543c09890a6a0327c31e3f3aae182a5a5973900f",
+      "sourceSha256": "6d18da152eb3e6dd55241c7059045b9e371b018bfa60ce92de26ee02e361a5c9",
+      "uploadFile": "output/visual-storage-upload/transition/transition_golden_station_departure_01.jpg"
+    },
+    {
+      "visualId": "transition_open_door_journey_01",
+      "category": "transition",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn",
+        "forest",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/transition/transition_open_door_journey_01.jpg",
+      "key": "transition/transition_open_door_journey_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/transition/transition_open_door_journey_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 10918,
+      "sha256": "b7d425dc790435c5f2795125b8ef54188c8dcfbb6c76a9b27f97551a559b9619",
+      "sourceSha256": "f65a6b910c082b4440bd0fdc77062f9023c4b7f3c0eb8d344e1b7b7735bea7e6",
+      "uploadFile": "output/visual-storage-upload/transition/transition_open_door_journey_01.jpg"
+    },
+    {
+      "visualId": "transition_quiet_platform_walk_01",
+      "category": "transition",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn"
+      ],
+      "localPath": "/static/visuals/transition/transition_quiet_platform_walk_01.jpg",
+      "key": "transition/transition_quiet_platform_walk_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/transition/transition_quiet_platform_walk_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 11656,
+      "sha256": "06dd9e15850fd21e149d12cdf597aea775d1513ace65a0ac1de20276ce567e23",
+      "sourceSha256": "db23c952988d94dd078cec3127959501bf335ea4866423adebfc2c4e7c9fb86c",
+      "uploadFile": "output/visual-storage-upload/transition/transition_quiet_platform_walk_01.jpg"
+    },
+    {
+      "visualId": "transition_storm_to_sunrise_01",
+      "category": "transition",
+      "role": "card",
+      "themes": [
+        "dawn"
+      ],
+      "localPath": "/static/visuals/transition/transition_storm_to_sunrise_01.jpg",
+      "key": "transition/transition_storm_to_sunrise_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/transition/transition_storm_to_sunrise_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 16492,
+      "sha256": "18127fc4556d482cf3565e6e84c70dc8609b50925ad8b35e23af848584db2ff4",
+      "sourceSha256": "76da8883c9c16712ffc541c80e24ccb257b063b26e73193695e3e778dd892d0c",
+      "uploadFile": "output/visual-storage-upload/transition/transition_storm_to_sunrise_01.jpg"
+    },
+    {
+      "visualId": "transition_sunlit_new_home_01",
+      "category": "transition",
+      "role": "card",
+      "themes": [
+        "light",
+        "minimal"
+      ],
+      "localPath": "/static/visuals/transition/transition_sunlit_new_home_01.jpg",
+      "key": "transition/transition_sunlit_new_home_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/transition/transition_sunlit_new_home_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 11675,
+      "sha256": "0887cb341371d4c110d1aa724b40ff0686738caccaf3d566bca892a0c4a3f4e0",
+      "sourceSha256": "68ce1ffc82aa968bae944e9887210af0b25cc3f47c19a2477ccba84898867585",
+      "uploadFile": "output/visual-storage-upload/transition/transition_sunlit_new_home_01.jpg"
+    },
+    {
+      "visualId": "transition_sunrise_station_suitcase_01",
+      "category": "transition",
+      "role": "card",
+      "themes": [
+        "light",
+        "dawn"
+      ],
+      "localPath": "/static/visuals/transition/transition_sunrise_station_suitcase_01.jpg",
+      "key": "transition/transition_sunrise_station_suitcase_01.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/transition/transition_sunrise_station_suitcase_01.jpg",
+      "mime": "image/jpeg",
+      "bytes": 13419,
+      "sha256": "926db19e3b97d77c685cbb9e9bbeb4f78d6d4d765aad27fc2ae5687f9036d90b",
+      "sourceSha256": "e765e3a620bf5ee72f2a3a4c4e5dfaec69e41090af15f36c2dedb4d3c9203c5b",
+      "uploadFile": "output/visual-storage-upload/transition/transition_sunrise_station_suitcase_01.jpg"
+    }
+  ]
+}

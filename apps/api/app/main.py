@@ -38,6 +38,7 @@ from .models import (
     User,
     now,
 )
+from .moments import purge_moments, register_moment_routes
 from .schemas import (
     Card,
     CardUpdate,
@@ -319,6 +320,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                     policy_version="2026-10-16",
                 )
             )
+        if values.get("save_chat") is False or values.get("ai_consent") is False:
+            purge_moments(db, user.id)
         if values.get("save_chat") is False:
             ids = select(Issue.id).where(Issue.user_id == user.id)
             db.execute(delete(Message).where(Message.issue_id.in_(ids)))
@@ -860,6 +863,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             ),
         }
 
+    register_moment_routes(app, authenticated, db_dependency, sessions, settings, ai_transport,
+                           evaluation=getattr(app.state, 'evaluation_sessions', None) is not None)
     register_discovery_routes(app, authenticated, db_dependency, owned, issue_view)
     register_journey_routes(app, authenticated, db_dependency, owned)
     register_routes(app, authenticated, db_dependency, owned, run_chat)

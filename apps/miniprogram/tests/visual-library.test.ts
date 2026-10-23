@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { themes } from '../src/themes'
@@ -37,13 +37,22 @@ function runtimeFile(src: string) {
 
 describe('visual library contract', () => {
   it('keeps one stable record for every original and mirrors the canonical manifest', () => {
-    expect(visuals).toHaveLength(28)
-    expect(new Set(visuals.map(visual => visual.id)).size).toBe(28)
-    expect(new Set(visuals.map(visual => visual.originalPath)).size).toBe(28)
+    const sourceRoot = path.join(root, 'assets/visual-library/originals')
+    const files = readdirSync(sourceRoot, { recursive: true })
+      .map(String).filter(file => /\.(png|jpe?g|jfif)$/i.test(file))
+      .map(file => 'assets/visual-library/originals/' + file.replaceAll('\\', '/')).sort()
+    expect(visuals.map(visual => visual.originalPath).sort()).toEqual(files)
+    expect(new Set(visuals.map(visual => visual.id)).size).toBe(visuals.length)
+    expect(new Set(visuals.map(visual => visual.originalPath)).size).toBe(visuals.length)
     expect(readFileSync(runtimeManifestFile).equals(readFileSync(manifestFile))).toBe(true)
-    expect(visuals.filter(visual => visual.status === 'deployed')).toHaveLength(22)
-    expect(visuals.filter(visual => visual.status === 'archived')).toHaveLength(5)
-    expect(visuals.filter(visual => visual.status === 'reference-only')).toHaveLength(1)
+    expect([...new Set(visuals.map(visual => visual.category))].sort())
+      .toEqual(['choices', 'connection', 'direction', 'growth', 'reflection', 'rest', 'transition'].sort())
+    const deployed = visuals.filter(visual => visual.deploy)
+    expect(new Set(deployed.map(visual => visual.sourceSha256)).size).toBe(deployed.length)
+    expect(getVisual('bluebell_forest_01')?.originalPath).toBe('assets/visual-library/originals/rest/rest_bluebell_forest_01.jfif')
+    expect(getVisual('growth_handcraft_stitching_01')?.deploy).toBe(true)
+    expect(getVisual('connection_window_tea_conversation_duplicate_01')?.deploy).toBe(false)
+    expect(getVisual('reference_bloom_pages_pair_01')).toBeUndefined()
   })
 
   it('references only real originals and deployed runtime files with the recorded hashes', () => {
@@ -75,6 +84,18 @@ describe('visual library contract', () => {
 })
 
 describe('local visual resolver', () => {
+  it('excludes sibling images in an already used source family', () => {
+    const first = getVisual('transition_sunrise_station_suitcase_01')!
+    const sibling = getVisual('transition_quiet_platform_walk_01')!
+    const before = sibling.sourceGroup
+    sibling.sourceGroup = first.sourceGroup
+    try {
+      const result = resolveVisual({ page: 'discover', category: 'transition', preferredIds: [sibling.id] }, 'dawn', 'card-thumbnail', [first.id])
+      expect(result?.id).not.toBe(sibling.id)
+      expect(result && getVisual(result.id)?.sourceGroup).not.toBe(first.sourceGroup)
+    } finally { sibling.sourceGroup = before }
+  })
+
   it('is deterministic for the same request and theme', () => {
     for (const theme of themes) {
       expect(resolveDiscoverVisuals(theme.id)).toEqual(resolveDiscoverVisuals(theme.id))
@@ -84,7 +105,7 @@ describe('local visual resolver', () => {
   })
 
   it('uses an aspect preference as a deterministic soft ranking signal', () => {
-    expect(resolveVisual({ page: 'discover', category: 'direction' }, 'dawn', 'card-thumbnail')?.id).toBe('autumn_forest_path_01')
+    expect(resolveVisual({ page: 'discover', category: 'direction' }, 'dawn', 'card-thumbnail')?.id).toBe('forest_path_pink_01')
     expect(resolveVisual({ page: 'discover', category: 'direction', aspect: 1.45 }, 'dawn', 'card-thumbnail')?.id).toBe('sunlit_meadow_path_01')
   })
 

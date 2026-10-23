@@ -39,7 +39,7 @@ export function createApi(transport: Transport, token: () => string, unauthorize
         rejectRequest = reject
         const header: Record<string, string> = { 'Content-Type': 'application/json' }
         if (token()) header.Authorization = `Bearer ${token()}`
-        task = transport({ url: base.replace(/\/$/, '') + path, method, data, header, timeout: path.endsWith('/chat') ? 65000 : 15000,
+        task = transport({ url: base.replace(/\/$/, '') + path, method, data, header, timeout: path.endsWith('/chat') || path === '/moments/open' ? 65000 : 15000,
           success(response) {
             if (settled) return
             settled = true

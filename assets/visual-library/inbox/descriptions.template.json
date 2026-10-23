@@ -1,0 +1,12 @@
+{
+  "example-file-with-any-name.jpg": {
+    "description": "A human-reviewed description. Replace this example; do not infer meaning from the filename.",
+    "category": "reflection",
+    "tags": ["quiet", "reading"],
+    "mood": ["calm"],
+    "intendedPage": ["discover", "explore"],
+    "visualRole": ["card-thumbnail"],
+    "themeCompatibility": ["light", "dawn"],
+    "sourceGroup": "quiet-reading"
+  }
+}

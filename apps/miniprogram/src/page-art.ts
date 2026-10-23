@@ -1,4 +1,5 @@
 import type { ThemeId } from './themes'
+import { resolveStoredVisualPath } from './visual-storage'
 import type { Card } from './domain'
 import { editFields } from './pages/index/data'
 
@@ -49,7 +50,12 @@ export const pageArtVisualIds: Record<ThemeId, PageArtVisualIds> = {
   },
 }
 export function resolvePageArt(theme: string): PageArt {
-  return pageArt[theme as ThemeId] || pageArt.light
+  const art = pageArt[theme as ThemeId] || pageArt.light
+  return {
+    discover: resolveStoredVisualPath(art.discover),
+    plan: resolveStoredVisualPath(art.plan),
+    cards: art.cards.map(resolveStoredVisualPath) as [string, string, string],
+  }
 }
 export function visibleDecisionFields(card: Card) {
   return editFields.filter(field => card[field.key].length > 0)
