@@ -228,7 +228,7 @@ text { overflow-wrap: anywhere; }
 .reply-wait-time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .reply-wait-note { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .reply-wait-dots { display: flex; gap: 3px; align-items: center; }
-.reply-wait-dots view { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); animation: breathe 1.5s ease-in-out infinite; }
+.reply-wait-dots view { width: 4px; height: 4px; border-radius: 50%; background: var(--bloom-waiting, #d8a33e); animation: breathe 1.5s ease-in-out infinite; }
 .reply-wait-dots view:nth-child(2) { animation-delay: .15s; }
 .reply-wait-dots view:nth-child(3) { animation-delay: .3s; }
 .reply-wait-stop { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 66px; min-height: 44px; margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); color: var(--ink); font-size: 13px; line-height: 1.4; }
@@ -246,14 +246,21 @@ text { overflow-wrap: anywhere; }
 .reasoning-label { display: block; color: var(--ink); font-size: 10px; font-weight: 500; margin-bottom: 3px; }
 .reasoning-text { display: block; color: var(--muted); font-size: 12px; line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
 @media (prefers-reduced-motion: reduce) { .reasoning-chevron { transition: none; } }
-/* The composer lives inside the fixed dock block; the send key stays in thumb reach. */
+/* The composer lives inside the fixed dock block; the send key stays in thumb reach.
+   One row: input (flex) | web | send. Past two lines the right rail stacks
+   vertically (web above send) so the input keeps the full width. */
 .composer { width: 100%; max-width: 448px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 10px; box-sizing: border-box; box-shadow: 0 5px 24px var(--bg); }
-.web-toggle { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; min-height: 34px; padding: 0; margin: 0 0 3px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--muted); flex-shrink: 0; }
+.composer-side { display: flex; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.composer.stacked .composer-side { flex-direction: column; align-items: center; gap: 8px; }
+.web-toggle { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; min-height: 34px; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--muted); flex-shrink: 0; }
 .web-toggle::after { border: 0; }
 .web-toggle.on { border-color: var(--accent); color: var(--accent); background: var(--soft); }
 .web-toggle[disabled] { opacity: .5; }
 .chat-input { flex: 1; padding: 10px 4px; font-size: 13px; line-height: 1.6; min-height: 41px; max-height: 150px; }
-.send-button { display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--bg); width: 38px; height: 38px; border-radius: 10px; font-size: 23px; flex-shrink: 0; }
+.send-button { display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--bg); width: 38px; height: 38px; min-height: 38px; padding: 0; margin: 0; line-height: 1; border: 0; border-radius: 10px; flex-shrink: 0; }
+.send-button::after { border: 0; }
+/* Native custom-component hosts otherwise keep a text baseline below the SVG. */
+.send-button, .web-toggle { font-size: 0; line-height: 0; }
 .send-button[disabled] { background: var(--accent); color: var(--bg); }
 /* Attributed external results: clearly not confirmed user facts. */
 .web-sources { margin-top: 8px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 10px; max-width: 100%; box-sizing: border-box; }
@@ -284,6 +291,7 @@ text { overflow-wrap: anywhere; }
 .modal-scroll { max-height: calc(85vh - 75px); padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
 .modal-scroll .primary { margin-top: 25px; }
 .modal-scroll .body-copy { margin-bottom: 20px; }
+.ai-consent-actions { flex-shrink: 0; padding: 12px 0 calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
 .wide { display: block; text-align: center; width: 100%; margin-top: 13px; }
 .archive-card { border-bottom: 1px solid var(--line); padding: 18px 0; }
 .archive-card .card-title { margin-top: 9px; font-size: 16px; }
@@ -301,3 +309,33 @@ text { overflow-wrap: anywhere; }
 @media (min-width: 600px) { .app-shell { box-shadow: 0 0 60px #33442612; border-left: 1px solid #dce2d4; border-right: 1px solid #dce2d4; } }
 @media (max-width: 360px) { .onboarding, .workspace, .settings-content { padding-left: 20px; padding-right: 20px; } .hero-title { font-size: 30px; } .path-art { width: 100px; } .option-title { font-size: 12px; } .option-description { font-size: 9px; } .concern-option { gap: 8px; } }
 @media (prefers-reduced-motion: reduce) { .typing-dot { animation: none; } .primary, .concern-option, .toggle, .toggle > view { transition: none; } }
+
+/* Public streaming state and lightweight message actions reuse theme tokens. */
+.streaming-reply { align-items: flex-start; }
+.thinking-copy { min-width: 0; flex: 1; }
+.reply-phase { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; line-height: 1.7; margin: 4px 0 8px; }
+.stream-text { display: block; white-space: pre-wrap; }
+.message-tools { display: flex; gap: 8px; margin: 5px 0 0; }
+.message-tools button { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; min-height: 32px; margin: 0; background: transparent; color: var(--muted); font-size: 11px; line-height: 1; border-radius: 6px; }
+.message-tools button::after { border: 0; }
+.message-tools button[disabled] { opacity: .45; }
+.jump-latest { position: fixed; right: 20px; bottom: calc(115px + env(safe-area-inset-bottom)); z-index: 12; display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 18px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 12px; line-height: 1.4; box-shadow: 0 3px 12px var(--soft); }
+.jump-latest::after { border: 0; }
+#chat-bottom { height: 1px; }
+
+.streaming-reply .message-bubble { margin-left: 0; font-size: 13px; line-height: 1.8; }
+
+.streaming-reply .stream-text { color:var(--ink); }
+.selected-quote { display:flex; gap:12px; align-items:flex-start; max-width:448px; margin:0 auto 6px; padding:10px 12px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:10px; background:var(--paper); }
+.selected-quote > view { flex:1; min-width:0; }
+.selected-quote-label { display:block; color:var(--muted); font-size:10px; margin-bottom:4px; }
+.selected-quote-text { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; color:var(--ink); font-size:12px; line-height:1.6; white-space:pre-wrap; }
+.selected-quote button { display:flex; align-items:center; justify-content:center; width:32px; height:32px; margin:-4px -4px 0 0; flex-shrink:0; padding:0; background:transparent; }
+
+/* Chat exceptions stay beside the input, including with the keyboard open. */
+.composer-error { max-width:448px; margin:0 auto 8px; padding:10px 12px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:10px; background:var(--paper); color:var(--ink); }
+.composer-error-row { display:flex; align-items:flex-start; gap:8px; }
+.composer-error-message { flex:1; min-width:0; font-size:12px; line-height:1.7; }
+.composer-error-close { width:28px; height:28px; margin:-3px -4px 0 0; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:transparent; }
+.composer-error-recover { display:flex; align-items:center; gap:6px; margin:6px 0 0; padding:4px 0; color:var(--accent); font-size:12px; line-height:1.5; background:transparent; }
+.composer-error button::after { border:0; }

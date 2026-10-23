@@ -182,7 +182,8 @@
 /* The dock centers the composer; the alpha polish only adjusts its shape. */
 .composer { border-radius:10px; padding:9px 10px 9px 16px; box-shadow:0 5px 24px #2531480b; }
 .chat-input { font-size:14px; }
-.send-button { background:var(--button-fill); color:#fff; width:42px; height:42px; display:flex; align-items:center; justify-content:center; }
+.web-toggle, .send-button { width:42px; height:42px; min-width:42px; min-height:42px; }
+.send-button { background:var(--button-fill); color:#fff; display:flex; align-items:center; justify-content:center; }
 .keyboard-open .tabbar { display:none; }
 .settings-content { padding-top:24px; }
 .setting-description { font-size:11px; }

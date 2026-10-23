@@ -3,3 +3,8 @@
 *.jpg binary
 *.jpeg binary
 *.webp binary
+
+# Preserve byte-hashed evaluation fixtures on Windows too.
+apps/api/evaluation/cases.json text eol=lf
+apps/api/evaluation/live_first/manifest.json text eol=lf
+apps/api/evaluation/live_first/rubric.json text eol=lf

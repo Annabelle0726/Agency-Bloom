@@ -21,7 +21,10 @@
     "minifyWXML": true,
     "localPlugins": false,
     "disableUseStrict": false,
-    "condition": false
+    "condition": false,
+    "useMultiFrameRuntime": true,
+    "swc": false,
+    "disableSWC": true
   },
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},
@@ -30,7 +33,14 @@
     "include": []
   },
   "appid": "wx0df7435d19ace441",
-  "editorSetting": {},
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  },
   "miniprogramRoot": "apps/miniprogram/dist/dev/mp-weixin/",
-  "projectname": "Agency Bloom (development)"
+  "projectname": "Agency Bloom (development)",
+  "srcMiniprogramRoot": "apps/miniprogram/dist/dev/mp-weixin/",
+  "condition": {},
+  "description": "项目配置文件，详见文档：https://developers.weixin.qq.com/miniprogram/dev/devtools/projectconfig.html",
+  "libVersion": "3.17.4"
 }

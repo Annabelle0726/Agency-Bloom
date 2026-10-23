@@ -1,3 +1,4 @@
+import { createChatFollow } from '../../chat-follow'
 import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
 import {onHide, onReady, onShow} from '@dcloudio/uni-app'
 import {makePreview, mergeSuggestion, experimentProposal} from '../../domain'
@@ -114,11 +115,13 @@ export function useIndexPage() {
   // #endif
   const tab = ref<SpaceTab>('now')
   const modal = ref<'' | 'privacy' | 'edit' | 'feedback' | 'ai' | 'appearance' | 'support' | 'experiment'>('')
+  watch(modal, value => { if (value === 'ai') uni.hideKeyboard() })
   const operations = createOperationState()
   const busy = computed(() => operations.busy.auth || operations.busy.data)
   const error = computed({ get: () => operations.errors.data, set: value => { operations.errors.data = value } })
   const authError = computed(() => operations.errors.auth)
   const chatError = computed(() => workspace.active.value.error.value || operations.errors.ai)
+  const composerError = computed(() => offline.value ? '网络连接已断开，输入仍保留，恢复网络后可以继续' : chatError.value || error.value)
   const offline = computed(() => !!operations.errors.init)
   const toast = ref('')
   const form = reactive<Onboarding>(newOnboarding())
@@ -157,7 +160,7 @@ export function useIndexPage() {
   // #endif
   const card = computed(() => current.value?.card ?? preview.value)
   const workspace = createChatWorkspace({
-    post: (conversationId, body) => api.request('POST', `/conversations/${conversationId}/chat`, body),
+    post: (conversationId, body, onEvent) => api.request('POST', `/conversations/${conversationId}/chat`, body, onEvent),
     cancelRemote: id => request('POST', `/requests/${id}/cancel`),
     requestId,
     onError: () => {},
@@ -207,12 +210,45 @@ export function useIndexPage() {
   const pendingText = computed({ get: () => workspace.active.value.pendingText.value, set: value => { workspace.active.value.pendingText.value = value } })
   const creatingConversation = computed(() => creatingDrafts.value.includes(workspace.activeId.value))
   const sending = computed(() => workspace.active.value.sending.value)
-  watch(sending, async value => {
+  const streamText = computed(() => workspace.active.value.streamText.value)
+  const replyPhase = computed(() => workspace.active.value.replyPhase.value)
+  const follow = createChatFollow(), followLatest = ref(true)
+  let scrollTimer: ReturnType<typeof setTimeout> | undefined
+  let scrollRevision = 0
+  function jumpLatest() {
+    follow.resume(); followLatest.value = true
+    if (tab.value !== 'chat') return
+    void nextTick(() => { if (follow.following && tab.value === 'chat') uni.pageScrollTo({ scrollTop: 10000000, duration: 0 }) })
+  }
+  function followReply() {
+    if (!follow.following || tab.value !== 'chat' || scrollTimer) return
+    scrollTimer = setTimeout(() => { scrollTimer = undefined; if (follow.following) jumpLatest() }, 100)
+  }
+  function handleChatScroll(event: { scrollTop: number }) {
+    if (tab.value !== 'chat') return
+    // Pause synchronously: a delayed native geometry callback must not race
+    // the next streamed chunk and pull the reader back to the bottom.
+    const revision = ++scrollRevision
+    follow.scroll(event.scrollTop, false)
+    followLatest.value = follow.following
+    uni.createSelectorQuery().select('#chat-bottom').boundingClientRect(rect => {
+      if (!rect || Array.isArray(rect) || revision !== scrollRevision) return
+      const height = uni.getSystemInfoSync().windowHeight
+      follow.scroll(event.scrollTop, (rect.bottom ?? Infinity) <= height + 80)
+      followLatest.value = follow.following
+    }).exec()
+  }
+  watch(sending, value => {
     if (!value || tab.value !== 'chat' || workspace.active.value.sendingTask.value === 'summary') return
-    uni.hideKeyboard()
-    await nextTick()
-    uni.pageScrollTo({ selector: '#pending-message', duration: 0 })
+    uni.hideKeyboard(); jumpLatest()
   })
+  watch(streamText, followReply)
+  watch(composerError, followReply)
+  watch(() => [workspace.activeId.value, tab.value], () => {
+    follow.reset(); followLatest.value = true
+    if (tab.value === 'chat') followReply()
+  })
+  onUnmounted(() => { if (scrollTimer) clearTimeout(scrollTimer) })
   const suggestion = computed({ get: () => workspace.active.value.suggestion.value, set: value => { workspace.active.value.suggestion.value = value } })
   const insight = computed({ get: () => workspace.active.value.insight.value, set: value => { workspace.active.value.insight.value = value } })
   const insightReaction = computed(() => workspace.active.value.insightReaction.value)
@@ -228,11 +264,22 @@ export function useIndexPage() {
     speakingTimer = setTimeout(() => { speakingIndex.value = null }, 780)
   })
   onUnmounted(() => { if (speakingTimer) clearTimeout(speakingTimer) })
-  watch(() => messages.value.length, async (length, previous) => {
-    if (tab.value !== 'chat' || length <= previous) return
-    await nextTick()
-    uni.pageScrollTo({ selector: `#message-${length - 1}`, duration: 160 })
+  watch(() => messages.value[messages.value.length - 1], followReply)
+  const messageSelectionOpen = ref(false)
+  watch(messageSelectionOpen, value => {
+    if (!value) return
+    follow.pause(); followLatest.value = false
+    if (scrollTimer) { clearTimeout(scrollTimer); scrollTimer = undefined }
+    uni.hideKeyboard()
   })
+  function askBloom(text: string) {
+    if (!text.trim() || sending.value) return
+    if (text.length > 800) { notify('这段内容较长，请缩小选区后再问 Bloom'); return }
+    workspace.active.value.selectedQuote.value = text
+    messageSelectionOpen.value = false
+    jumpLatest()
+  }
+  watch(() => workspace.activeId.value, () => { messageSelectionOpen.value = false })
   const experimentEditor = reactive<Experiment>({ action: '', tests: '', effort: '', stop_rule: '' })
   let experimentBase: Card | null = null
   let experimentVersion = 0
@@ -598,7 +645,7 @@ export function useIndexPage() {
     if (!user.value.ai_consent) { modal.value = 'ai'; return }
     const account = user.value.id, sessionToken = token.value
     const context = workspace.drafts[key]
-    operations.clear('ai'); session.error.value = ''
+    operations.clear('ai')
     let conversationId = activeConversation.value?.id
     if (!conversationId) {
       if (!context) return
@@ -644,7 +691,6 @@ export function useIndexPage() {
 
   function editMessage(index: number) {
     if (busy.value || sending.value || readOnlyConversation.value) return
-    workspace.active.value.error.value = ''
     workspace.active.value.beginEdit(index)
   }
   async function saveMessageEdit() {
@@ -861,19 +907,22 @@ export function useIndexPage() {
   }
   async function recoverReply() {
     const id = workspace.activeId.value, session = workspace.get(id)
-    if (!session.lastRequestId.value) return
+    const requestId = session.errorRequestId.value || session.lastRequestId.value
+    if (!requestId) return
     await guarded(async () => {
-      const status = await request<{ status: string; recoverable: boolean }>('GET', `/requests/${session.lastRequestId.value}`)
+      const status = await request<{ status: string; recoverable: boolean }>('GET', `/requests/${requestId}`)
       if (status.status === 'pending') { notify('请求仍在处理中，请稍后再查看'); return }
       if (status.recoverable) {
         const page = await request<{ items: ChatMessage[]; next_cursor: string | null }>('GET', `/conversations/${id}/messages`)
+        const conversation = await request<Conversation>('GET', `/conversations/${id}`)
+        if (session.sending.value || session.errorRequestId.value !== requestId) return
         const last = page.items[page.items.length - 1]
-        session.messages.value = page.items; session.olderCursor.value = page.next_cursor; session.error.value = ''
+        session.messages.value = page.items; session.olderCursor.value = page.next_cursor; session.error.value = ''; session.errorRequestId.value = ''
+        if (workspace.activeId.value === id) operations.clear('ai')
         session.suggestion.value = last?.payload?.suggestion || null
         session.insight.value = last?.payload?.insight || null; session.insightReaction.value = ''
         session.phaseChange.value = null; session.phaseConfirmed.value = false; session.phaseOpen.value = false
         session.closeEdit()
-        const conversation = await request<Conversation>('GET', `/conversations/${id}`)
         session.summary.value = conversation.summary; session.summaryDraft.value = null
         notify('已读取保存的回复，输入草稿仍保留')
       } else notify('没有可恢复的已保存回复；不会自动再次调用模型')
@@ -952,7 +1001,7 @@ export function useIndexPage() {
     busy,
     error,
     authError,
-    chatError,
+    chatError, composerError,
     offline,
     toast,
     preview,
@@ -975,7 +1024,7 @@ export function useIndexPage() {
     runningIds,
     messages,
     draft,
-    pendingText,
+    pendingText, streamText, replyPhase, followLatest, jumpLatest, askBloom, messageSelectionOpen, handleChatScroll,
     sending,
     creatingConversation,
     suggestion,

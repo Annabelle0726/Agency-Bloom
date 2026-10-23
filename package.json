@@ -8,7 +8,7 @@
     "dev:wechat": "node tools/wechat.mjs dev",
     "wechat:open": "node tools/wechat.mjs open dev",
     "wechat:open:build": "node tools/wechat.mjs open build",
-    "test:tools": "node --test tools/wechat.test.mjs",
+    "test:tools": "node --test tools/wechat.test.mjs tools/evaluation-fixtures.test.mjs",
     "visuals:sync": "node tools/sync-visual-manifest.cjs",
     "visuals:validate": "node tools/validate-visual-manifest.cjs",
     "visuals:sheets": "node tools/generate-visual-contact-sheets.cjs",

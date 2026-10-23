@@ -3,16 +3,47 @@ import { createChatSession } from '../src/chat'
 import { ApiError } from '../src/http'
 import type { ChatResponse } from '../src/domain'
 
-function harness() {
+function harness(requestId: () => string = () => 'one-request') {
   let resolve!: (reply: ChatResponse) => void
   let reject!: (error: Error) => void
   const abort = vi.fn(() => reject(new ApiError('已停止回复', 0, true)))
   const post = vi.fn(() => ({ promise: new Promise<ChatResponse>((yes, no) => { resolve = yes; reject = no }), cancel: abort }))
   const remote = vi.fn(async () => {})
   const error = vi.fn(), notice = vi.fn()
-  const chat = createChatSession({ post, cancelRemote: remote, onError: error, onCancelled: notice, requestId: () => 'one-request' })
+  const chat = createChatSession({ post, cancelRemote: remote, onError: error, onCancelled: notice, requestId })
   return { chat, post, abort, remote, error, notice, resolve: (value: ChatResponse) => resolve(value), reject: (value: Error) => reject(value) }
 }
+
+it('keeps an exception visible until a subsequent reply succeeds', async () => {
+  const h = harness()
+  h.chat.draft.value = '保留的问题'
+  const first = h.chat.send('c')
+  h.reject(new Error('回复格式异常')); await first
+  expect(h.chat.error.value).toBe('回复格式异常')
+  const second = h.chat.send('c')
+  expect(h.chat.error.value).toBe('回复格式异常')
+  expect(h.chat.draft.value).toBe('保留的问题')
+  h.resolve({reply:'已恢复，可以继续聊',suggestion:null,mode:'demo'}); await second
+  expect(h.chat.error.value).toBe('')
+})
+
+it('keeps the failed request reference during a new attempt and isolates other sessions', async () => {
+  let id = 0
+  const first = harness(() => `request-${++id}`), other = harness()
+  first.chat.draft.value = '问题'
+  let pending = first.chat.send('first')
+  first.reject(new Error('首次失败')); await pending
+  expect(first.chat.errorRequestId.value).toBe('request-1')
+  pending = first.chat.send('first')
+  expect(first.chat.lastRequestId.value).toBe('request-2')
+  expect(first.chat.errorRequestId.value).toBe('request-1')
+  other.chat.draft.value = '另一个会话'
+  const another = other.chat.send('other')
+  other.resolve({reply:'正常',suggestion:null,mode:'demo'}); await another
+  expect(first.chat.error.value).toBe('首次失败')
+  first.reject(new Error('再次失败')); await pending
+  expect(first.chat.errorRequestId.value).toBe('request-2')
+})
 
 it('edits a branch only after success, preserves draft on failure, and omits old summary', async () => {
   const h = harness()
@@ -138,10 +169,11 @@ it('cancels promptly, reports the remote request and preserves the input', async
 
 it('holds a proposal as an unconfirmed draft and bounds sent recent history', async () => {
   const h = harness()
-  h.chat.messages.value = Array.from({ length: 20 }, (_, i) => ({ role: i % 2 ? 'assistant' as const : 'user' as const, content: String(i) }))
+  h.chat.messages.value = Array.from({ length: 40 }, (_, i) => ({ role: i % 2 ? 'assistant' as const : 'user' as const, content: String(i) }))
   h.chat.draft.value = '程序员和 AI 产品经理怎么选'
   const pending = h.chat.send('issue')
-  expect(h.post.mock.calls[0][1].history).toHaveLength(8)
+  expect(h.post.mock.calls[0][1].history).toHaveLength(32)
+  expect(h.post.mock.calls[0][1].history[0].content).toBe('8')
   const suggestion = { options: ['继续开发', '探索产品'], hypotheses: [], unknowns: ['岗位要求'], next_step: '访谈一位从业者' }
   h.resolve({ reply: '先看现实约束', suggestion, mode: 'deepseek' })
   await pending

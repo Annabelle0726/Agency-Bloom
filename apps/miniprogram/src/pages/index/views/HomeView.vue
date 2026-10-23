@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SvgIcon from '../../../components/SvgIcon.vue'
+import { homeQuote } from '../../../use-home-quote'
 import type { Card, Issue } from '../../../domain'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
@@ -40,22 +41,26 @@ const emit = defineEmits<{
       <view class="focus-card-heading"><text>今日聚焦</text><text>{{ todayLabel }}</text></view>
       <button class="focus-row" data-home="plan" @click="emit('plan')" hover-class="pressed" :hover-start-time="0">
         <view class="focus-symbol"><SvgIcon name="step" :size="18" tone="accent" /></view>
-        <view class="focus-row-copy"><text>{{ card.next_step || '找到一个愿意尝试的小改变' }}</text><text>{{ card.next_step ? '你已确认的下一步，随时可以调整' : '从时间和精力允许的一步开始' }}</text></view><text class="focus-tag">计划</text>
+        <view class="focus-row-copy"><text>{{ card.next_step || '找到一个愿意尝试的小改变' }}</text><text>{{ card.next_step ? '你已确认的下一步，随时可以调整' : '从时间和精力允许的一步开始' }}</text></view><text class="focus-tag focus-tag-plan">计划</text>
       </button>
       <button class="focus-row" data-home="reflect" @click="emit('feedback')" hover-class="pressed" :hover-start-time="0">
         <view class="focus-symbol"><SvgIcon name="note" :size="18" tone="accent" /></view>
-        <view class="focus-row-copy"><text>留意今天的真实感受</text><text>一点发现，或只是想停一停</text></view><text class="focus-tag">记录</text>
+        <view class="focus-row-copy"><text>留意今天的真实感受</text><text>一点发现，或只是想停一停</text></view><text class="focus-tag focus-tag-reflect">记录</text>
       </button>
       <button class="focus-row" data-home="chat" @click="emit('chat')" hover-class="pressed" :hover-start-time="0">
         <view class="focus-symbol"><SvgIcon name="chat" :size="18" tone="accent" /></view>
-        <view class="focus-row-copy"><text>把挂心的事，慢慢说清楚</text><text>接着上一次，也可以换个话题</text></view><text class="focus-tag">对话</text>
+        <view class="focus-row-copy"><text>把挂心的事，慢慢说清楚</text><text>接着上一次，也可以换个话题</text></view><text class="focus-tag focus-tag-chat">对话</text>
       </button>
     </view>
     <view class="home-quote">
       <view class="quote-body">
         <text class="quote-eyebrow">留一句给自己</text>
-        <text class="quote-text">{{ '未来值得争取\n此刻的生活，也值得被照顾' }}</text>
-        <view class="quote-footer"><view class="quote-rule" aria-hidden="true"/><text class="quote-signature">Agency Bloom</text></view>
+        <view class="quote-passage">
+          <text class="quote-mark quote-open" aria-hidden="true">“</text>
+          <text class="quote-text">{{ homeQuote.text }}</text>
+          <text class="quote-mark quote-close" aria-hidden="true">”</text>
+        </view>
+        <view class="quote-footer"><text class="quote-signature">{{ homeQuote.source }}</text></view>
       </view>
     </view>
   </view>

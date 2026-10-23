@@ -5,6 +5,7 @@ import path from 'node:path'
 // Lucide Icons v1.60.0 is licensed ISC. Source: https://lucide.dev/license
 // We keep the upstream 24×24 geometry and only adjust the project stroke width.
 const lucide = {
+  copy: { name: 'copy', body: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>' },
   leaf: { name: 'leaf', body: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" /> <path d="M2 22c0-6 6-10 12-12" />' },
   arrow: { name: 'arrow-right', body: '<path d="M5 12h14" /> <path d="m12 5 7 7-7 7" />' },
   'arrow-up': { name: 'arrow-up', body: '<path d="m5 12 7-7 7 7" /> <path d="M12 19V5" />' },

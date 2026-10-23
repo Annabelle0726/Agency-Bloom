@@ -9,7 +9,7 @@
 .bloom-intro .page-title { display:block; font-family:var(--font-heading); font-size:24px; font-weight:400; line-height:1.47; letter-spacing:0; margin:8px 0; white-space:normal; overflow-wrap:break-word; }
 .bloom-intro .page-description { display:block; color:var(--muted); font-size:13px; line-height:1.75; }
 .discovery-list, .bloom-history, .plan-content > .bloom-surface, .plan-content > .section-row, .bloom-decision { position:relative; z-index:1; }
-.bloom-content .bloom-discovery-card { display:flex; align-items:stretch; gap:15px; padding:13px; margin:0 0 11px; border:1px solid var(--line); border-radius:10px; background:var(--surface-glass); box-shadow:0 4px 18px #1d2b3a05; color:var(--ink); line-height:1.6; transition:transform 130ms,opacity 130ms; overflow:hidden; }
+.bloom-content .bloom-discovery-card { display:flex; align-items:stretch; gap:15px; padding:13px; margin:0 0 11px; border:1px solid var(--glass-border); border-radius:10px; background:linear-gradient(145deg,var(--glass-fill-a) 0%,var(--glass-fill-b) 100%); box-shadow:var(--glass-inset),var(--glass-shadow); -webkit-backdrop-filter:blur(16px) saturate(1.12); backdrop-filter:blur(16px) saturate(1.12); color:var(--ink); line-height:1.6; transition:transform 130ms,opacity 130ms; overflow:hidden; }
 .bloom-discovery-card .discovery-photo { display:block; flex:0 0 84px; width:84px; min-height:136px; height:auto; align-self:stretch; border-radius:8px; background:var(--soft); }
 .discovery-copy { flex:1; min-width:0; padding:2px 0; }
 .bloom-discovery-card .discovery-heading { gap:6px; align-items:center; }
@@ -22,20 +22,23 @@
 .bloom-content .bloom-history { display:flex; align-items:center; justify-content:flex-start; gap:10px; border:0; background:transparent; padding:12px 2px; min-height:48px; text-align:left; color:var(--muted); }
 .bloom-content .bloom-history > view { flex:0 0 auto; }
 .bloom-history > text { flex:1; min-width:0; font-size:13px; color:var(--ink); text-align:left; }
-.bloom-content .bloom-surface { padding:19px; border:1px solid var(--line); border-radius:10px; background:var(--paper); box-shadow:var(--shadow); margin:0 0 22px; }
+.bloom-content .bloom-surface { padding:19px; border:1px solid var(--glass-border); border-radius:10px; background:linear-gradient(145deg,var(--glass-fill-a) 0%,var(--glass-fill-b) 100%); box-shadow:var(--glass-inset),var(--glass-shadow); -webkit-backdrop-filter:blur(16px) saturate(1.12); backdrop-filter:blur(16px) saturate(1.12); margin:0 0 22px; }
 .plan-content .bloom-surface .card-title { font-family:var(--font-body); font-size:16px; font-weight:400; line-height:1.55; }
-.plan-content .bloom-surface .body-copy { display:block; margin-top:7px; font-size:12.5px; line-height:1.7; color:var(--muted); }
-.bloom-content .plan-empty { background:var(--surface-glass); }
+.plan-content .bloom-surface .body-copy { display:block; margin-top:7px; font-size:13px; line-height:1.7; color:var(--muted); }
 .plan-empty-main { display:flex; align-items:flex-start; gap:10px; }
 .plan-empty-sprout { flex:0 0 22px; width:22px; height:22px; margin-top:2px; }
 .plan-empty-copy { flex:1; min-width:0; }
-.plan-empty-arrow { flex:0 0 30px; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:var(--soft); color:var(--accent); display:flex; align-items:center; justify-content:center; line-height:0; }
-.bloom-content .plan-empty-actions { gap:8px 20px; margin-top:14px; }
+.bloom-content .plan-empty-actions { gap:8px 16px; margin-top:18px; }
+.plan-empty-actions .plan-empty-edit,
+.plan-empty-actions .plan-empty-chat { display:flex; align-items:center; justify-content:center; flex-shrink:0; gap:8px; min-height:44px; margin:0; box-sizing:border-box; font-size:13px; line-height:1.5; white-space:nowrap; }
+.plan-empty-actions .plan-empty-edit { padding:6px 9px 6px 14px; border:1px solid var(--line); border-radius:24px; background:var(--soft); color:var(--accent); font-weight:500; }
+.plan-empty-edit-icon { display:flex; align-items:center; justify-content:center; flex:0 0 26px; width:26px; height:26px; border-radius:50%; background:var(--paper); }
+.plan-empty-actions .plan-empty-chat { padding:6px 0; border:0; background:transparent; color:var(--muted); }
 .bloom-content .text-button { min-height:44px; box-sizing:border-box; font-size:13px; line-height:1.5; }
 .bloom-content .next-title { font-family:var(--font-body); font-size:16px; line-height:1.6; margin:9px 0 5px; font-weight:400; white-space:pre-wrap; overflow-wrap:anywhere; }
 .bloom-content .section-row { margin-top:22px; margin-bottom:10px; }
 .bloom-content .section-title { font-family:var(--font-body); font-size:15px; line-height:1.6; font-weight:400; color:var(--ink); }
-.bloom-content .bloom-decision { padding:19px; border-radius:10px; background:var(--paper); }
+.bloom-content .bloom-decision { padding:19px; border:1px solid var(--glass-border); border-radius:10px; background:linear-gradient(145deg,var(--glass-fill-a) 0%,var(--glass-fill-b) 100%); box-shadow:var(--glass-inset),var(--glass-shadow); -webkit-backdrop-filter:blur(16px) saturate(1.12); backdrop-filter:blur(16px) saturate(1.12); }
 .decision-heading { display:flex; align-items:flex-start; gap:14px; }
 .decision-heading-copy { flex:1; min-width:0; }
 .decision-heading .paper-top { justify-content:flex-start; gap:8px; margin:0 0 8px; padding-right:0; }
@@ -46,7 +49,7 @@
 .decision-photo-empty { border:1px solid var(--glass-line, var(--line)); background:linear-gradient(155deg,var(--soft),var(--accent-light)); position:relative; overflow:hidden; }
 .decision-photo-empty::after { content:''; position:absolute; left:19px; right:19px; bottom:18px; height:1px; background:var(--accent); opacity:.22; }
 .decision-rows { margin-top:8px; }
-.decision-row { display:flex; align-items:flex-start; gap:12px; width:100%; box-sizing:border-box; padding:14px 0; border:0; border-top:1px solid var(--line); background:transparent; text-align:left; color:var(--ink); line-height:1.5; }
+.decision-row { display:flex; align-items:flex-start; gap:12px; width:100%; box-sizing:border-box; padding:14px 0; border:0; border-top:1px solid var(--glass-line); background:transparent; text-align:left; color:var(--ink); line-height:1.5; }
 .decision-row > .svg-icon { align-self:center; }
 .decision-row-icon { flex:0 0 38px; width:38px; height:38px; border-radius:50%; background:var(--soft); display:flex; align-items:center; justify-content:center; }
 .decision-row-icon.constraints, .decision-row-icon.confirmed, .decision-row-icon.unknowns { background:var(--accent-light); }

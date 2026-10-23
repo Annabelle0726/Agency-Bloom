@@ -4,6 +4,7 @@ Review scope: autonomy, no diagnosis, one optional question, reversible actions.
 Primary references and review rationale: docs/ADAPTIVE_MODEL.md.
 """
 
+import re
 from dataclasses import asdict, dataclass
 
 
@@ -35,31 +36,27 @@ STRATEGIES = {
 
 
 def casual(message):
+    # Explicit listening preference overrides task routing, but a greeting or
+    # temporary emotion alone must not swallow a substantive request.
+    if any(word in message for word in ("只想聊", "随便聊", "不想规划", "不想分析", "只想倾诉", "先听我")):
+        return True
+    if any(word in message for word in ("怎么", "如何", "比较", "应该", "建议", "帮我", "职业", "选择", "转行")):
+        return False
     if any(word in message for word in ("今天", "暂时", "这会儿", "此刻", "一时")) and any(
         word in message for word in ("累", "疲惫", "难过", "低落", "烦")
     ):
         return True
-    return any(
-        word in message
-        for word in (
-            "只想聊",
-            "随便聊",
-            "不想规划",
-            "不想分析",
-            "只想倾诉",
-            "先听我",
-            "今天好累",
-            "今天工作好累",
-            "暂时疲惫",
-            "今晚吃",
-            "你好",
-            "我想你了",
-        )
-    )
+    return bool(re.fullmatch(r"(你好|嗨|在吗|我想你了)[，,。！!？? ]*(今天有点想找人聊聊[。！! ]*)?", message.strip())) or "今晚吃" in message
+
+
+def explicit_crisis(message):
+    # Narrow positive signal only. The system safety rule applies to ALL turns;
+    # absence here does not classify a message as safe or diagnose the user.
+    return any(word in message for word in ("伤害自己", "自杀", "自残", "结束生命", "不想活", "活着没有意义"))
 
 
 def select_strategy(message, mode="discover"):
-    if mode == "listen" or casual(message):
+    if mode == "listen" or casual(message) or explicit_crisis(message):
         return None
     rules = (
         ("communication", ("怎么沟通", "表达需要", "如何沟通")),

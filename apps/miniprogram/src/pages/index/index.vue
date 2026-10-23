@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, provide } from 'vue'
+import { onPageScroll } from '@dcloudio/uni-app'
 import SvgIcon from '../../components/SvgIcon.vue'
 import { ICON_PALETTE_KEY } from '../../icon-system'
 import OnboardingFlow from '../../components/OnboardingFlow.vue'
@@ -9,6 +10,7 @@ import ConversationDrawer from '../../components/ConversationDrawer.vue'
 import PhaseChangeReview from '../../components/PhaseChangeReview.vue'
 import {themes} from '../../themes'
 import {resolveExploreVisual} from '../../visual-library'
+import {resolveBloomStatus} from '../../bloom-status'
 import AppTopbar from './views/AppTopbar.vue'
 import AppTabbar from './views/AppTabbar.vue'
 import HomeView from './views/HomeView.vue'
@@ -53,7 +55,7 @@ const {
   busy,
   error,
   authError,
-  chatError,
+  chatError, composerError,
   offline,
   toast,
   preview,
@@ -76,7 +78,7 @@ const {
   runningIds,
   messages,
   draft,
-  pendingText,
+  pendingText, streamText, replyPhase, followLatest, jumpLatest, askBloom, messageSelectionOpen, handleChatScroll,
   sending,
   creatingConversation,
   suggestion,
@@ -155,9 +157,13 @@ const {
   greeting,
   canonicalSupportStyle,
 } = useIndexPage()
+// Keep scroll registration in the page entry: the Mini Program compiler uses
+// this import to enable page-scroll lifecycle dispatch.
+onPageScroll(handleChatScroll)
 
 provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
 const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
+const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.value || !!chatError.value))
 </script>
 
 <template>
@@ -171,7 +177,7 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
       </view>
       <AppTopbar v-if="screen === 'space' && tab !== 'chat'" :dark="dark" @history="showHistory"
                  @settings="selectTab('settings')" />
-      <view v-if="error && !modal && screen === 'space'" class="notice error-notice">
+      <view v-if="error && !modal && screen === 'space' && !(tab === 'chat' && (current || isDrafting))" class="notice error-notice">
         <text>{{ error }}</text>
         <button v-if="!ready" class="text-button" @click="initialize" hover-class="pressed" :hover-start-time="0"
                 :hover-stay-time="70">重新连接
@@ -205,29 +211,39 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
                   :generating-summary="generatingSummary" :active-conversation="activeConversation"
                   :is-drafting="isDrafting" :chat-entry="chatEntry" :running-ids="runningIds"
                   :chat-menu-open="chatMenuOpen" :read-only-conversation="readOnlyConversation"
-                  :selected-mode="selectedMode" :chat-error="chatError" :ai-mode="config.ai_mode"
+                  :selected-mode="selectedMode" :ai-mode="config.ai_mode"
+                  :bloom-status="bloomStatus"
                   :mode-picker-open="modePickerOpen" :messages="messages" :user-save-chat="!!user?.save_chat"
                   :welcome-context="welcomeContext" :new-chat-starters="newChatStarters"
                   :chat-starters="chatStarters" :starter-hint="starterHint" :user-avatar="userAvatar"
                   :speaking-index="speakingIndex" :older-cursor="workspace.active.value.olderCursor.value"
+                  :stream-text="streamText" :reply-phase="replyPhase" :follow-latest="followLatest" :selection-open="messageSelectionOpen"
+                  @jump-latest="jumpLatest" @ask-bloom="askBloom" @selection="messageSelectionOpen = $event"
                   :pending-text="pendingText" :suggestion="suggestion" :insight="insight"
-                  :insight-reaction="insightReaction" :last-request-id="workspace.active.value.lastRequestId.value"
+                  :insight-reaction="insightReaction"
                   :current-ended="!!current?.ended_at" :phase-change="workspace.active.value.phaseChange.value"
                   @back="tab = 'now'" @history="showHistory"
                   @toggle-menu="chatMenuOpen ? closeChatMenu() : openChatMenu()" @menu-action="chatMenuAction"
-                  @dismiss-error="workspace.active.value.error.value = ''; operations.clear('ai')"
-                  @recover="recoverReply" @resume="resumeExploration" @select-mode="setChatMode"
+                  @resume="resumeExploration" @select-mode="setChatMode"
                   @starter="useChatStarter" @load-older="loadOlderMessages"
+                  :perspective-disabled="workspace.active.value.perspectiveDisabled.value"
+                  :perspective-dismissed="workspace.active.value.perspectiveDismissed.value"
                   :explore-visual="exploreVisual" :theme-id="activeTheme.id"
+                  @perspective="(action, index) => workspace.active.value.reactToPerspective(action, index)"
                   @edit-message="editMessage"
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />
-        <ChatComposer v-if="(current || isDrafting) && tab === 'chat'" :draft="draft" :sending="sending"
+        <view v-if="tab === 'chat'" id="chat-bottom" :style="{height:`${1 + (workspace.active.value.selectedQuote.value ? 96 : 0) + (composerError ? 128 : 0)}px`}" />
+        <ChatComposer v-if="(current || isDrafting) && tab === 'chat' && !modal" :draft="draft" :sending="sending"
                       :creating="creatingConversation" :sending-started-at="workspace.active.value.sendingStartedAt.value" :generating-summary="generatingSummary"
                       :read-only-conversation="readOnlyConversation" :active-conversation="activeConversation"
                       :is-drafting="isDrafting" :web-search-on="workspace.active.value.webSearchOn.value"
+                      :selected-quote="workspace.active.value.selectedQuote.value" @clear-quote="workspace.active.value.selectedQuote.value = ''"
+                      :error="composerError" :recoverable="!!workspace.active.value.errorRequestId.value"
+                      :recovery-busy="busy || sending || offline" @recover="recoverReply"
+                      @dismiss-error="workspace.active.value.error.value = ''; workspace.active.value.errorRequestId.value = ''; operations.clear('ai'); error = ''"
                       :chat-footer-note="chatFooterNote" @draft-change="updateDraft" @toggle-web="toggleWebSearch"
-                      @send="sendChat" @cancel="cancelChat" />
+                      @send="sendChat" @cancel="cancelChat" @focus="messageSelectionOpen = false" />
         <DiscoverView v-else-if="tab === 'discover'" :theme-id="activeTheme.id" :recommendations="discovery.recommendations.value"
                       :loading="discovery.loading.value" :error="discovery.error.value" :loaded="discovery.loaded.value"
                       @explore="explorePrompt" @dismiss="discovery.dismiss" @rotate="discovery.rotate" @retry="discovery.load">

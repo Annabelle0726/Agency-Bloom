@@ -51,7 +51,14 @@ def price_usage(settings, usage, created=None, provider_model=None):
         usage.get("prompt_tokens_details", {}).get("cached_tokens", 0),
     )
     miss = token_count(usage, "prompt_cache_miss_tokens", prompt - hit)
-    if hit + miss != prompt or output > settings.max_output_tokens:
+    total = token_count(usage, "total_tokens", prompt + output)
+    details = usage.get("completion_tokens_details") or {}
+    if not isinstance(details, dict):
+        raise ValueError("Invalid completion token details")
+    reasoning = token_count(details, "reasoning_tokens") if "reasoning_tokens" in details else None
+    if reasoning is not None and reasoning > output:
+        raise ValueError("Reasoning tokens exceed completion tokens")
+    if total != prompt + output or hit + miss != prompt or output > settings.max_output_tokens:
         raise ValueError("Inconsistent token usage")
     factor = Decimal(1)
     band = "peak_ceiling"
@@ -70,6 +77,9 @@ def price_usage(settings, usage, created=None, provider_model=None):
     return {
         "prompt_tokens": prompt,
         "completion_tokens": output,
+        # Reasoning is a subset, never billed a second time. Missing != zero.
+        "reasoning_tokens": reasoning,
+        "non_reasoning_completion_tokens": output - reasoning if reasoning is not None else None,
         "total_tokens": prompt + output,
         "prompt_cache_hit_tokens": hit,
         "prompt_cache_miss_tokens": miss,

@@ -11,6 +11,8 @@
 <style lang="scss" src="./workspace.scss"></style>
 <style lang="scss" src="./bloom-pages.scss"></style>
 <script setup lang="ts">
-import { onLaunch } from '@dcloudio/uni-app'
+import { onLaunch, onShow } from '@dcloudio/uni-app'
+import { refreshHomeQuote } from './use-home-quote'
 onLaunch(() => {})
+onShow(refreshHomeQuote)
 </script>

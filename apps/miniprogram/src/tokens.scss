@@ -4,6 +4,7 @@
   --selection: #edf2e9; --selection-border: #9aac98; --button-fill: #425e4c; --disabled-fill: #e7eaed;
   --radius-button: 8px; --radius-card: 8px; --motion-press: 130ms; --motion-page: 180ms;
   --ease-out: cubic-bezier(.22,1,.36,1); --icon-filter: none;
+  --bloom-online: #58a06c; --bloom-waiting: #d8a33e; --bloom-offline: #cf5f5b;
   --shadow: 0 8px 30px rgba(37,49,72,.035); --app-height: 100vh;
   --font-heading: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'SimSun', serif;
   background: #eeeff3; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -12,6 +13,7 @@
   --bg: #151e30; --paper: #202b40; --ink: #edf1f8; --muted: #a0aec3; --line: #354157;
   --accent: #b2c9df; --accent-light: #2b3850; --soft: #232f43; --gold: #c1af91;
   --selection: #2d3c59; --selection-border: #8da7d2; --button-fill: #516580; --disabled-fill: #283449; --shadow: none;
+  --bloom-online: #75c78c; --bloom-waiting: #eac263; --bloom-offline: #ef8a84;
   --icon-filter: brightness(0) invert(.91);
   background: #111827;
 }

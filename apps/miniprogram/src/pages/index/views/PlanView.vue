@@ -40,13 +40,16 @@ const emit = defineEmits<{ openEditor: []; feedback: []; chat: []; resume: []; e
           <text class="card-title">还没有决定下一步，也没关系</text>
           <text class="body-copy">先写下一个想聊的事情，或和我一起想一想</text>
         </view>
-        <button class="plan-empty-arrow" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0" aria-label="整理我的卡片">
-          <SvgIcon name="arrow" :size="18" tone="accent" />
-        </button>
       </view>
       <view class="plan-empty-actions">
-        <button class="text-button with-icon" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0">整理我的卡片 <SvgIcon name="arrow" :size="17" /></button>
-        <button class="text-button with-icon" @click="emit('chat')" hover-class="pressed" :hover-start-time="0">一起聊聊 <SvgIcon name="chat" :size="17" /></button>
+        <button class="plan-empty-edit" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+          <text>整理我的卡片</text>
+          <view class="plan-empty-edit-icon"><SvgIcon name="arrow" :size="16" tone="accent" /></view>
+        </button>
+        <button class="plan-empty-chat" @click="emit('chat')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+          <SvgIcon name="chat" :size="17" tone="muted" />
+          <text>一起聊聊</text>
+        </button>
       </view>
     </view>
     <view v-else class="next-card bloom-surface">

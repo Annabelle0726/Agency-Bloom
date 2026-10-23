@@ -20,9 +20,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from . import ai, visual_selection, web_search
+from .chat_stream import stream_response
 from .config import Settings
 from .conversations import before_message, cancel_pending, context_for, edit_anchor, register_routes
 from .discovery import register_discovery_routes
+from .evaluation_guard import GuardError
 from .journey import register_journey_routes
 from .local_schema import upgrade_local
 from .models import (
@@ -39,6 +41,7 @@ from .models import (
     now,
 )
 from .moments import purge_moments, register_moment_routes
+from .perspective_shift import fingerprint as perspective_fingerprint
 from .schemas import (
     Card,
     CardUpdate,
@@ -115,8 +118,18 @@ def issue_view(db, item):
     }
 
 
-def create_app(ai_transport=None, wechat_transport=None, web_search_transport=None, **overrides):
+def create_app(ai_transport=None, wechat_transport=None, web_search_transport=None, evaluation_guard=None, perspective_prototype=None, **overrides):
     settings = Settings(**overrides)
+    if evaluation_guard is not None and (not isinstance(ai_transport, httpx.MockTransport)
+            or settings.deepseek_base_url != "https://offline.invalid"
+            or not settings.database_url.startswith("sqlite")):
+        raise GuardError("hosted_input_bound_unverified")
+    if perspective_prototype is not None and (
+        evaluation_guard is not None or not isinstance(ai_transport, httpx.MockTransport)
+        or settings.deepseek_base_url != "https://offline.invalid"
+        or not settings.database_url.startswith("sqlite")
+    ):
+        raise GuardError("perspective_prototype_requires_isolated_mock")
     sqlite = settings.database_url.startswith("sqlite")
     args = {"check_same_thread": False, "timeout": 30} if sqlite else {"prepare_threshold": None}
     engine = create_engine(settings.database_url, connect_args=args, pool_pre_ping=True)
@@ -144,6 +157,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         redoc_url=None,
     )
     app.state.settings = settings
+    app.state.evaluation_sessions = sessions if evaluation_guard is not None else None
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -567,7 +581,24 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     ):
         return await run_chat(issue_id, body, request, user, db)
 
-    async def run_chat(issue_id, body, request, user, db, conversation=None):
+    async def run_chat(issue_id, body, request, user, db, conversation=None, progress=None):
+        if progress is None and body.task == 'chat' and 'text/event-stream' in request.headers.get('accept', ''):
+            if evaluation_guard is not None:
+                # Frozen evaluations bind the exact non-streaming wire payload.
+                # Changing transport requires a separately reviewed evaluation.
+                raise HTTPException(409, {"code": "evaluation_parameters_changed"})
+            user_id, conversation_id = user.id, conversation.id if conversation else None
+            async def work(emit):
+                # Own the session for the streaming lifetime, including cancellation.
+                with sessions() as stream_db:
+                    stream_user = stream_db.get(User, user_id)
+                    if not stream_user:
+                        raise HTTPException(401, '登录已失效')
+                    stream_conversation = stream_db.get(Conversation, conversation_id) if conversation_id else None
+                    if conversation_id and not stream_conversation:
+                        raise HTTPException(404, '没有找到这段会话')
+                    return await run_chat(issue_id, body, request, stream_user, stream_db, stream_conversation, emit)
+            return stream_response(work)
         legacy = conversation is None
         # Serialize admission with consent/context edits, then refresh authenticated data.
         # A stale dependency read must never authorize a newly submitted provider call.
@@ -634,7 +665,9 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             sources_web_error = None
         request_theme = user.theme
         visual_candidates, visual_payload = [], None
+        # Fixed evaluations retain their reviewed prompt contract.
         if (settings.visual_selection_enabled and body.task == "chat"
+                and evaluation_guard is None
                 and not visual_selection.should_omit_visuals(body.message)):
             try:
                 visual_candidates, visual_payload = visual_selection.visual_context_for_chat(
@@ -656,7 +689,14 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             history=history,
             web_results=web_results,
             visual_selection=visual_payload,
+            # Frozen Mock evaluations keep their reviewed prompt version.
+            # Normal conversations use the explicitly versioned current style.
+            reply_style='warm-v1' if evaluation_guard is None else None,
         )
+        perspective = None
+        if perspective_prototype is not None:
+            perspective = perspective_prototype.prepare(db, user, conversation, body, history)
+            prompt = perspective_prototype.augment(prompt, perspective)
         if sources is not None:
             supplied = json.loads(prompt[1]['content'].split('：', 1)[1])
             sources['recent_feedback'] = supplied['recent_feedback']
@@ -667,6 +707,17 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             if sources_web_error is not None:
                 sources['web_search'] = 'failed' if sources_web_error else 'included'
         reserved = ai.reservation_micro(settings, prompt)
+        if evaluation_guard is not None:
+            try:
+                reserved = evaluation_guard.reserve(
+                    db, key, body, user_id, conversation.id if conversation else issue_id,
+                    ai.provider_payload(settings, prompt), settings, ai_transport,
+                )
+            except GuardError as exc:
+                db.rollback()
+                with sessions.begin() as stopped:
+                    evaluation_guard.stop(stopped, str(exc))
+                raise HTTPException(409, {"code": str(exc)}) from None
         insert = sqlite_insert if sqlite else pg_insert
         db.execute(
             insert(Budget)
@@ -681,6 +732,9 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         )
         if available.rowcount != 1:
             db.rollback()
+            if evaluation_guard is not None:
+                with sessions.begin() as stopped:
+                    evaluation_guard.stop(stopped, "monthly_budget_exhausted")
             raise HTTPException(402, "本月 AI 服务额度已用完，卡片和反馈仍可继续使用")
         # Recheck while the monthly ledger row is locked, including across workers.
         count = db.scalar(
@@ -714,13 +768,20 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         except IntegrityError:
             db.rollback()
             raise HTTPException(409, "这条请求已经提交，请勿重复发送") from None
-        task = asyncio.create_task(ai.generate(settings, prompt, ai_transport))
+        def dispatch_check(payload):
+            with sessions.begin() as admitted:
+                evaluation_guard.dispatch(admitted, key, payload, settings, ai_transport)
+
+        task = asyncio.create_task(
+            ai.generate_with_deadline(settings, prompt, ai_transport, dispatch_guard=dispatch_check, progress=progress)
+            if evaluation_guard is not None else ai.generate_with_deadline(settings, prompt, ai_transport, progress=progress)
+        )
         try:
             while not task.done():
                 await asyncio.wait([task], timeout=0.2)
                 with sessions() as check:
                     cancelled = check.get(AIRequest, key).status != "pending"
-                if cancelled or await request.is_disconnected():
+                if cancelled or (progress is None and await request.is_disconnected()):
                     raise asyncio.CancelledError()
             generation = await task
             result, actual_cost = generation.output, generation.cost_micro
@@ -741,6 +802,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                     result = result.model_copy(update={"visual_id": None})
             else:
                 result = result.model_copy(update={"visual_id": None})
+            candidate = perspective_prototype.validate(result.perspective_shift, perspective) if perspective_prototype else None
+            result = result.model_copy(update={"perspective_shift": candidate})
             saved_ids = {}
             with sessions.begin() as done:
                 done.execute(
@@ -761,6 +824,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                     or live_conversation.archived_at
                 ):
                     raise asyncio.CancelledError()
+                if evaluation_guard is not None:
+                    evaluation_guard.settle(done, key, generation)
                 done.execute(
                     update(Budget)
                     .where(Budget.month == month)
@@ -802,6 +867,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                         live_conversation.summary = None
                         live_conversation.version += 1
                     user_message = Message(
+                        **({"id": perspective.current_id} if perspective else {}),
                         issue_id=issue_id,
                         conversation_id=target_id,
                         role="user",
@@ -831,10 +897,13 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                         "user_message_id": user_message.id,
                         "assistant_message_id": assistant_message.id,
                     }
+            if perspective_prototype is not None:
+                perspective_prototype.delivered(candidate, perspective)
             return (
                 result.model_dump()
                 | {
                     "mode": settings.ai_mode,
+                    "perspective_token": perspective_fingerprint(candidate) if candidate else None,
                     "usage": generation.usage,
                     "reasoning_summary": [p.model_dump() for p in result.reasoning_summary] if result.reasoning_summary else None,
                 }
@@ -848,6 +917,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             with suppress(asyncio.CancelledError, Exception):
                 await task
             with sessions.begin() as failed:
+                if evaluation_guard is not None:
+                    evaluation_guard.stop(failed, "provider_result_unknown")
                 record = failed.get(AIRequest, key)
                 if record:
                     record.status = "cancelled"
@@ -870,6 +941,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                 "generation_failed kind=%s status=%s code=%s fields=%s", kind, status, code, fields
             )
             with sessions.begin() as failed:
+                if evaluation_guard is not None:
+                    evaluation_guard.stop(failed, "provider_result_unknown")
                 record = failed.get(AIRequest, key)
                 if record:
                     record.status = "failed"

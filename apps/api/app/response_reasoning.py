@@ -53,13 +53,29 @@ def ground_reasoning(result: AIOutput, catalog, *, summary_task=False):
     return result.model_copy(update={"reasoning_summary": valid if len(valid) >= 2 else None})
 
 
-def public_payload(payload):
-    """Never return legacy raw reasoning artifacts from stored messages."""
+def public_payload(payload, reply=None):
+    """Restore previously validated explanations; never reconstruct lost evidence.
+
+    Source quotes were verified on generation. Restore validates shape, reply
+    anchoring and private-field exclusion, not fresh semantic entailment.
+    """
     if not isinstance(payload, dict):
         return None
     clean = {k: v for k, v in payload.items()
-            if k not in {"thinking_steps", "reasoning_content", "reasoning", "chain_of_thought"}}
+             if k in {"supplied_context", "suggestion", "insight", "request_id",
+                      "tail_line", "web_sources", "reasoning_summary", "visual_id"}}
     visual_id = clean.get("visual_id")
     if visual_id is not None and (not isinstance(visual_id, str) or not re.fullmatch(r"[a-z0-9_]{1,80}", visual_id)):
         clean.pop("visual_id", None)
+    items = AIOutput(reply="history validation", reasoning_summary=clean.get("reasoning_summary")).reasoning_summary
+    if items and reply:
+        valid = (
+            len({p.kind for p in items}) == len(items)
+            and len({p.text for p in items}) == len(items)
+            and all(p.text in reply and not INTERNAL.search(p.text)
+                    and all(not INTERNAL.search(e.quote) for e in p.evidence) for p in items)
+        )
+        clean["reasoning_summary"] = [p.model_dump() for p in items] if valid else None
+    elif "reasoning_summary" in clean:
+        clean["reasoning_summary"] = None
     return clean

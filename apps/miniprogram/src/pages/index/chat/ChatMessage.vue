@@ -4,7 +4,12 @@ import { responseReasoning, reasoningLabels } from '../../../response-reasoning'
 import CompanionAvatar from '../../../components/CompanionAvatar.vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
 import ChatVisual from './ChatVisual.vue'
+import PerspectiveShiftEntry from './PerspectiveShiftEntry.vue'
+import type { PerspectiveAction } from '../../../perspective-shift'
+import type { PerspectiveShift } from '../../../domain'
 import type { ChatMessage } from '../../../domain'
+import type { BloomStatus } from '../../../bloom-status'
+import SelectableReply from './SelectableReply.vue'
 import ModalShell from '../modals/ModalShell.vue'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
@@ -19,8 +24,12 @@ const props = defineProps<{
   userAvatar: string
   editable: boolean
   themeId: string
+  selectionOwner?: boolean
+  perspective?: PerspectiveShift | null
+  perspectiveBusy?: boolean
+  bloomStatus?: BloomStatus
 }>()
-const emit = defineEmits<{ edit: [] }>()
+const emit = defineEmits<{ edit: []; ask: [text: string]; selection: [value: boolean]; perspective: [action: PerspectiveAction] }>()
 const selecting = ref(false), actionsOpen = ref(false)
 function copy() {
   uni.setClipboardData({ data: props.message.content, fail: () => uni.showToast({ title: '复制未完成，请重试', icon: 'none' }) })
@@ -36,14 +45,18 @@ watch(() => [props.message.id, props.message.content, props.message.payload?.rea
 
 <template>
   <view :id="'message-' + index" class="message-row" :class="message.role">
-    <CompanionAvatar :follow-gaze="gazeActive" :foreground="foreground" v-if="message.role === 'assistant'" :size="38" online
+    <CompanionAvatar :follow-gaze="gazeActive" :foreground="foreground" v-if="message.role === 'assistant'" :size="38" :status="isLast ? (bloomStatus || 'online') : 'online'"
                      :state="speaking ? 'speaking' : (isLast ? 'idle' : 'rest')" />
     <image v-else class="chat-avatar"
            :src="userAvatar || '/static/avatar-user.png'"
            mode="aspectFill" aria-label="你的头像"/>
     <view class="message-content">
       <text v-if="message.role === 'assistant'" class="message-name">Bloom</text>
-      <text class="message-bubble" @longpress.stop="actionsOpen = true">{{ message.content }}</text>
+      <SelectableReply v-if="message.role === 'assistant'" :content="message.content" :disabled="!editable" :selection-owner="selectionOwner" @ask="emit('ask',$event)" @active="emit('selection',$event)" />
+      <text v-else class="message-bubble" @longpress.stop="actionsOpen = true">{{ message.content }}</text>
+      <view v-if="message.role === 'assistant'" class="message-tools">
+        <button class="message-copy" aria-label="复制这条回复" @click="copy" hover-class="pressed"><SvgIcon name="copy" tone="muted" :size="14" /><text>复制</text></button>
+      </view>
       <ChatVisual v-if="message.role === 'assistant'" :visual-id="message.payload?.visual_id" :theme-id="themeId" />
       <view v-if="message.role === 'assistant' && explanations.length" class="response-reasoning">
         <button class="reasoning-toggle" :aria-expanded="open" aria-label="查看回应思路"
@@ -59,6 +72,8 @@ watch(() => [props.message.id, props.message.content, props.message.payload?.rea
           </view>
         </view>
       </view>
+      <PerspectiveShiftEntry v-if="message.role === 'assistant' && perspective" :candidate="perspective"
+        :busy="perspectiveBusy" @act="emit('perspective', $event)" />
       <view v-if="message.role === 'assistant' && message.payload?.web_sources?.length" class="web-sources">
         <text class="web-sources-label">根据网上资料（未经核实）</text>
         <view v-for="(source, sourceIndex) in message.payload.web_sources" :key="sourceIndex" class="web-source-row">

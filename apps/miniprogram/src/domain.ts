@@ -24,7 +24,15 @@ export interface ReasoningPoint {
   text: string
   evidence?: { source_id: string; quote: string }[]
 }
-export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; reasoning_summary?: ReasoningPoint[]; web_sources?: WebSource[] | null; visual_id?: string | null } | null }
+export interface PerspectiveShift {
+  title: '换个角度'
+  observation: string; possible_blind_spot: string; alternative_perspective: string
+  uncertainty: string; optional_next_question?: string | null
+  supporting_message_ids: string[]
+  evidence: { message_id: string; quote: string; supports: ('observation' | 'possible_blind_spot' | 'alternative_perspective')[] }[]
+  trigger: 'repeated_choice' | 'new_constraint' | 'assistant_revision'
+}
+export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { perspective_shift?: PerspectiveShift | null; perspective_token?: string | null; suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; reasoning_summary?: ReasoningPoint[]; web_sources?: WebSource[] | null; visual_id?: string | null } | null }
 export interface ConversationSummary { overview: string; decisions: string[]; open_questions: string[]; next_steps: string[] }
 export interface Conversation {
   dismissed_change_ids?: string[]
@@ -65,6 +73,8 @@ export interface WebSource {
   name?: string; url: string; snippet?: string; site?: string; published?: string
 }
 export interface ChatResponse {
+  perspective_shift?: PerspectiveShift | null
+  perspective_token?: string | null
   user_message_id?: string
   assistant_message_id?: string
   reply: string; suggestion: Suggestion | null; mode: 'demo' | 'deepseek'

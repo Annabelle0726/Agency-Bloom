@@ -1,14 +1,15 @@
+import { createEventStream, type ChatEvent } from './chat-stream'
 export type ErrorKind = 'network' | 'timeout' | 'http' | 'auth' | 'model' | 'cancelled'
 export class ApiError extends Error {
   constructor(message: string, public status = 0, public cancelled = false, public kind: ErrorKind = cancelled ? 'cancelled' : 'http') { super(message) }
 }
 interface NativeOptions {
   url: string; method: 'GET' | 'POST' | 'PUT' | 'DELETE'; data?: any;
-  header: Record<string, string>; timeout: number;
+  header: Record<string, string>; timeout: number; enableChunked?: boolean; dataType?: string;
   success: (response: { statusCode: number; data: any }) => void;
   fail: (error: { errMsg?: string }) => void
 }
-type Transport = (options: NativeOptions) => { abort: () => void }
+type Transport = (options: NativeOptions) => { abort: () => void; onChunkReceived?: (callback: (event: { data: ArrayBuffer }) => void) => void }
 // Only our own codes select copy; never display provider bodies or credentials.
 const modelErrors: Record<string, string> = {
   output_truncated: 'AI 回复达到长度上限，未能完整返回；输入已保留',
@@ -29,19 +30,29 @@ interface Diagnostic { kind: ErrorKind; status: number; method: string; route: s
 export function createApi(transport: Transport, token: () => string, unauthorized: () => void, base: string,
   diagnostic: (event: Diagnostic) => void = event => { if (import.meta.env.DEV) console.warn('[Agency Bloom request]', event) }) {
   return {
-    request<T>(method: NativeOptions['method'], path: string, data?: unknown) {
+    request<T>(method: NativeOptions['method'], path: string, data?: unknown, onEvent?: (event: ChatEvent) => void) {
       let settled = false
-      let task: { abort: () => void } | undefined
+      let task: ReturnType<Transport> | undefined
       let rejectRequest: (reason: Error) => void = () => {}
       const route = path.split('?')[0].replace(/\/(issues|requests)\/[^/]+/, '/$1/:id')
       const report = (kind: ErrorKind, status = 0) => diagnostic({ kind, status, method, route })
       const promise = new Promise<T>((resolve, reject) => {
         rejectRequest = reject
         const header: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (onEvent) header.Accept = 'text/event-stream'
         if (token()) header.Authorization = `Bearer ${token()}`
-        task = transport({ url: base.replace(/\/$/, '') + path, method, data, header, timeout: path.endsWith('/chat') || path === '/moments/open' ? 65000 : 15000,
-          success(response) {
+        let received = false
+        const stream = onEvent ? createEventStream(event => {
+          if (settled) return
+          if (event.type === 'done') { settled = true; resolve(event.response as T) }
+          else if (event.type === 'error') handleResponse({ statusCode: event.status, data: { detail: event.detail } })
+          else onEvent(event)
+        }) : null
+        const handleResponse = (response: { statusCode: number; data: any }) => {
             if (settled) return
+            if (typeof response.data === 'string') {
+              try { response.data = JSON.parse(response.data) } catch { response.data = {} }
+            }
             settled = true
             if (response.statusCode >= 200 && response.statusCode < 300) resolve(response.data as T)
             else {
@@ -55,6 +66,15 @@ export function createApi(transport: Transport, token: () => string, unauthorize
               report(kind, status)
               reject(new ApiError(message, status, false, kind))
             }
+        }
+        task = transport({ url: base.replace(/\/$/, '') + path, method, data, header, timeout: path.endsWith('/chat') || path === '/moments/open' ? 65000 : 15000,
+          ...(onEvent ? { enableChunked: true, dataType: 'text' } : {}),
+          success(response) {
+            if (settled) return
+            if (stream && response.statusCode >= 200 && response.statusCode < 300 && (received || typeof response.data === 'string')) {
+              try { if (!received) stream.push(response.data); stream.finish() }
+              catch { settled = true; reject(new ApiError('回复连接已中断，输入仍保留，可查看这条请求的结果', 0, false, 'network')) }
+            } else handleResponse(response)
           },
           fail(error) {
             if (settled) return
@@ -63,6 +83,12 @@ export function createApi(transport: Transport, token: () => string, unauthorize
             report(kind)
             reject(new ApiError(kind === 'timeout' ? '连接等待较久，请稍后再试' : '暂时无法连接服务，请稍后再试', 0, false, kind))
           },
+        })
+        task.onChunkReceived?.(event => {
+          if (settled || !stream) return
+          received = true
+          try { stream.push(event.data) }
+          catch { settled = true; task?.abort(); reject(new ApiError('回复数据未能完整接收，输入仍保留', 0, false, 'network')) }
         })
       })
       return { promise, cancel() {

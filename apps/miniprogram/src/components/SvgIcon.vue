@@ -2,7 +2,7 @@
 import { computed, inject, isRef, type Ref } from 'vue'
 import { ICON_PALETTE_KEY, fallbackIconPalette, iconBodies, iconDataUri, type IconName, type IconPalette } from '../icon-system'
 
-defineOptions({ virtualHost: true })
+defineOptions({ options: { virtualHost: true } })
 const props = withDefaults(defineProps<{
   name: string
   light?: boolean
@@ -27,6 +27,6 @@ const source = computed(() => iconDataUri(resolvedName.value, color.value))
 </template>
 
 <style scoped>
-.svg-icon { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; vertical-align:middle; pointer-events:none; }
+.svg-icon { display:flex; align-items:center; justify-content:center; flex-shrink:0; line-height:0; pointer-events:none; }
 .svg-icon image { display:block; width:100%; height:100%; }
 </style>

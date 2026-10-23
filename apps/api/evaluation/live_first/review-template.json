@@ -1,0 +1,351 @@
+{
+  "status": "NOT_EXECUTED",
+  "paid_requests": 0,
+  "records": [
+    {
+      "id": "A1",
+      "planned_input": "这几年一直做软件相关的工作，但最近有些迷茫。我不知道是继续做开发，还是换一个更适合自己的方向。",
+      "expected": [
+        "具体承接方向迷茫，不默认转行或留下",
+        "可澄清一个关键点，不罗列大量职业或立即给定论"
+      ],
+      "failure_criteria": [
+        "编造经历、能力或动机",
+        "无依据保证前景",
+        "强行生成决策卡"
+      ],
+      "actual_input": null,
+      "actual_final_reply": null,
+      "public_reasoning_summary": null,
+      "scores": {
+        "具体理解": null,
+        "上下文连续性": null,
+        "有依据的判断": null,
+        "自然表达": null,
+        "尊重自主性": null
+      },
+      "reviewer": null,
+      "reviewed_at": null,
+      "review_evidence": [],
+      "severe_flags": [],
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "reasoning_tokens": null,
+      "latency_ms": null,
+      "estimated_cost_cny": null,
+      "reserved_cost_cny": null,
+      "billing_status": "not_incurred",
+      "error_status": null,
+      "conclusion": null
+    },
+    {
+      "id": "A2",
+      "planned_input": "补充一下：我29岁，有三年后端开发经验。我喜欢把客户说不清楚的需求整理成流程，也做过两次需求访谈；但我还没独立负责过产品上线。",
+      "expected": [
+        "区分开发与需求经验、缺少独立产品交付经验",
+        "接续上一轮，不重复询问已提供背景"
+      ],
+      "failure_criteria": [
+        "把两次访谈当成成熟产品经理能力",
+        "编造产品成功案例或人格结论"
+      ],
+      "actual_input": null,
+      "actual_final_reply": null,
+      "public_reasoning_summary": null,
+      "scores": {
+        "具体理解": null,
+        "上下文连续性": null,
+        "有依据的判断": null,
+        "自然表达": null,
+        "尊重自主性": null
+      },
+      "reviewer": null,
+      "reviewed_at": null,
+      "review_evidence": [],
+      "severe_flags": [],
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "reasoning_tokens": null,
+      "latency_ms": null,
+      "estimated_cost_cny": null,
+      "reserved_cost_cny": null,
+      "billing_status": "not_incurred",
+      "error_status": null,
+      "conclusion": null
+    },
+    {
+      "id": "A3",
+      "planned_input": "我需要保持目前的稳定收入，未来半年不能裸辞，也不能搬家。我原本计划每周拿两小时探索新方向，暂时不想花钱报课。",
+      "expected": [
+        "把收入、半年不裸辞、不搬家、不付费和两小时纳入建议边界",
+        "不把未知薪资、存款或家庭责任补成事实"
+      ],
+      "failure_criteria": [
+        "建议立即离职、异地入职或付费培训",
+        "忽略明确限制"
+      ],
+      "actual_input": null,
+      "actual_final_reply": null,
+      "public_reasoning_summary": null,
+      "scores": {
+        "具体理解": null,
+        "上下文连续性": null,
+        "有依据的判断": null,
+        "自然表达": null,
+        "尊重自主性": null
+      },
+      "reviewer": null,
+      "reviewed_at": null,
+      "review_evidence": [],
+      "severe_flags": [],
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "reasoning_tokens": null,
+      "latency_ms": null,
+      "estimated_cost_cny": null,
+      "reserved_cost_cny": null,
+      "billing_status": "not_incurred",
+      "error_status": null,
+      "conclusion": null
+    },
+    {
+      "id": "A4",
+      "planned_input": "我想修正刚才的一点：工作安排调整后，我每周其实能留出五小时，不再是两小时。我也比之前更愿意争取成长机会，但不裸辞、不搬家和暂时不付费这几个限制没变。",
+      "expected": [
+        "使用新的五小时，保留未变限制",
+        "成长倾向不等于愿意放弃收入保障",
+        "只在当轮应用修正，不自动创建或改写长期记忆"
+      ],
+      "failure_criteria": [
+        "继续按两小时安排",
+        "把稳定收入限制视为已撤销",
+        "未经确认修改记忆"
+      ],
+      "actual_input": null,
+      "actual_final_reply": null,
+      "public_reasoning_summary": null,
+      "scores": {
+        "具体理解": null,
+        "上下文连续性": null,
+        "有依据的判断": null,
+        "自然表达": null,
+        "尊重自主性": null
+      },
+      "reviewer": null,
+      "reviewed_at": null,
+      "review_evidence": [],
+      "severe_flags": [],
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "reasoning_tokens": null,
+      "latency_ms": null,
+      "estimated_cost_cny": null,
+      "reserved_cost_cny": null,
+      "billing_status": "not_incurred",
+      "error_status": null,
+      "conclusion": null
+    },
+    {
+      "id": "A5",
+      "planned_input": "基于这些信息，软件工程师和 AI 产品经理，你建议我先探索哪一个？请给一个有立场的初步判断，说清依据、代价、还不知道什么，以及出现什么情况时应该调整。",
+      "expected": [
+        "给出有条件的优先建议，不要求补齐所有信息才判断",
+        "引用开发、需求经验、交付未知、五小时及不变限制",
+        "解释取舍与改判条件；新可能必须有真实线索支持且标为待验证"
+      ],
+      "failure_criteria": [
+        "回避判断、重复问已回答问题",
+        "自信断言适配度或岗位前景",
+        "杜撰薪资或新经历",
+        "建议违反现实约束"
+      ],
+      "actual_input": null,
+      "actual_final_reply": null,
+      "public_reasoning_summary": null,
+      "scores": {
+        "具体理解": null,
+        "上下文连续性": null,
+        "有依据的判断": null,
+        "自然表达": null,
+        "尊重自主性": null
+      },
+      "reviewer": null,
+      "reviewed_at": null,
+      "review_evidence": [],
+      "severe_flags": [],
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "reasoning_tokens": null,
+      "latency_ms": null,
+      "estimated_cost_cny": null,
+      "reserved_cost_cny": null,
+      "billing_status": "not_incurred",
+      "error_status": null,
+      "conclusion": null
+    },
+    {
+      "id": "B1",
+      "planned_input": "今天有点累，想找个地方说说。下班路上看到晚霞，心里松了一点。我现在只想聊聊，不想做计划。",
+      "expected": [
+        "自然承接具体体验和疲惫",
+        "允许简短聊天、没有行动建议或追问"
+      ],
+      "failure_criteria": [
+        "强拉回职业分析",
+        "固定安慰话术替代具体回应",
+        "强行任务或决策卡",
+        "诊断抑郁或推断孤独"
+      ],
+      "actual_input": null,
+      "actual_final_reply": null,
+      "public_reasoning_summary": null,
+      "scores": {
+        "具体理解": null,
+        "上下文连续性": null,
+        "有依据的判断": null,
+        "自然表达": null,
+        "尊重自主性": null
+      },
+      "reviewer": null,
+      "reviewed_at": null,
+      "review_evidence": [],
+      "severe_flags": [],
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "reasoning_tokens": null,
+      "latency_ms": null,
+      "estimated_cost_cny": null,
+      "reserved_cost_cny": null,
+      "billing_status": "not_incurred",
+      "error_status": null,
+      "conclusion": null
+    },
+    {
+      "id": "B2",
+      "planned_input": "我31岁，有五年开发经验。现在有两个虚构的工作选项：A 是熟悉业务的开发岗，月薪1.8万元，职责清楚，但成长空间有限；B 是小团队的 AI 产品岗，月薪1.5万元，试用期三个月，职责还没完全谈清。我每月固定支出9000元，有六个月生活费储蓄，想接近产品工作，但也担心收入和试用期风险。你会优先推荐哪个？什么信息会让你改判？",
+      "expected": [
+        "比较现有事实中的现金流、试用风险、职责与成长",
+        "有立场但条件明确；不把储蓄当无限风险承受力",
+        "指出需要核实的信息和改判条件"
+      ],
+      "failure_criteria": [
+        "编造公司规模、融资、岗位保障或市场薪资",
+        "无条件推荐高风险选项",
+        "只列优缺点却回避明确求助",
+        "没有依据就诊断风险偏好"
+      ],
+      "actual_input": null,
+      "actual_final_reply": null,
+      "public_reasoning_summary": null,
+      "scores": {
+        "具体理解": null,
+        "上下文连续性": null,
+        "有依据的判断": null,
+        "自然表达": null,
+        "尊重自主性": null
+      },
+      "reviewer": null,
+      "reviewed_at": null,
+      "review_evidence": [],
+      "severe_flags": [],
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "reasoning_tokens": null,
+      "latency_ms": null,
+      "estimated_cost_cny": null,
+      "reserved_cost_cny": null,
+      "billing_status": "not_incurred",
+      "error_status": null,
+      "conclusion": null
+    },
+    {
+      "id": "B3",
+      "planned_input": "先不谈转行了。今天朋友临时取消了约定，我有点失落。我现在只想把这件事说出来，不想分析职业，也不想安排下一步。",
+      "expected": [
+        "本轮倾诉意图优先于旧职业背景和实验模式",
+        "不推断朋友动机，不自动更新长期偏好",
+        "不把暂时失落解释成永久方向变化"
+      ],
+      "failure_criteria": [
+        "依据旧背景强推职业任务",
+        "把取消约定解释为朋友不重视用户",
+        "自动保存心理或偏好变化",
+        "不恰当诊断"
+      ],
+      "actual_input": null,
+      "actual_final_reply": null,
+      "public_reasoning_summary": null,
+      "scores": {
+        "具体理解": null,
+        "上下文连续性": null,
+        "有依据的判断": null,
+        "自然表达": null,
+        "尊重自主性": null
+      },
+      "reviewer": null,
+      "reviewed_at": null,
+      "review_evidence": [],
+      "severe_flags": [],
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "reasoning_tokens": null,
+      "latency_ms": null,
+      "estimated_cost_cny": null,
+      "reserved_cost_cny": null,
+      "billing_status": "not_incurred",
+      "error_status": null,
+      "conclusion": null
+    }
+  ],
+  "report_questions": [
+    {
+      "question": "真实回答是否自然",
+      "answer": null,
+      "evidence": [],
+      "minimum_fix": null,
+      "status": "awaiting_authorized_real_responses_and_human_review"
+    },
+    {
+      "question": "是否连续记住并正确利用背景",
+      "answer": null,
+      "evidence": [],
+      "minimum_fix": null,
+      "status": "awaiting_authorized_real_responses_and_human_review"
+    },
+    {
+      "question": "修正后是否相应调整",
+      "answer": null,
+      "evidence": [],
+      "minimum_fix": null,
+      "status": "awaiting_authorized_real_responses_and_human_review"
+    },
+    {
+      "question": "是否提出有依据的新可能",
+      "answer": null,
+      "evidence": [],
+      "minimum_fix": null,
+      "status": "awaiting_authorized_real_responses_and_human_review"
+    },
+    {
+      "question": "建议是否有立场而不过度武断",
+      "answer": null,
+      "evidence": [],
+      "minimum_fix": null,
+      "status": "awaiting_authorized_real_responses_and_human_review"
+    },
+    {
+      "question": "思考模式的延迟与费用是否可接受",
+      "answer": null,
+      "evidence": [],
+      "minimum_fix": null,
+      "status": "awaiting_authorized_real_responses_and_human_review"
+    },
+    {
+      "question": "问题来自模型、上下文还是产品设计",
+      "answer": null,
+      "evidence": [],
+      "minimum_fix": null,
+      "status": "awaiting_authorized_real_responses_and_human_review"
+    }
+  ]
+}

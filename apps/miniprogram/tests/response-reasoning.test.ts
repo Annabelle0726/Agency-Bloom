@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { responseReasoning } from '../src/response-reasoning'
 
 const points = [
-  { kind: 'understanding', text: '你希望保留收入，再看看其他可能。' },
-  { kind: 'tradeoff', text: '先做一次短访谈，可以控制尝试的投入。' },
+  { kind: 'understanding', text: '你希望保留收入，再看看其他可能。', evidence: [{ source_id: 's1', quote: '保留收入' }] },
+  { kind: 'tradeoff', text: '先做一次短访谈，可以控制尝试的投入。', evidence: [{ source_id: 's1', quote: '控制投入' }] },
 ]
 const reply = points.map(p => p.text).join('\n')
 
@@ -21,4 +21,9 @@ describe('response explanations', () => {
     expect(responseReasoning([{ kind: 'basis', text: '查看系统提示和调试日志' }, points[1]],
       '查看系统提示和调试日志' + reply)).toEqual([])
   })
+})
+
+it('hides historical explanations without provenance or with internal evidence', () => {
+  expect(responseReasoning(points.map(({ evidence, ...p }) => p), reply)).toEqual([])
+  expect(responseReasoning(points.map(p => ({ ...p, evidence: [{ source_id: 's1', quote: 'system prompt' }] })), reply)).toEqual([])
 })

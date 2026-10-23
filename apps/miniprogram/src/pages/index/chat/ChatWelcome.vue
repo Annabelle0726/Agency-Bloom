@@ -5,6 +5,7 @@ import ChatExploreVisual from './ChatExploreVisual.vue'
 import type { ChatEntry } from '../../../chat-entry'
 import type { Conversation } from '../../../domain'
 import type { ResolvedVisual } from '../../../visual-library'
+import type { BloomStatus } from '../../../bloom-status'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
@@ -21,6 +22,7 @@ defineProps<{
   foreground?: boolean
   starterHint: string
   visual?: ResolvedVisual | null
+  bloomStatus?: BloomStatus
 }>()
 const emit = defineEmits<{ starter: [prompt: string] }>()
 </script>
@@ -28,7 +30,7 @@ const emit = defineEmits<{ starter: [prompt: string] }>()
 <template>
   <view v-if="isDrafting" class="chat-welcome">
     <view class="chat-welcome-intro">
-      <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" :follow-gaze="true" :foreground="foreground && !busy && !sending" /></view>
+      <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" :follow-gaze="true" :foreground="foreground && !busy && !sending" :status="bloomStatus || 'online'" /></view>
       <text class="body-copy">想说什么，就从哪里说起，发送后这段对话才会被创建</text>
     </view>
     <ChatExploreVisual :visual="visual || null" />
@@ -50,7 +52,7 @@ const emit = defineEmits<{ starter: [prompt: string] }>()
   </view>
   <view v-else-if="activeConversation" class="chat-welcome">
     <view class="chat-welcome-intro">
-      <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" :follow-gaze="true" :foreground="foreground && !busy && !sending" /></view>
+      <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" :follow-gaze="true" :foreground="foreground && !busy && !sending" :status="bloomStatus || 'online'" /></view>
       <text class="body-copy">{{ chatEntry.introduction }}</text>
     </view>
     <ChatExploreVisual :visual="visual || null" />

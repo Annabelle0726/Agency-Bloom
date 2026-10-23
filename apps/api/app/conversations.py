@@ -5,6 +5,7 @@ from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from .adaptive import relevant, snapshot_for
+from .context_selection import CANDIDATE_MESSAGES, memory_for_turn, select_history
 from .models import AIRequest, Conversation, ConversationLink, Issue, Memory, Message, User, now
 from .response_reasoning import public_payload
 from .schemas import (
@@ -117,7 +118,7 @@ def context_for(db, user, conversation, body, anchor=None):
     factual inventory of what was handed to the model, never a claim about
     what the model actually used.
     """
-    limit = 80 if body.task == "summary" else 8
+    limit = 80 if body.task == "summary" else CANDIDATE_MESSAGES
     if user.save_chat:
         query = select(Message).where(Message.conversation_id == conversation.id)
         if anchor is not None:
@@ -132,6 +133,8 @@ def context_for(db, user, conversation, body, anchor=None):
     else:
         history = [m.model_dump() for m in body.history[-limit:]]
         summary = body.session_summary.model_dump() if body.session_summary else None
+    if body.task == "chat":
+        history = select_history(history, body.message)
     links = list(
         db.scalars(
             select(ConversationLink.issue_id).where(
@@ -162,7 +165,7 @@ def context_for(db, user, conversation, body, anchor=None):
         topic += ' ' + ' '.join(m['content'] for m in history[-4:] if m['role'] == 'user')
     memories = [m for m in memories if relevant(m['content'], topic)]
     memories.sort(key=lambda m: m['horizon'] != 'current_phase')
-    memories = memories[:6]
+    memories = [memory_for_turn(m, body.message) for m in memories[:6]]
     current = [m for m in memories if m['horizon'] == 'current_phase' and m['status'] == 'active']
     long_term = [m for m in memories if m['horizon'] == 'long_term' and m['status'] == 'active']
     pending = [m for m in memories if m['status'] == 'needs_review']
@@ -459,7 +462,7 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
                     "role": m.role,
                     "content": m.content,
                     "created_at": m.created_at,
-                    "payload": public_payload(m.payload),
+                    "payload": public_payload(m.payload, m.content),
                 }
                 for m in reversed(rows)
             ],

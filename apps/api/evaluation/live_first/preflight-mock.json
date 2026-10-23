@@ -1,0 +1,223 @@
+{
+  "status": "BLOCKED_FOR_LIVE_EXECUTION",
+  "paid_requests": 0,
+  "mock_provider_calls": 8,
+  "generated_at": "2026-10-21T05:19:36.656160+00:00",
+  "manifest_sha256": "414c87a168f3ef71557d39e7fa26c3a30c829617d7868194598e34034d975b3d",
+  "app_source_sha256": {
+    "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "adaptive.py": "7736c60d8752a8f8c39fd0f92f33fcf710201c35ed2e65b1ed86c8a0415ef6da",
+    "ai.py": "9ab77cd6271f262d3fc372fa7dcf227dd1de5005126744464afbcd432c7adbd0",
+    "config.py": "92f66afb8fc7ea6731080c0abba7b481610189f027062141f810d490a6d6762a",
+    "context_selection.py": "50c9b7af96eb0cdb073e08a5d4b3811a374dbe8b753bdb484dd5bd0b137f35d1",
+    "conversations.py": "df24b3ba8301d40d3283549e5df25f83d5fdb0c09c85939653358b4928d06e08",
+    "local_schema.py": "1c35269826e2a591e191c9ef670aa47dcd4efd18439267a215f6e6e4fae641a8",
+    "main.py": "ada334fd51b1fa19a6cbb997217b2f87fd562d87672e72990b5ca07dae5d294e",
+    "models.py": "064cccd32a6262c33fcf2399e448d08e43a6007cbfd501b8050fc85b376ce9f1",
+    "pricing.py": "91017254017c2d1532fff3f78bffd97583862be08522b1e907a83ac3e4b3d4c5",
+    "psychology.py": "248a0636c5a3152e51d5b033ae36d2c9e166a9288c975982afe2699b49ba4514",
+    "response_reasoning.py": "8f088a5449b845a2eed53244244e1c3a7a8559f97d836f5cdd70468eaf967e6b",
+    "schemas.py": "fa1ac4de0ceb77803ea429e30efeb66da65efe08cd7c2465095c292be4b8603a",
+    "web_search.py": "4658fcab1351f323dc3c93cec04537b40cf54612257db94a3c1665268098dfe1"
+  },
+  "blockers": [
+    "30,000 prompt-token ceiling is proposed, not a current backend admission limit.",
+    "No persistent evaluation-specific eight-attempt/CNY3.05 admission guard is installed.",
+    "Public model tokenizer/frame audit is not a verified hosted-service billing upper bound."
+  ],
+  "records": [
+    {
+      "case": "A1",
+      "planned_input": "这几年一直做软件相关的工作，但最近有些迷茫。我不知道是继续做开发，还是换一个更适合自己的方向。",
+      "captured_parameters": {
+        "model": "deepseek-v4-pro",
+        "thinking": {
+          "type": "enabled"
+        },
+        "max_tokens": 4096,
+        "reasoning_effort": "high",
+        "response_format": {
+          "type": "text"
+        },
+        "stream": false
+      },
+      "selected_history_count": 0,
+      "estimated_input_bound_with_mock_history": 10855,
+      "conditional_peak_reservation_cny": "0.208287",
+      "one_request_no_retry": true,
+      "duplicate_request_blocked": true,
+      "memories_and_cards_unchanged": true,
+      "real_reply": null,
+      "human_scores": null
+    },
+    {
+      "case": "A2",
+      "planned_input": "补充一下：我29岁，有三年后端开发经验。我喜欢把客户说不清楚的需求整理成流程，也做过两次需求访谈；但我还没独立负责过产品上线。",
+      "captured_parameters": {
+        "model": "deepseek-v4-pro",
+        "thinking": {
+          "type": "enabled"
+        },
+        "max_tokens": 4096,
+        "reasoning_effort": "high",
+        "response_format": {
+          "type": "text"
+        },
+        "stream": false
+      },
+      "selected_history_count": 2,
+      "estimated_input_bound_with_mock_history": 11427,
+      "conditional_peak_reservation_cny": "0.213435",
+      "one_request_no_retry": true,
+      "duplicate_request_blocked": true,
+      "memories_and_cards_unchanged": true,
+      "real_reply": null,
+      "human_scores": null
+    },
+    {
+      "case": "A3",
+      "planned_input": "我需要保持目前的稳定收入，未来半年不能裸辞，也不能搬家。我原本计划每周拿两小时探索新方向，暂时不想花钱报课。",
+      "captured_parameters": {
+        "model": "deepseek-v4-pro",
+        "thinking": {
+          "type": "enabled"
+        },
+        "max_tokens": 4096,
+        "reasoning_effort": "high",
+        "response_format": {
+          "type": "text"
+        },
+        "stream": false
+      },
+      "selected_history_count": 4,
+      "estimated_input_bound_with_mock_history": 11952,
+      "conditional_peak_reservation_cny": "0.218160",
+      "one_request_no_retry": true,
+      "duplicate_request_blocked": true,
+      "memories_and_cards_unchanged": true,
+      "real_reply": null,
+      "human_scores": null
+    },
+    {
+      "case": "A4",
+      "planned_input": "我想修正刚才的一点：工作安排调整后，我每周其实能留出五小时，不再是两小时。我也比之前更愿意争取成长机会，但不裸辞、不搬家和暂时不付费这几个限制没变。",
+      "captured_parameters": {
+        "model": "deepseek-v4-pro",
+        "thinking": {
+          "type": "enabled"
+        },
+        "max_tokens": 4096,
+        "reasoning_effort": "high",
+        "response_format": {
+          "type": "text"
+        },
+        "stream": false
+      },
+      "selected_history_count": 6,
+      "estimated_input_bound_with_mock_history": 12597,
+      "conditional_peak_reservation_cny": "0.223965",
+      "one_request_no_retry": true,
+      "duplicate_request_blocked": true,
+      "memories_and_cards_unchanged": true,
+      "real_reply": null,
+      "human_scores": null
+    },
+    {
+      "case": "A5",
+      "planned_input": "基于这些信息，软件工程师和 AI 产品经理，你建议我先探索哪一个？请给一个有立场的初步判断，说清依据、代价、还不知道什么，以及出现什么情况时应该调整。",
+      "captured_parameters": {
+        "model": "deepseek-v4-pro",
+        "thinking": {
+          "type": "enabled"
+        },
+        "max_tokens": 4096,
+        "reasoning_effort": "high",
+        "response_format": {
+          "type": "text"
+        },
+        "stream": false
+      },
+      "selected_history_count": 8,
+      "estimated_input_bound_with_mock_history": 13232,
+      "conditional_peak_reservation_cny": "0.229680",
+      "one_request_no_retry": true,
+      "duplicate_request_blocked": true,
+      "memories_and_cards_unchanged": true,
+      "real_reply": null,
+      "human_scores": null
+    },
+    {
+      "case": "B1",
+      "planned_input": "今天有点累，想找个地方说说。下班路上看到晚霞，心里松了一点。我现在只想聊聊，不想做计划。",
+      "captured_parameters": {
+        "model": "deepseek-v4-pro",
+        "thinking": {
+          "type": "enabled"
+        },
+        "max_tokens": 4096,
+        "reasoning_effort": "low",
+        "response_format": {
+          "type": "text"
+        },
+        "stream": false
+      },
+      "selected_history_count": 0,
+      "estimated_input_bound_with_mock_history": 10837,
+      "conditional_peak_reservation_cny": "0.208125",
+      "one_request_no_retry": true,
+      "duplicate_request_blocked": true,
+      "memories_and_cards_unchanged": true,
+      "real_reply": null,
+      "human_scores": null
+    },
+    {
+      "case": "B2",
+      "planned_input": "我31岁，有五年开发经验。现在有两个虚构的工作选项：A 是熟悉业务的开发岗，月薪1.8万元，职责清楚，但成长空间有限；B 是小团队的 AI 产品岗，月薪1.5万元，试用期三个月，职责还没完全谈清。我每月固定支出9000元，有六个月生活费储蓄，想接近产品工作，但也担心收入和试用期风险。你会优先推荐哪个？什么信息会让你改判？",
+      "captured_parameters": {
+        "model": "deepseek-v4-pro",
+        "thinking": {
+          "type": "enabled"
+        },
+        "max_tokens": 4096,
+        "reasoning_effort": "high",
+        "response_format": {
+          "type": "text"
+        },
+        "stream": false
+      },
+      "selected_history_count": 0,
+      "estimated_input_bound_with_mock_history": 11434,
+      "conditional_peak_reservation_cny": "0.213498",
+      "one_request_no_retry": true,
+      "duplicate_request_blocked": true,
+      "memories_and_cards_unchanged": true,
+      "real_reply": null,
+      "human_scores": null
+    },
+    {
+      "case": "B3",
+      "planned_input": "先不谈转行了。今天朋友临时取消了约定，我有点失落。我现在只想把这件事说出来，不想分析职业，也不想安排下一步。",
+      "captured_parameters": {
+        "model": "deepseek-v4-pro",
+        "thinking": {
+          "type": "enabled"
+        },
+        "max_tokens": 4096,
+        "reasoning_effort": "low",
+        "response_format": {
+          "type": "text"
+        },
+        "stream": false
+      },
+      "selected_history_count": 0,
+      "estimated_input_bound_with_mock_history": 10884,
+      "conditional_peak_reservation_cny": "0.208548",
+      "one_request_no_retry": true,
+      "duplicate_request_blocked": true,
+      "memories_and_cards_unchanged": true,
+      "real_reply": null,
+      "human_scores": null
+    }
+  ],
+  "note": "Mock history cannot predict future real history size or real response quality."
+}

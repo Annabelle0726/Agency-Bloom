@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createCompanionGaze, createNativeGazeFeed, type GazeFeed } from '../companion-gaze'
+import type { BloomStatus } from '../bloom-status'
 
 type CompanionMood = 'rest' | 'idle' | 'thinking' | 'speaking'
 const props = withDefaults(defineProps<{
@@ -10,7 +11,8 @@ const props = withDefaults(defineProps<{
   online?: boolean
   followGaze?: boolean
   foreground?: boolean
-}>(), { size: 38, state: 'idle', interactive: true, followGaze: false, foreground: true, online: false })
+  status?: BloomStatus
+}>(), { size: 38, state: 'idle', interactive: true, followGaze: false, foreground: true, online: undefined, status: undefined })
 
 const touched = ref(false)
 let resetTimer: ReturnType<typeof setTimeout> | undefined
@@ -54,6 +56,10 @@ onMounted(() => {
   // #endif
   gazeController.setActive(gazeEnabled.value)
 })
+const presence = computed<BloomStatus | null>(() => props.status || (props.online === false ? null : 'online'))
+const presenceLabel = computed(() => presence.value === 'waiting'
+  ? 'Bloom 正在回复'
+  : presence.value === 'offline' ? 'Bloom 暂时不可用' : '在线')
 
 function greet() {
   if (!props.interactive) return
@@ -82,7 +88,7 @@ onUnmounted(() => {
       <view class="gaze-socket gaze-left"><view class="gaze-pupil" :style="eyeStyle"><view class="gaze-glint" /></view></view>
       <view class="gaze-socket gaze-right"><view class="gaze-pupil" :style="eyeStyle"><view class="gaze-glint" /></view></view>
     </view>
-    <view v-if="online" class="bot-online" aria-label="在线" />
+    <view v-if="presence" class="bot-online" :class="'is-' + presence" :aria-label="presenceLabel" />
   </view>
 </template>
 
@@ -145,13 +151,30 @@ onUnmounted(() => {
   max-height: 10px;
   border-radius: 50%;
   background: #58a06c;
+  background: var(--bloom-online, #58a06c);
   border: 1.5px solid var(--paper, #ffffff);
   box-shadow: 0 0 4px rgba(88, 160, 108, .45);
   animation: bot-online-breathe 3.4s ease-in-out infinite;
 }
+.bot-online.is-waiting {
+  background: #d8a33e;
+  background: var(--bloom-waiting, #d8a33e);
+  box-shadow: 0 0 4px rgba(216, 163, 62, .5);
+  animation: bot-waiting-breathe 1.4s ease-in-out infinite;
+}
+.bot-online.is-offline {
+  background: #cf5f5b;
+  background: var(--bloom-offline, #cf5f5b);
+  box-shadow: 0 0 4px rgba(207, 95, 91, .5);
+  animation: none;
+}
 @keyframes bot-online-breathe {
   0%, 100% { box-shadow: 0 0 3px rgba(88, 160, 108, .35); }
   50% { box-shadow: 0 0 6px rgba(88, 160, 108, .6); }
+}
+@keyframes bot-waiting-breathe {
+  0%, 100% { box-shadow: 0 0 3px rgba(216, 163, 62, .35); }
+  50% { box-shadow: 0 0 7px rgba(216, 163, 62, .7); }
 }
 .bot-rest .bot-image, .bot-rest .bot-glow { animation: none; }
 .bot-thinking .bot-image { animation: bot-think 1.9s ease-in-out infinite; }

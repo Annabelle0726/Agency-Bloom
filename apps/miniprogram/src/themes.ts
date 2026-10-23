@@ -60,6 +60,15 @@ function mixHex(base: string, tint: string, amount: number) {
 }
 export function themeStyle(theme: ThemeDefinition): Record<string, string> {
   const p = theme.palette
+  const focusColors = theme.dark
+    ? { plan: '#b4d8ce', reflect: '#e5c694', chat: '#cfb9e2' }
+    : { plan: '#386a60', reflect: '#865b2a', chat: '#72518c' }
+  const focusTags: Record<string, string> = {}
+  for (const [kind, color] of Object.entries(focusColors)) {
+    focusTags[`--focus-${kind}-ink`] = color
+    focusTags[`--focus-${kind}-fill`] = mixHex(p.paper, color, theme.dark ? .12 : .07)
+    focusTags[`--focus-${kind}-border`] = mixHex(p.paper, color, theme.dark ? .28 : .22)
+  }
   const gradients: Record<ThemeId, [string, string]> = {
     light: ['#9bb4ff', '#66c4eb'], dark: ['#7e93b8', '#3d5a78'],
     dawn: ['#eac59f', '#b97e59'], forest: ['#9fc8a0', '#548e78'],
@@ -78,6 +87,7 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${alpha})`
   }
   return {
+    ...focusTags,
     '--bg': p.bg, '--paper': p.paper, '--ink': p.ink, '--muted': p.muted, '--line': p.line,
     '--accent': p.accent, '--button-fill': p.fill, '--soft': p.soft, '--accent-light': p.soft,
     '--scrollbar-thumb': p.muted, '--scrollbar-track': p.soft,

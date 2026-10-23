@@ -16,6 +16,14 @@ export function responseReasoning(value: unknown, reply: string): ReasoningPoint
         typeof item.text !== 'string' || item.text.length < 8 || item.text.length > 120 ||
         !reply.includes(item.text) || seen.has(item.kind) || texts.has(item.text) ||
         /chain.?of.?thought|system.?prompt|reasoning_content|thinking_steps|系统提示|系统指令|思维链|调试日志|工具参数|tool_calls|<think/i.test(item.text)) return []
+    if (!Array.isArray(item.evidence) || item.evidence.length < 1 || item.evidence.length > 2 ||
+        item.evidence.some((e: unknown) => {
+          if (!e || typeof e !== 'object') return true
+          const evidence = e as Record<string, unknown>
+          return typeof evidence.source_id !== 'string' || !/^s[1-9][0-9]?$/.test(evidence.source_id) ||
+            typeof evidence.quote !== 'string' || evidence.quote.trim().length < 4 || evidence.quote.length > 160 ||
+            /chain.?of.?thought|system.?prompt|reasoning_content|thinking_steps|系统提示|系统指令|思维链|调试日志|工具参数|tool_calls|<think/i.test(evidence.quote)
+        })) return []
     seen.add(item.kind)
     texts.add(item.text)
   }

@@ -12,6 +12,8 @@ from pydantic import (
     model_validator,
 )
 
+from .perspective_schema import PerspectiveControl, PerspectiveShift
+
 Line = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=400)]
 Lines = Annotated[list[Line], Field(max_length=12)]
 SupportStyle = Literal["listen", "discover", "compare", "experiment", "clarify", "act"]
@@ -139,6 +141,7 @@ class ConversationSummary(StrictModel):
 
 
 class ChatInput(StrictModel):
+    perspective_control: PerspectiveControl | None = None
     request_id: UUID
     message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
     history: list[ChatMessage] = Field(default=[], max_length=8)
@@ -283,6 +286,18 @@ class ReasoningPoint(StrictModel):
 
 
 class AIOutput(StrictModel):
+    perspective_shift: PerspectiveShift | None = None
+
+    @field_validator("perspective_shift", mode="before")
+    @classmethod
+    def optional_perspective(cls, value):
+        if value is None:
+            return None
+        try:
+            return PerspectiveShift.model_validate(value)
+        except (ValidationError, TypeError, ValueError):
+            return None
+
     reasoning_summary: list[ReasoningPoint] | None = None
 
     @field_validator("reasoning_summary", mode="before")

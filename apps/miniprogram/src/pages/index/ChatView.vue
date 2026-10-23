@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+import { PERSPECTIVE_PROTOTYPE, publicPerspective, type PerspectiveAction } from '../../perspective-shift'
 import SvgIcon from '../../components/SvgIcon.vue'
 import ChatHeader from './chat/ChatHeader.vue'
 import ChatModePanel from './chat/ChatModePanel.vue'
 import ChatWelcome from './chat/ChatWelcome.vue'
 import ChatMessageItem from './chat/ChatMessage.vue'
 import ChatPendingMessage from './chat/ChatPendingMessage.vue'
+import ChatThinking from './chat/ChatThinking.vue'
+import type { ReplyPhase } from '../../chat-stream'
 import ChatProposalCard from './chat/ChatProposalCard.vue'
 import ChatInsightCard from './chat/ChatInsightCard.vue'
 import type { ChatEntry } from '../../chat-entry'
@@ -12,10 +16,11 @@ import type { ChatMessage, Conversation, Insight, PhaseChange, Suggestion } from
 import type { SupportMode } from '../../onboarding'
 import type { ConversationMenuAction } from '../../conversation-action'
 import type { ResolvedVisual } from '../../visual-library'
+import type { BloomStatus } from '../../bloom-status'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
-defineProps<{
+const props = defineProps<{
   busy: boolean
   foreground?: boolean
   sending: boolean
@@ -27,8 +32,8 @@ defineProps<{
   chatMenuOpen: boolean
   readOnlyConversation: boolean
   selectedMode: string
-  chatError: string
   aiMode: string
+  bloomStatus: BloomStatus
   modePickerOpen: boolean
   messages: ChatMessage[]
   userSaveChat: boolean
@@ -40,23 +45,32 @@ defineProps<{
   speakingIndex: number | null
   olderCursor: string | null
   pendingText: string
+  streamText: string
+  replyPhase: ReplyPhase
+  followLatest: boolean
+  selectionOpen: boolean
   suggestion: Suggestion | null
   insight: Insight | null
   insightReaction: string
-  lastRequestId: string
   currentEnded: boolean
   phaseChange: PhaseChange | null
+  perspectiveDisabled?: boolean
+  perspectiveDismissed?: string[]
   exploreVisual?: ResolvedVisual | null
   themeId: string
 }>()
+const selectionIndex = ref<number | null>(null)
+function selectMessage(index: number, active: boolean) {
+  if (active) { selectionIndex.value = index; emit('selection', true) }
+  else if (selectionIndex.value === index) { selectionIndex.value = null; emit('selection', false) }
+}
+watch(() => props.selectionOpen, value => { if (!value) selectionIndex.value = null })
 
 const emit = defineEmits<{
   back: []
   history: []
   toggleMenu: []
   menuAction: [action: ConversationMenuAction]
-  dismissError: []
-  recover: []
   resume: []
   selectMode: [mode: SupportMode]
   starter: [prompt: string]
@@ -65,6 +79,10 @@ const emit = defineEmits<{
   reviewSuggestion: []
   reactInsight: [action: 'interested' | 'dismissed' | 'experiment']
   editMessage: [index: number]
+  askBloom: [text: string]
+  selection: [value: boolean]
+  jumpLatest: []
+  perspective: [action: PerspectiveAction, index: number]
 }>()
 </script>
 
@@ -85,7 +103,6 @@ const emit = defineEmits<{
       @toggle-menu="emit('toggleMenu')"
       @menu-action="emit('menuAction', $event)"
     />
-    <view v-if="chatError" class="notice chat-error"><text>{{ chatError }}</text><button class="notice-close" aria-label="关闭对话提示" @click="emit('dismissError')"><SvgIcon name="close" :size="18" /></button><button v-if="lastRequestId" class="text-button" :disabled="busy" @click="emit('recover')">查看这条请求的结果</button></view>
     <view v-if="readOnlyConversation" class="notice"><text>{{ currentEnded ? '所属探索已结束，恢复探索后可以继续' : '会话已归档，可以在会话面板恢复' }}</text><button v-if="currentEnded" class="text-button" @click="emit('resume')">恢复探索</button></view>
     <text v-if="aiMode === 'demo'" class="demo-chat-note">本地演示 · 以下回复为固定示例，不调用模型</text>
     <ChatModePanel
@@ -109,6 +126,7 @@ const emit = defineEmits<{
       :busy="busy"
       :starter-hint="starterHint"
       :visual="exploreVisual || null"
+      :bloom-status="bloomStatus"
       @starter="emit('starter', $event)"
     />
     <button v-if="olderCursor" class="text-button" :disabled="busy" @click="emit('loadOlder')">加载更早的消息</button>
@@ -124,12 +142,22 @@ const emit = defineEmits<{
       :user-avatar="userAvatar"
       :theme-id="themeId"
       :editable="!busy && !sending && !readOnlyConversation && (!userSaveChat || !!message.id)"
+      :selection-owner="selectionIndex === index"
+      :perspective="PERSPECTIVE_PROTOTYPE && !perspectiveDisabled && !perspectiveDismissed?.includes(message.payload?.perspective_token || '') ? publicPerspective(message.payload?.perspective_shift, message.payload?.perspective_token, messages) : null"
+      :perspective-busy="busy || sending || readOnlyConversation"
+      :bloom-status="bloomStatus"
+      @perspective="emit('perspective', $event, index)"
       @edit="emit('editMessage', index)"
+      @ask="emit('askBloom', $event)" @selection="selectMessage(index,$event)"
     />
     <button v-if="phaseChange && !sending" class="text-button review-phase-change" @click="emit('openPhase')">查看可能的方向变化</button>
     <view v-if="sending && !generatingSummary" id="pending-message">
       <ChatPendingMessage :pending-text="pendingText" :user-avatar="userAvatar" />
     </view>
+    <ChatThinking v-if="sending" :generating-summary="generatingSummary" :phase="replyPhase" :stream-text="streamText" />
+    <button v-if="!followLatest && !selectionOpen" class="jump-latest" @click="emit('jumpLatest')" hover-class="pressed">
+      <SvgIcon name="chevron" :size="13" /><text>回到最新</text>
+    </button>
     <ChatProposalCard v-if="suggestion" :suggestion="suggestion" @review="emit('reviewSuggestion')" />
     <ChatInsightCard
       v-if="insight"
