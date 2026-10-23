@@ -28,7 +28,6 @@ const emit = defineEmits<{
         <text class="hero-aside">{{ '远处有方向\n此刻也有生活' }}</text>
       </view>
     </view>
-    <slot name="moment" />
     <button v-if="current" class="home-mission glass-card" data-home="mission" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0">
       <view class="mission-copy">
         <view class="mission-eyebrow"><view class="mission-dot" aria-hidden="true"/><text class="mission-label">此刻，我在意的</text></view>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { createCompanionGaze, createNativeGazeFeed, type GazeFeed } from '../companion-gaze'
 
 type CompanionMood = 'rest' | 'idle' | 'thinking' | 'speaking'
 const props = withDefaults(defineProps<{
@@ -7,11 +8,52 @@ const props = withDefaults(defineProps<{
   state?: CompanionMood
   interactive?: boolean
   online?: boolean
-}>(), { size: 38, state: 'idle', interactive: true, online: false })
+  followGaze?: boolean
+  foreground?: boolean
+}>(), { size: 38, state: 'idle', interactive: true, followGaze: false, foreground: true, online: false })
 
 const touched = ref(false)
 let resetTimer: ReturnType<typeof setTimeout> | undefined
-const motion = computed(() => touched.value ? 'greeting' : props.state)
+const surface = ref<any>(null), gaze = ref({ x: 0, y: 0 }), reduced = ref(false), visible = ref(true)
+const gazeEnabled = computed(() => props.followGaze && props.foreground && !touched.value && !reduced.value && visible.value && (props.state === 'rest' || props.state === 'idle'))
+const motion = computed(() => touched.value ? 'greeting' : gazeEnabled.value ? 'rest' : props.state)
+let feed: GazeFeed = () => () => {}
+// #ifdef MP-WEIXIN
+feed = createNativeGazeFeed(uni)
+// #endif
+const gazeController = createCompanionGaze(feed, value => { gaze.value = value })
+const eyeStyle = computed(() => ({ transform: `translate(${(gaze.value.x * props.size * .018).toFixed(2)}px, ${(gaze.value.y * props.size * .014).toFixed(2)}px)` }))
+watch(gazeEnabled, value => gazeController.setActive(value), { flush: 'sync' })
+let removeBrowserListeners = () => {}
+let touch: { x: number; y: number } | null = null
+function touchStart(event: { touches?: ArrayLike<{ clientX: number; clientY: number }> }) {
+  const point = event.touches?.[0]
+  if (point) touch = { x: point.clientX, y: point.clientY }
+}
+function touchMove(event: { touches?: ArrayLike<{ clientX: number; clientY: number }> }) {
+  const point = event.touches?.[0]
+  if (point && touch) gazeController.point((point.clientX - touch.x) / 28, (point.clientY - touch.y) / 28)
+}
+function releaseGaze() { touch = null; gazeController.release() }
+function mouseMove(event: any) {
+  // #ifdef H5
+  const rect = (surface.value?.$el || surface.value)?.getBoundingClientRect?.()
+  if (rect) gazeController.point((event.clientX - rect.left - rect.width / 2) / (rect.width / 2), (event.clientY - rect.top - rect.height / 2) / (rect.height / 2))
+  // #endif
+}
+onMounted(() => {
+  // #ifdef H5
+  const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+  const motionChanged = () => { reduced.value = media.matches }
+  const visibilityChanged = () => { visible.value = !document.hidden }
+  motionChanged(); visibilityChanged()
+  const element = (surface.value?.$el || surface.value) as HTMLElement | undefined
+  element?.addEventListener('mousemove', mouseMove); element?.addEventListener('mouseleave', releaseGaze)
+  media.addEventListener('change', motionChanged); document.addEventListener('visibilitychange', visibilityChanged)
+  removeBrowserListeners = () => { element?.removeEventListener('mousemove', mouseMove); element?.removeEventListener('mouseleave', releaseGaze); media.removeEventListener('change', motionChanged); document.removeEventListener('visibilitychange', visibilityChanged) }
+  // #endif
+  gazeController.setActive(gazeEnabled.value)
+})
 
 function greet() {
   if (!props.interactive) return
@@ -23,18 +65,23 @@ function greet() {
 
 onUnmounted(() => {
   if (resetTimer) clearTimeout(resetTimer)
+  removeBrowserListeners(); gazeController.dispose()
 })
 </script>
 
 <template>
-  <view class="companion-bot" :class="'bot-' + motion"
+  <view ref="surface" class="companion-bot" :class="'bot-' + motion"
         :style="{ width: size + 'px', height: size + 'px' }"
         :role="interactive ? 'button' : 'img'"
         :aria-label="interactive ? 'Bloom 机器人头像，轻触互动' : 'Bloom 机器人头像'"
-        @tap="greet">
+        @tap="greet" @touchstart="touchStart" @touchmove="touchMove" @touchend="releaseGaze" @touchcancel="releaseGaze">
     <view class="bot-glow" />
     <image class="bot-image" src="/static/companion-bot.png" mode="aspectFit" />
     <view class="bot-spark" />
+    <view v-if="gazeEnabled" class="gaze-layer" aria-hidden="true">
+      <view class="gaze-socket gaze-left"><view class="gaze-pupil" :style="eyeStyle"><view class="gaze-glint" /></view></view>
+      <view class="gaze-socket gaze-right"><view class="gaze-pupil" :style="eyeStyle"><view class="gaze-glint" /></view></view>
+    </view>
     <view v-if="online" class="bot-online" aria-label="在线" />
   </view>
 </template>
@@ -50,6 +97,13 @@ onUnmounted(() => {
   border-radius: 50%;
   overflow: visible;
 }
+/* Live pupils align with the original 128px artwork; no new raster asset. */
+.gaze-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.gaze-socket { position: absolute; width: 9.4%; height: 13.3%; border-radius: 50%; background: #fcfbf5; }
+.gaze-left { left: 33.6%; top: 48%; }
+.gaze-right { left: 55.5%; top: 49.4%; }
+.gaze-pupil { position: absolute; left: 21%; top: 19%; width: 58%; height: 62%; border-radius: 50%; background: linear-gradient(150deg, #7f9576, #486752); transition: transform 130ms cubic-bezier(.22, 1, .36, 1); }
+.gaze-glint { position: absolute; left: 50%; top: 13%; width: 27%; height: 29%; border-radius: 50%; background: #fcfbf5; }
 .bot-image {
   display: block;
   width: 100%;
@@ -144,6 +198,7 @@ onUnmounted(() => {
   45% { opacity: .75; transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .gaze-layer { display: none; } .gaze-pupil { transition: none; }
   .bot-image, .bot-glow, .bot-spark { animation: none !important; }
   .bot-online { animation: none !important; }
 }

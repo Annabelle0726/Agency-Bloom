@@ -18,6 +18,7 @@ defineProps<{
   chatEntry: ChatEntry
   sending: boolean
   busy: boolean
+  foreground?: boolean
   starterHint: string
   visual?: ResolvedVisual | null
 }>()
@@ -27,7 +28,7 @@ const emit = defineEmits<{ starter: [prompt: string] }>()
 <template>
   <view v-if="isDrafting" class="chat-welcome">
     <view class="chat-welcome-intro">
-      <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" /></view>
+      <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" :follow-gaze="true" :foreground="foreground && !busy && !sending" /></view>
       <text class="body-copy">想说什么，就从哪里说起，发送后这段对话才会被创建</text>
     </view>
     <ChatExploreVisual :visual="visual || null" />
@@ -49,7 +50,7 @@ const emit = defineEmits<{ starter: [prompt: string] }>()
   </view>
   <view v-else-if="activeConversation" class="chat-welcome">
     <view class="chat-welcome-intro">
-      <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" /></view>
+      <view class="chat-welcome-avatar"><CompanionAvatar :size="32" state="idle" :follow-gaze="true" :foreground="foreground && !busy && !sending" /></view>
       <text class="body-copy">{{ chatEntry.introduction }}</text>
     </view>
     <ChatExploreVisual :visual="visual || null" />

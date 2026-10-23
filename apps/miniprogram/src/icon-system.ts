@@ -37,6 +37,8 @@ function base64Ascii(value: string) {
   throw Error('No base64 encoder is available for the icon system')
 }
 
+export function svgDataUri(source: string) { return 'data:image/svg+xml;base64,' + base64Ascii(source) }
+
 /**
  * WeChat Mini Program cannot render inline Vue SVG nodes reliably. The proven
  * path is a base64 SVG data source in an image, which also keeps the icon
@@ -46,7 +48,7 @@ export function iconDataUri(name: IconName, color: string) {
   const key = `${name}:${color}`
   const cached = sourceCache.get(key)
   if (cached) return cached
-  const source = 'data:image/svg+xml;base64,' + base64Ascii(iconSvg(name, color))
+  const source = svgDataUri(iconSvg(name, color))
   sourceCache.set(key, source)
   return source
 }

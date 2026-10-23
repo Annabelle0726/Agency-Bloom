@@ -1,10 +1,11 @@
 # Bloom Moment — a little curiosity, without a problem to solve
 
-The home page now offers one optional experience immediately after its welcome.
+Discover now offers one optional experience before its existing conversation starters.
+Home no longer renders or reads Bloom Moment.
 A visit only reads today's state. Opening the invitation, or explicitly choosing
 **Another**, creates at most one provider request. No notification, background
 generation, streak, deadline, reward schedule or additional model reviewer is
-introduced. Discover and the personal journey remain separate entry points.
+introduced. The existing Discover questions and personal journey entry stay available.
 
 ## Experience
 
@@ -16,9 +17,10 @@ a psychological or personality inference. Exact fingerprints and retained-text
 similarity reject recent repetitions. A rejected candidate does not cause an
 automatic replacement request.
 
-The six existing palettes, typography, small radii, CompanionAvatar and local
+The six existing palettes, typography, small radii, CompanionAvatar and published
 visual resolver are reused. Artwork changes locally with date, experience and
-theme. Missing eligible artwork falls back to a real compatible local image or
+theme. The resolver uses verified cloud assets when configured and local variants otherwise.
+Missing eligible artwork falls back to a real compatible image or
 text; it never invents a filename or invokes an image API. No new asset dependency.
 
 **Chat about this** opens an editable, unsent, independent conversation draft.
@@ -64,7 +66,7 @@ SQLite development creates the additive table through normal metadata startup.
 PostgreSQL requires `20261023020000_bloom_moments.sql`. Its RLS table is accessible
 through the authenticated backend, not public client roles. The development
 verification does not apply this migration to a private or hosted database.
-Until deployed, the endpoint fails safely and the homepage offers read retry.
+Until deployed, the endpoint fails safely and Discover offers an explicit read retry.
 
 ## Reliability and cost boundary
 
@@ -129,3 +131,176 @@ judge, engagement pressure or inference from a refusal is needed.
 - The isolated fixture/API and native acceptance script remain reproducible.
   Physical-device typography, safe-area behavior and real model quality require
   subsequent verification. The PostgreSQL migration is prepared, not applied.
+
+
+## Discover refinement — October 23, 2026
+
+North star: a small personal letter in Discover, with readable words and a bounded
+photograph. This is an optional curiosity entry, not a task, streak or reward.
+The user explicitly requested the installed `oil-ui` workflow. Existing product
+palettes, heading fonts, SVGs, CompanionAvatar and the five-link navigation remain
+in use; no additional design system or raster asset was introduced.
+
+- Remove Discover's 470px atmospheric hero and its 236px introductory spacer.
+  Begin with one concise invitation, then the Moment, then existing questions.
+- Replace the stretched, full-height image strip with a 76 × 94px photographic
+  frame (62 × 80px below 360px). A subtle three-degree tilt distinguishes this
+  letter from the surrounding question list. Images never size themselves from
+  model-generated text; an image failure hides the optional artwork.
+- Read the opened content at full width. Use 15px body text, an 18px question and
+  13px source/disclosure text. Wrap short phrases at actual punctuation boundaries on narrow screens, preserving all response characters.
+  Exact source quotes, dates and AI/demo disclosure remain visible.
+- Give opening/chat a single filled primary action. Another/dismiss remain plain
+  secondary actions. The optional memory checkbox stays unchecked by default.
+- Existing Discover questions use open rows and 60 × 70px thumbnails rather than
+  large glass cards. The Plan page retains its original hero and layout.
+- Reuse page-entry motion, add 130ms immediate press feedback and a 220ms reveal
+  only when new content arrives; reduced-motion preferences disable displacement.
+  There is no decorative loop, typing delay or fabricated generation progress.
+- Remove the repeated unopened headline and uppercase introductory eyebrow.
+  Keep one product name, one date, the invitation, action and necessary disclosure.
+
+GET reconciliation now runs when entering Discover or resuming the app there.
+Opening, consent, another, refusal, retention, unsent drafts and backend request
+boundaries are unchanged. The home empty-state condition also excludes the
+already-rendered home view, preventing a second dashboard below it.
+
+The user reports that the Supabase SQL is configured. This pass neither applies
+migrations nor reads production records; it changes no environment, provider,
+monthly budget or frozen live-evaluation configuration.
+
+### Reproduction
+
+`tools/verify-moment-discover-h5.cjs` is an auxiliary browser check using the real
+Vue page, isolated `tools/mock-moments-api.py` on 8030 and an H5 preview on 5187.
+Set `PLAYWRIGHT_MODULE` / `PLAYWRIGHT_BROWSER` to an existing local installation
+when needed. The fixture validates its own marker before interacting, creates
+only synthetic accounts and never uses a provider key. Its script checks:
+
+- No Moment on Home and no Moment request from Home; visiting Discover only reads.
+- Separate consent, explicit generation, refresh readback and no duplicate call.
+- Failed dismissal preserves content; explicit recovery and dismissal do not pay.
+- Another and optional confirmed-memory quotes; chat opens an unsent new draft.
+- All six themes, 320/360/390/430px widths, bounded photos and reduced motion.
+- Exhausted budget preserves the current content and produces no automatic retry.
+
+Evidence is in `output/moments/discover/`, with baseline screenshots in
+`output/moments/before-home.png` and `before-discover.png`. The screenshot helper
+waits for uni-image's background to load and the arrival state to finish; checking
+only `document.images` incorrectly captured still-loading placeholders.
+
+The native helper now enters Discover, verifies Moment absence on Home and checks
+photo bounds. Its isolated tourist project copies the repository's configured SDK
+version. Native simulator acceptance remains separate from H5 and compiler checks.
+
+
+### Verification of the refinement
+
+- TypeScript passed; the existing frontend suite passed all 167 tests.
+- Formal WeChat build and the user's development artifacts both passed the
+  installed native compilers: 20 WXSS and 47 WXML files each. The development
+  `ChatVisual.js` is present and its import resolves. The reported missing-component
+  error was not reproducible in the current complete build; a watched importer
+  was touched to trigger dependency re-evaluation without changing chat code.
+- The final auxiliary H5 flow passed three consecutive runs, each covering eleven
+  viewport/theme layout checks plus the interaction/error cases above. Each run
+  reported zero page exceptions, zero failed image requests and zero paid requests.
+- One independent screenshot review, following oil-ui's existing-interface polish
+  protocol (no numerical score), identified a narrow-screen word break and a
+  redundant light-flavor subtitle. Both were corrected. Source labels and the demo
+  disclosure were retained because they communicate provenance. Final 320px
+  phrase wrapping was visually checked by the implementing agent.
+- H5 visual evidence covers 390 × 844 and 320/360/430 × 740. Static review cannot
+  establish motion quality or native rendering. Press/reveal transitions remain
+  short and reduced-motion-safe; no frame-rate claim is made.
+- Native automation still fails before entering the app because the installed
+  Nightly's tool handshake does not supply the SDK version expected by
+  miniprogram-automator. This is **not** a passed simulator or physical-device test.
+  No SDK values or successful UI results were fabricated to bypass that failure.
+- Existing Sass legacy-API deprecation warnings remain. No API/provider code was
+  changed; production accounts, SQL migrations, environment files and all budget
+  ledgers were left untouched.
+
+
+## Tactile action, optional reading, and companion gaze — October 23, 2026
+
+The primary Moment action uses the existing New Conversation color tokens with a
+softer finish. All six themes supply its highlight, body and shaded edge. The
+strong bottom ledge is removed: a soft 1px contact shadow, restrained inset light
+and 1px press travel retain a little depth. The unchanged 8px radius and compact
+footprint keep it part of the small letter. No repeating shine or decorative loop
+was added.
+
+A **Collapse / Expand** button defaults to expanded. Collapsing removes the body,
+photo, sources, actions and companion, leaving the title and edition header. It
+changes only view state and never deletes, regenerates or sends the Moment. Errors
+and uncertain-request recovery stay visible outside the fold. A fresh view starts
+expanded; no new preference or personal record is stored.
+
+The old operational footer is replaced by a human invitation. The adjacent More
+SVG opens the factual AI attribution and retention explanation. The demo notice
+remains visible in demo mode; a warm sentence never masquerades as generated
+personal understanding or changes the existing retention setting.
+
+`CompanionAvatar.vue` now owns the optional gaze interaction, shared by Moment,
+the chat welcome, and the latest assistant reply. Historical message avatars do
+not subscribe to the gaze feed. Only the pupils are independently composited with
+native views; the original raster and greeting/thinking states are reused. While
+gaze is active the image rests so its eyes stay aligned. A native-only
+accelerometer feed calibrates to the first comfortable holding position.
+Subsequent tilt changes a bounded, smoothed gaze. Pointer movement and an
+unblocked touch drag offer a local alternative. No camera, eye tracking, face
+detection, storage, telemetry or model request is involved.
+
+`companion-gaze.ts` owns its exact native listener, rejects invalid/violent input,
+limits updates, and prevents stale start callbacks from interfering with a newer
+subscription. Collapse/unmount, tab/page hide, greeting, thinking and speaking
+stop the feed and reset the gaze. Chat gaze pauses while a reply is pending. Browser reduced-motion and visibility changes also stop
+it. Sensor failure quietly leaves ordinary greeting/touch interaction available.
+Nothing retries a paid request or generates tool-like progress.
+
+The explicitly requested installed `oil-motion` skill was read. Its stated scope
+excludes CSS/JS/SVG microinteractions; this eye-only input mapping uses that local
+frontend path rather than video generation, an atlas, a credential setup or an
+external animation service. This pass is a focused self-review of the changed
+component, not a new whole-page design review.
+
+Verification uses six offline controller/native-adapter cases plus the existing
+frontend suite. The H5 acceptance script additionally checks default expansion,
+collapse/reopen without a new AI call, exact body preservation, attribution,
+pressed-button travel, actual pupil displacement/recentering, and reduced-motion
+shutdown. It also verifies the actual welcome and latest-reply pupils. Current
+evidence is under `output/moments/refined/`. The installed native compilers
+validate the build, but physical-phone tilt direction, permission behavior and
+feel remain unverified; browser pointer checks do not establish those results.
+
+
+### Theme atmosphere and final verification
+
+Discover has a viewport-scale, static SVG of petal and leaf contours. Its accent,
+gold and soft colors come from the current palette, with six cached local data
+URIs. It sits behind the page content without taking pointer events; Moment keeps
+its readable surface. No remote asset, animation, new permission or model call is
+required. The Plan page and bottom navigation remain unchanged.
+
+TypeScript and all 174 frontend tests passed, including six gaze controller/feed
+cases and the six-theme SVG contract. A clean HEAD export with only the intended
+commit files also passed TypeScript and 14 focused tests, excluding unrelated
+working-tree features. The production mini-program build passed, including 20
+WXSS / 47 WXML compiler checks; the current development artifact check passed
+21 WXSS / 48 WXML. Existing Sass legacy-API warnings remain nonfatal.
+
+Three consecutive H5 interaction runs passed (11 cases each), reporting zero page
+exceptions, failed image requests or paid requests. These use the actual Vue app
+and a temporary demo-mode backend with fictional accounts. A fictional demo chat
+also verifies the latest reply's avatar; it never reaches a paid provider. Checks
+cover all six themes and 320/360/390/430px widths, default expansion, no-call
+collapse/reopen, disclosure, 1px press travel, Moment/chat pupil movement,
+recentering, reduced motion, draft preservation and budget-error recovery.
+
+Visual self-review covered forest/dark atmosphere, the softened action, folded
+title, narrow layout and both chat states. Physical-device tilt direction,
+permission behavior and feel remain unverified. Browser and compiler checks do
+not establish native UI acceptance. No new independent-review result is claimed.
+No provider, environment file, production account, budget ledger or raw reasoning
+handling was changed by this visual refinement.

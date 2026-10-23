@@ -356,11 +356,13 @@ export function useIndexPage() {
   }
 
   const discovery = useDiscovery(user, request, notify)
+  const spaceForeground = ref(true)
   const bloomMoment = useBloomMoment(user, request, requestId)
   watch(() => [user.value?.id, tab.value, screen.value], () => {
-    if (user.value && screen.value === 'space' && tab.value === 'now') void bloomMoment.load()
+    if (user.value && screen.value === 'space' && tab.value === 'discover') void bloomMoment.load()
   }, { flush: 'post' })
-  onShow(() => { if (user.value && screen.value === 'space' && tab.value === 'now') void bloomMoment.load() })
+  onShow(() => { spaceForeground.value = true; if (user.value && screen.value === 'space' && tab.value === 'discover') void bloomMoment.load() })
+  onHide(() => { spaceForeground.value = false })
   function chatAboutMoment() {
     const content = bloomMoment.moment.value?.content
     if (!content || !user.value) return
@@ -1045,6 +1047,7 @@ export function useIndexPage() {
     explorePrompt,
     discovery,
     bloomMoment,
+    spaceForeground,
     chatAboutMoment,
     newChatStarters,
     todayLabel,

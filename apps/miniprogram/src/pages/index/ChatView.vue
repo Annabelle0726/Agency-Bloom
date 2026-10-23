@@ -17,6 +17,7 @@ defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
 defineProps<{
   busy: boolean
+  foreground?: boolean
   sending: boolean
   generatingSummary: boolean
   activeConversation: Conversation | null
@@ -97,6 +98,7 @@ const emit = defineEmits<{
     <ChatWelcome
       v-if="!messages.length && !sending"
       :is-drafting="isDrafting"
+      :foreground="foreground"
       :active-conversation="activeConversation"
       :user-save-chat="userSaveChat"
       :welcome-context="welcomeContext"
@@ -116,6 +118,8 @@ const emit = defineEmits<{
       :message="message"
       :index="index"
       :is-last="index === messages.length - 1"
+      :gaze-active="index === messages.length - 1 && !sending && !busy"
+      :foreground="foreground"
       :speaking="speakingIndex === index"
       :user-avatar="userAvatar"
       :theme-id="themeId"

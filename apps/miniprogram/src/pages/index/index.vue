@@ -148,6 +148,7 @@ const {
   explorePrompt,
   discovery,
   bloomMoment,
+  spaceForeground,
   chatAboutMoment,
   newChatStarters,
   todayLabel,
@@ -196,21 +197,11 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
       <template v-else-if="screen === 'space'">
         <HomeView v-if="tab === 'now'" :card="card" :current="current" :greeting="greeting"
                   :today-label="todayLabel" @open-editor="openEditor()" @plan="selectTab('plan')"
-                  @feedback="modal = 'feedback'" @chat="selectTab('chat')">
-          <template #moment>
-            <BloomMoment :moment="bloomMoment.moment.value" :day="bloomMoment.day.value" :theme-id="activeTheme.id"
-              :loading="bloomMoment.loading.value" :generating="bloomMoment.generating.value" :error="bloomMoment.error.value"
-              :personalize="bloomMoment.personalize.value" :can-personalize="!!user?.use_memory" :retained="!!user?.save_chat"
-              :consent-open="bloomMoment.consentOpen.value" :demo="config.ai_mode === 'demo'"
-              @open="bloomMoment.open" @dismiss="bloomMoment.dismiss" @chat="chatAboutMoment"
-              @personalize="bloomMoment.personalize.value = !bloomMoment.personalize.value"
-              @consent="bloomMoment.consent" @decline="bloomMoment.consentOpen.value = false" @recover="bloomMoment.load" />
-          </template>
-        </HomeView>
+                  @feedback="modal = 'feedback'" @chat="selectTab('chat')" />
         <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id"
                   @open-editor="openEditor()" @feedback="modal = 'feedback'" @chat="selectTab('chat')"
                   @resume="resumeExploration" @end="endIssue" />
-        <ChatView v-else-if="(current || isDrafting) && tab === 'chat'" :busy="busy" :sending="sending"
+        <ChatView :foreground="spaceForeground" v-else-if="(current || isDrafting) && tab === 'chat'" :busy="busy" :sending="sending"
                   :generating-summary="generatingSummary" :active-conversation="activeConversation"
                   :is-drafting="isDrafting" :chat-entry="chatEntry" :running-ids="runningIds"
                   :chat-menu-open="chatMenuOpen" :read-only-conversation="readOnlyConversation"
@@ -239,8 +230,18 @@ const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
                       @send="sendChat" @cancel="cancelChat" />
         <DiscoverView v-else-if="tab === 'discover'" :theme-id="activeTheme.id" :recommendations="discovery.recommendations.value"
                       :loading="discovery.loading.value" :error="discovery.error.value" :loaded="discovery.loaded.value"
-                      @explore="explorePrompt" @dismiss="discovery.dismiss" @rotate="discovery.rotate" @retry="discovery.load" />
-        <EmptyDashboard v-else-if="!current && tab !== 'settings'" :tab="tab" :busy="busy"
+                      @explore="explorePrompt" @dismiss="discovery.dismiss" @rotate="discovery.rotate" @retry="discovery.load">
+          <template #moment>
+            <BloomMoment :foreground="spaceForeground" :moment="bloomMoment.moment.value" :day="bloomMoment.day.value" :theme-id="activeTheme.id"
+              :loading="bloomMoment.loading.value" :generating="bloomMoment.generating.value" :error="bloomMoment.error.value"
+              :personalize="bloomMoment.personalize.value" :can-personalize="!!user?.use_memory" :retained="!!user?.save_chat"
+              :consent-open="bloomMoment.consentOpen.value" :demo="config.ai_mode === 'demo'"
+              @open="bloomMoment.open" @dismiss="bloomMoment.dismiss" @chat="chatAboutMoment"
+              @personalize="bloomMoment.personalize.value = !bloomMoment.personalize.value"
+              @consent="bloomMoment.consent" @decline="bloomMoment.consentOpen.value = false" @recover="bloomMoment.load" />
+          </template>
+        </DiscoverView>
+        <EmptyDashboard v-else-if="!current && tab !== 'settings' && tab !== 'now'" :tab="tab" :busy="busy"
                         @onboarding="beginOnboarding" @history="showHistory" />
         <SettingsView v-else-if="tab === 'settings'" :user="user" :user-avatar="userAvatar"
                       :avatar-busy="avatarBusy" :active-theme="activeTheme" :busy="busy" :usage="usage"

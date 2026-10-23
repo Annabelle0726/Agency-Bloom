@@ -39,7 +39,22 @@ Feedback/rotation use `agency.discovery.v1:<userId>` on the device: at most 200 
 
 ## Visual and interaction scope
 
-Preserve the existing six-theme photography, image resolver, typography and card style. Quiet source captions and text actions explain relevance without statistics or badges. Existing press feedback and page transitions are reused; no new image/animation dependency or decorative motion is added. Copy is limited to the question, source, optional feedback and new-conversation guidance. Visual acceptance is a focused self-review of the changed card/footer states, not a page redesign.
+Discover now begins with the optional Bloom Moment described in [BLOOM-MOMENT.md](BLOOM-MOMENT.md).
+Visiting the tab only reads today's Moment; generation remains an explicit user
+operation. The original rule-driven question selection, sources, feedback and
+independent editable draft contracts above are unchanged.
+
+The six theme palettes, heading font, SVGs and bottom navigation remain in use.
+A static, viewport-scale SVG adds faint petal and leaf contours behind Discover;
+its colors follow the selected theme. Six small local data URIs are cached, with
+no remote image or animation. The decoration ignores pointer input and stays
+behind readable content. The large photographic hero is removed on this page. Moment uses a bounded photographic detail;
+question rows have 60 × 70px thumbnails and full-width questions. The Plan page's
+atmospheric layout is unaffected. Personalization stays an explicit unchecked
+choice, and demo fixtures are visibly identified. No background model request,
+new asset dependency or engagement-pressure mechanic is introduced. The final
+October 23 visual and interaction verification is recorded in BLOOM-MOMENT.md;
+older simulator records below concern the Discovery selection flow.
 
 ## Verification and deployment
 

@@ -14,6 +14,8 @@ const props = defineProps<{
   index: number
   isLast: boolean
   speaking: boolean
+  gazeActive?: boolean
+  foreground?: boolean
   userAvatar: string
   editable: boolean
   themeId: string
@@ -34,7 +36,7 @@ watch(() => [props.message.id, props.message.content, props.message.payload?.rea
 
 <template>
   <view :id="'message-' + index" class="message-row" :class="message.role">
-    <CompanionAvatar v-if="message.role === 'assistant'" :size="38" online
+    <CompanionAvatar :follow-gaze="gazeActive" :foreground="foreground" v-if="message.role === 'assistant'" :size="38" online
                      :state="speaking ? 'speaking' : (isLast ? 'idle' : 'rest')" />
     <image v-else class="chat-avatar"
            :src="userAvatar || '/static/avatar-user.png'"

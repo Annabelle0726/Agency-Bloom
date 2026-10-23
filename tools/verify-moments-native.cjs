@@ -21,16 +21,23 @@ async function until(check, label) {
 }
 const component = name => page.$(name.replaceAll('/', '\\/'))
 async function moment() {
-  return await component('pages/index/views/BloomMoment') || await (await component('pages/index/views/HomeView'))?.$('pages\\/index\\/views\\/BloomMoment')
+  return await component('pages/index/views/BloomMoment') || await (await component('pages/index/views/DiscoverView'))?.$('pages\\/index\\/views\\/BloomMoment')
 }
 async function tap(selector) { const e = await (await moment()).$(selector); assert.ok(e, selector); await e.tap() }
-async function shot(name) { await mp.callWxMethod('pageScrollTo', { scrollTop: 160, duration: 0 }); await wait(200); await mp.screenshot({ path: path.join(out, name + '.png') }) }
+async function shot(name) { await mp.callWxMethod('pageScrollTo', { scrollTop: 0, duration: 0 }); await wait(200); await mp.screenshot({ path: path.join(out, name + '.png') }) }
+async function discover() {
+  await until(async () => !!await component('pages/index/views/AppTabbar'), 'Workspace navigation')
+  const nav = await component('pages/index/views/AppTabbar')
+  await (await nav.$('[data-tab="discover"]')).tap()
+  await until(async () => !!await moment(), 'Moment in Discover')
+}
 async function enter(theme, consent = true) {
   const seed = await api('/qa/seed?theme=' + theme + '&consent=' + consent, 'POST'); auth = 'Bearer ' + seed.token
   await refresh(); await mp.callWxMethod('setStorageSync', 'agency.session', seed.token)
   await mp.callWxMethod('setStorageSync', 'agency.theme.manual.v1:' + seed.user_id, true)
   await mp.callWxMethod('setStorageSync', 'agency.onboarding.paused.v1.' + seed.user_id, true)
-  await mp.callWxMethod('reLaunch', { url: '/pages/index/index' }); await until(async () => !!await moment(), 'Homepage with no exploration')
+  await mp.callWxMethod('reLaunch', { url: '/pages/index/index' }); await until(async () => !!await component('pages/index/views/AppTabbar'), 'Homepage with no exploration')
+  assert.equal(await moment(), null, 'Moment does not render on Home'); await discover()
   return seed
 }
 (async () => {
@@ -40,6 +47,7 @@ async function enter(theme, consent = true) {
     assert.match(await fs.readFile(path.join(source, 'pages/index/useIndexPage.js'), 'utf8'), /127\.0\.0\.1:8030/)
     await fs.cp(source, project, { recursive: true })
     const config = JSON.parse(await fs.readFile(path.join(project, 'project.config.json'), 'utf8'))
+    config.libVersion = JSON.parse(await fs.readFile(path.join(root, 'project.config.json'), 'utf8')).libVersion
     config.appid = 'touristappid'; config.projectname = 'Bloom Moment QA'; config.setting.urlCheck = false
     await fs.writeFile(path.join(project, 'project.config.json'), JSON.stringify(config, null, 2)); return
   }
@@ -55,7 +63,7 @@ async function enter(theme, consent = true) {
   await shot('forest-opened')
   const first = (await api('/api/moments/today')).moment.id
   await mp.callWxMethod('reLaunch', { url: '/pages/index/index' })
-  await until(async () => !!await moment() && !!await (await moment()).$('.moment-question'), 'Retained after relaunch')
+  await discover(); await until(async () => !!await (await moment()).$('.moment-question'), 'Retained after relaunch')
   assert.equal((await api('/api/usage')).daily_calls, 1)
   assert.equal((await api('/api/moments/today')).moment.id, first)
   await tap('[data-moment="dismiss"]')
@@ -80,9 +88,11 @@ async function enter(theme, consent = true) {
     await shot(theme + '-opened')
     const bounds = await (await (await moment()).$('.bloom-moment')).size()
     const info = await mp.systemInfo(); assert.ok(bounds.width <= info.windowWidth)
+    const photo = await (await moment()).$('.moment-picture')
+    if (photo) { const size = await photo.size(); assert.ok(size.width <= 90 && size.height <= 105) }
   }
   const info = await mp.systemInfo(); assert.deepEqual(errors, [])
   const report = { passed: true, width: info.windowWidth, height: info.windowHeight, model: info.model,
-    flows: ['empty-account home', 'no call on view', 'consent', 'open', 'daily replay', 'dismiss without call', 'explicit another', 'opt-in dated quote', 'unsent separate draft', 'six themes'], exceptions: errors, paidRequests: 0 }
+    flows: ['Moment only in Discover', 'bounded photography', 'no call on view', 'consent', 'open', 'daily replay', 'dismiss without call', 'explicit another', 'opt-in dated quote', 'unsent separate draft', 'six themes'], exceptions: errors, paidRequests: 0 }
   await fs.writeFile(path.join(out, 'report-' + Date.now() + '.json'), JSON.stringify(report, null, 2)); console.log(JSON.stringify(report))
 })().catch(e => { console.error(e); process.exitCode = 1 }).finally(async () => { if (mp) await mp.disconnect(); if (process.exitCode) process.exit(process.exitCode) })
