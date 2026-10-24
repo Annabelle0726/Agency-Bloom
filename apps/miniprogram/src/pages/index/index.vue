@@ -67,6 +67,10 @@ const {
   activeThemeStyle,
   dark,
   applyingTheme,
+  themeAuto,
+  themeAutoBusy,
+  nextThemeBoundary,
+  toggleThemeAuto,
   navImages,
   card,
   workspace,
@@ -269,7 +273,9 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
         <SettingsView v-else-if="tab === 'settings'" :user="user" :user-avatar="userAvatar"
                       @speech="speech.manage()"
                       :avatar-busy="avatarBusy" :active-theme="activeTheme" :busy="busy" :usage="usage"
-                      :ai-mode="config.ai_mode" @appearance="modal = 'appearance'" @toggle-save="toggleSaveChat"
+                      :theme-auto="themeAuto" :theme-busy="themeAutoBusy" :next-theme-boundary="nextThemeBoundary"
+                      :ai-mode="config.ai_mode" @appearance="modal = 'appearance'" @toggle-theme-auto="toggleThemeAuto"
+                      @toggle-save="toggleSaveChat"
                       @toggle-ai="toggleAIConsent" @support="modal = 'support'" @direction="drawer = 'direction'"
                       @memories="drawer = 'memories'" @privacy="modal = 'privacy'" @logout="logOut"
                       @delete-account="deleteAccount" @choose-avatar="chooseAvatar"
@@ -288,7 +294,8 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
       <AiConsentModal v-if="modal === 'ai'" :ai-mode="config.ai_mode" :busy="busy" :error="error"
                       @close="modal = ''" @consent="consentAI" />
       <AppearanceModal v-if="modal === 'appearance'" :themes="themes" :active-theme="activeTheme"
-                       :applying-theme="applyingTheme" :busy="!!applyingTheme" :error="error" @close="modal = ''"
+                       :applying-theme="applyingTheme" :busy="!!applyingTheme" :theme-auto="themeAuto"
+                       :next-theme-boundary="nextThemeBoundary" :error="error" @close="modal = ''"
                        @select="setTheme" />
       <SupportModal v-if="modal === 'support'" :busy="busy" :sending="sending" :error="error"
                     :selected="canonicalSupportStyle(user?.support_style)" @close="modal = ''"

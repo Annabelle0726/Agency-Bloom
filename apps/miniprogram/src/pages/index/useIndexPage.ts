@@ -7,7 +7,7 @@ import type {SupportMode} from '../../onboarding'
 import {chatEntryFor, draftChangeFor} from '../../chat-entry'
 import { OPENING_KEY, initialScreen, signedInScreen, draftKeyFor, pauseKeyFor } from '../../entry'
 import type { EntryScreen } from '../../entry'
-import {navigationItems, themeForSession, themeStyle, themeNavSvg} from '../../themes'
+import {navigationItems, resolveTheme, themeForSession, themeStyle, themeNavSvg} from '../../themes'
 import type {ThemeId, SpaceTab} from '../../themes'
 import type {Card, ChatMessage, Issue, Onboarding, User, Experiment, Conversation, ConversationSummary} from '../../domain'
 import {ApiError, createApi} from '../../http'
@@ -21,7 +21,8 @@ import {discoveryStateKey} from '../../discovery'
 import type {DiscoveryRecommendation} from '../../discovery'
 import type {ConversationAction, ConversationMenuAction} from '../../conversation-action'
 import {createAvatarStore} from '../../avatar'
-import {createManualThemePreference, personalSpaceTheme} from '../../theme-preference'
+import {createThemePreference, formatThemeBoundary, personalSpaceTheme} from '../../theme-preference'
+import {createThemeClock} from '../../theme-clock'
 import {newChatStarters, experimentFields, editFields, todayLabel, greeting} from './data'
 
 
@@ -127,21 +128,50 @@ export function useIndexPage() {
   const toast = ref('')
   const form = reactive<Onboarding>(newOnboarding())
   const preview = computed(() => makePreview(form))
-  const manualThemePreference = createManualThemePreference({
+  const themePreference = createThemePreference({
     read: key => uni.getStorageSync(key),
     write: (key, value) => uni.setStorageSync(key, value),
+    remove: key => uni.removeStorageSync(key),
   })
-  function manualThemeChosen(): boolean {
+  const themeClock = createThemeClock()
+  themeClock.start()
+  onUnmounted(themeClock.stop)
+  onHide(() => { themeClock.stop(); keyboardHeight.value = 0 })
+  const themeSlot = themeClock.slot
+  const themeAuto = computed(() => {
     const id = user.value?.id
-    return !id || manualThemePreference.isChosen(id)
-  }
-  const activeTheme = computed(() => {
-    if (screen.value !== 'space') return themeForSession(user.value, false)
-    return personalSpaceTheme(user.value, manualThemeChosen(), new Date().getHours())
+    return !id || themePreference.isAuto(id)
   })
+  const themeOverride = computed(() => {
+    const id = user.value?.id
+    return id ? themePreference.overrideFor(id, themeSlot.value.key) : null
+  })
+  const nextThemeBoundary = computed(() => formatThemeBoundary(themeSlot.value.end))
+  const desiredTheme = computed(() => {
+    if (screen.value !== 'space') return themeForSession(user.value, false)
+    return personalSpaceTheme(user.value, {
+      auto: themeAuto.value,
+      overrideTheme: themeOverride.value,
+      slot: themeSlot.value,
+    })
+  })
+  const activeThemeId = ref<ThemeId>(desiredTheme.value.id)
+  const activeTheme = computed(() => resolveTheme(activeThemeId.value))
+  function applyDesiredTheme(force = false) {
+    // Do not repaint a focused composer at a time boundary. The latest policy
+    // applies as soon as the keyboard closes.
+    if (!force && keyboardHeight.value > 0) return
+    activeThemeId.value = desiredTheme.value.id
+  }
+  watch([() => desiredTheme.value.id, keyboardHeight], () => applyDesiredTheme(), { immediate: true })
+  watch([() => user.value?.id, () => screen.value], () => applyDesiredTheme(true))
+  watch([() => user.value?.id, () => themeSlot.value.key], ([id, slot]) => {
+    if (id) themePreference.pruneOverride(id, slot)
+  }, { immediate: true })
   const activeThemeStyle = computed(() => themeStyle(activeTheme.value))
   const dark = computed(() => activeTheme.value.dark)
   const applyingTheme = ref<ThemeId | null>(null)
+  const themeAutoBusy = ref(false)
   const navImages = computed(() => Object.fromEntries(navigationItems.map(({ id }) => {
     const svg = themeNavSvg(activeTheme.value, id, tab.value === id)
     const bytes = new Uint8Array([...svg].map(char => char.charCodeAt(0)))
@@ -490,6 +520,10 @@ export function useIndexPage() {
   onUnmounted(() => uni.$off('agency:journey-changed', markJourneyChanged))
   onMounted(initialize)
   onShow(() => {
+    // Timers can be suspended in the background. Re-read the wall clock and
+    // rebuild the next boundary whenever the page returns to the foreground.
+    themeClock.refresh()
+    themeClock.start()
     if (ready.value && offline.value) void initialize()
     if (journeyChanged && user.value && ready.value && !offline.value) {
       journeyChanged = false
@@ -749,22 +783,73 @@ export function useIndexPage() {
   }
 
   async function setTheme(theme: ThemeId) {
-    if (!user.value || screen.value !== 'space' || applyingTheme.value) return
-    if (user.value.theme === theme && manualThemeChosen()) return
+    if (!user.value || screen.value !== 'space' || applyingTheme.value || themeAutoBusy.value) return
+    themeClock.refresh()
     const accountId = user.value.id
+    const slotKey = themeSlot.value.key
+    const autoAtChoice = themeAuto.value
     const previousTheme = user.value.theme
+    const previousOverride = themePreference.overrideFor(accountId, slotKey)
     error.value = ''
     applyingTheme.value = theme
     // Apply the choice immediately. An unrelated data request must not make the
     // appearance controls feel unresponsive; a failed save rolls the choice back.
     user.value = {...user.value, theme}
-    manualThemePreference.markChosen(accountId)
+    if (autoAtChoice) themePreference.setOverride(accountId, theme, slotKey)
+    else themePreference.clearOverride(accountId)
+    activeThemeId.value = theme
     try {
       await request<User>('PUT', '/me', {theme})
     } catch (err) {
-      if (user.value?.id === accountId) user.value = {...user.value, theme: previousTheme}
-      error.value = err instanceof Error ? err.message : '主题暂时没有保存，请稍后重试'
+      if (user.value?.id === accountId) {
+        user.value = {...user.value, theme: previousTheme}
+        if (autoAtChoice) {
+          if (previousOverride && themeSlot.value.key === slotKey) {
+            themePreference.setOverride(accountId, previousOverride, slotKey)
+          } else themePreference.clearOverride(accountId)
+        } else themePreference.clearOverride(accountId)
+        applyDesiredTheme(true)
+      }
+      if (user.value?.id === accountId) error.value = err instanceof Error ? err.message : '主题暂时没有保存，请稍后重试'
     } finally { applyingTheme.value = null }
+  }
+
+  async function toggleThemeAuto() {
+    const current = user.value
+    if (!current || screen.value !== 'space' || themeAutoBusy.value || applyingTheme.value) return
+    themeClock.refresh()
+    const accountId = current.id
+    const slotKey = themeSlot.value.key
+    error.value = ''
+    if (themeAuto.value) {
+      // Turning auto off pins the palette currently on screen, so the switch
+      // itself never causes a visual jump.
+      const pinned = activeTheme.value.id
+      const previousTheme = current.theme
+      const previousOverride = themePreference.overrideFor(accountId, slotKey)
+      themeAutoBusy.value = true
+      themePreference.setAuto(accountId, false)
+      user.value = {...current, theme: pinned}
+      activeThemeId.value = pinned
+      try {
+        await request<User>('PUT', '/me', {theme: pinned})
+        if (user.value?.id === accountId) notify('已关闭自动切换，当前主题会长期保留')
+      } catch (err) {
+        if (user.value?.id === accountId) {
+          themePreference.setAuto(accountId, true)
+          if (previousOverride && themeSlot.value.key === slotKey) {
+            themePreference.setOverride(accountId, previousOverride, slotKey)
+          }
+          user.value = {...user.value, theme: previousTheme}
+          applyDesiredTheme(true)
+        }
+        if (user.value?.id === accountId) error.value = err instanceof Error ? err.message : '自动切换设置暂时没有保存，请稍后重试'
+      } finally { themeAutoBusy.value = false }
+      return
+    }
+    themePreference.setAuto(accountId, true)
+    applyDesiredTheme(true)
+    notify('已开启，主题会随时间自动切换')
   }
 
   async function setSupportStyle(support_style: string) {
@@ -1019,6 +1104,10 @@ export function useIndexPage() {
     activeThemeStyle,
     dark,
     applyingTheme,
+    themeAuto,
+    themeAutoBusy,
+    nextThemeBoundary,
+    toggleThemeAuto,
     navImages,
     card,
     workspace,

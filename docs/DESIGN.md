@@ -111,3 +111,8 @@ Insight 与普通气泡区分：8px 圆角、细绿侧线、观察小字、新�
 
 - 一句话在界面中只占一行时，结尾不加句号；多句连写、需要停顿或分成多行说明时才使用句号。
 - 页面标题不在文案里写死换行；除非内容本身需要分行，标题由容器自然排布，并在目标宽度保持单行。
+
+
+## 2026-10-24 Time-based theme controls
+
+The Settings switch “随时间自动切换” defaults on and reuses existing theme-aware toggle styling. Manual choices last until the next 05/10/16/19 local boundary; auto-off preserves manual choices long-term. Appearance shows the next boundary explicitly. Automatic repainting waits for keyboard dismissal; background resume refreshes the clock. The six palettes and frozen reference art remain unchanged. Implementation and acceptance limits: [THEME-SWITCHING.md](THEME-SWITCHING.md).

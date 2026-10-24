@@ -12,11 +12,15 @@ defineProps<{
   avatarBusy: boolean
   activeTheme: ThemeDefinition
   busy: boolean
+  themeAuto: boolean
+  themeBusy: boolean
+  nextThemeBoundary: string
   usage: { used_cny: number; limit_cny: number; daily_calls: number; daily_limit: number; mode: string }
   aiMode: string
 }>()
 const emit = defineEmits<{
   appearance: []
+  toggleThemeAuto: []
   toggleSave: []
   toggleAi: []
   support: []
@@ -63,6 +67,19 @@ const emit = defineEmits<{
           <text class="setting-description">{{ activeTheme.name }} · {{ activeTheme.english }}</text>
         </view>
         <SvgIcon name="chevron" :size="17"/>
+      </button>
+      <button class="setting-row" :disabled="busy || themeBusy" :aria-pressed="themeAuto"
+              @click="emit('toggleThemeAuto')" hover-class="pressed"
+              :hover-start-time="0" :hover-stay-time="70">
+        <view>
+          <text class="setting-title">随时间自动切换</text>
+          <text class="setting-description">
+            {{ themeAuto ? '已开启 · 手动选择保留到 ' + nextThemeBoundary + '，之后恢复时间主题' : '已关闭 · 手动选择的主题会长期保留' }}
+          </text>
+        </view>
+        <view class="toggle" :class="{ on: themeAuto }">
+          <view/>
+        </view>
       </button>
       <button class="setting-row" :disabled="busy" @click="emit('toggleSave')" hover-class="pressed"
               :hover-start-time="0" :hover-stay-time="70">

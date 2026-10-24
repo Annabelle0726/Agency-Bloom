@@ -6,7 +6,7 @@ import { resolvePageArt } from '../../page-art'
 import { journeyDate, mergeJourneyEvents, reflectionFor, shortJourneyDate, useJourneySession } from '../../journey'
 import type { CandidatePage, JourneyEvent, JourneyPage } from '../../journey'
 import type { Issue } from '../../domain'
-const { theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, back } = useJourneySession()
+const { theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, refreshTheme, back } = useJourneySession()
 const issues = ref<Issue[]>([]), events = ref<JourneyEvent[]>([]), cursor = ref<string | null>(null)
 const selectedIssue = ref(''), pendingCount = ref(0), pendingOffset = ref<number | null>(null)
 const loaded = ref(false), moreBusy = ref(false), navigating = ref(false)
@@ -73,7 +73,7 @@ function record() {
 }
 function openDirection(id: string) { open('/pages/journey/detail?mode=direction&issue=' + encodeURIComponent(id)) }
 onLoad(options => { setEntryTheme(options?.theme) })
-onShow(() => { void load() })
+onShow(() => { refreshTheme(); void load() })
 </script>
 <template>
   <view class="journey-page preview-stage" :class="'theme-' + theme.id" :style="{ ...style, '--journey-top': capsuleBottom + 'px' }">

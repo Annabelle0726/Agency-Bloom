@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import SvgIcon from '../../components/SvgIcon.vue'
 import { journeyDate, useJourneySession } from '../../journey'
 import type { CandidatePage, JourneyCandidate, JourneyEvent } from '../../journey'
 import type { Issue } from '../../domain'
-const { theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, back } = useJourneySession()
+const { theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, refreshTheme, back } = useJourneySession()
 const recordRequestId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
   const n = Math.floor(Math.random() * 16); return (c === 'x' ? n : (n & 3) | 8).toString(16)
 })
@@ -112,6 +112,7 @@ onLoad(options => {
   } catch { error.value = '记录地址不完整，请返回后重新打开'; return }
   void load()
 })
+onShow(() => refreshTheme())
 </script>
 <template>
   <view class="journey-page preview-stage journey-detail" :class="'theme-' + theme.id" :style="{ ...style, '--journey-top': capsuleBottom + 'px' }">

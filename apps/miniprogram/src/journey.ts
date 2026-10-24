@@ -1,8 +1,10 @@
-import { computed, provide, ref, watch } from 'vue'
+import { onHide } from '@dcloudio/uni-app'
+import { computed, onUnmounted, provide, ref, watch } from 'vue'
 import { createApi } from './http'
 import { ICON_PALETTE_KEY } from './icon-system'
 import { resolveTheme, themeStyle } from './themes'
-import { createManualThemePreference, personalSpaceTheme } from './theme-preference'
+import { createThemePreference, personalSpaceTheme } from './theme-preference'
+import { createThemeClock } from './theme-clock'
 import type { Issue, User } from './domain'
 
 export interface JourneyEvent {
@@ -42,9 +44,38 @@ export function reflectionFor(events: JourneyEvent[], issues: Issue[]) {
 export function useJourneySession() {
   const user = ref<User | null>(null), error = ref(''), loading = ref(false)
   const entryTheme = ref(resolveTheme('light'))
-  const manual = createManualThemePreference({ read: key => uni.getStorageSync(key), write: (key, value) => uni.setStorageSync(key, value) })
-  const theme = computed(() => user.value ? personalSpaceTheme(user.value, manual.isChosen(user.value.id), new Date().getHours()) : entryTheme.value)
+  const preference = createThemePreference({
+    read: key => uni.getStorageSync(key),
+    write: (key, value) => uni.setStorageSync(key, value),
+    remove: key => uni.removeStorageSync(key),
+  })
+  const clock = createThemeClock()
+  clock.start()
+  const keyboardHeight = ref(0)
+  // #ifdef MP-WEIXIN
+  const keyboardChanged = ({ height }: { height: number }) => { keyboardHeight.value = height }
+  uni.onKeyboardHeightChange(keyboardChanged)
+  onUnmounted(() => uni.offKeyboardHeightChange(keyboardChanged))
+  // #endif
+  onUnmounted(clock.stop)
+  onHide(() => { clock.stop(); keyboardHeight.value = 0 })
+  const auto = computed(() => !user.value || preference.isAuto(user.value.id))
+  const override = computed(() => user.value ? preference.overrideFor(user.value.id, clock.slot.value.key) : null)
+  const desiredTheme = computed(() => user.value
+    ? personalSpaceTheme(user.value, { auto: auto.value, overrideTheme: override.value, slot: clock.slot.value })
+    : entryTheme.value)
+  const activeThemeId = ref(desiredTheme.value.id)
+  const theme = computed(() => resolveTheme(activeThemeId.value))
+  watch([() => desiredTheme.value.id, keyboardHeight], () => {
+    // Keep a focused journey form readable across a time boundary.
+    if (keyboardHeight.value === 0) activeThemeId.value = desiredTheme.value.id
+  }, { immediate: true })
+  watch(() => user.value?.id, () => { activeThemeId.value = desiredTheme.value.id })
+  watch([() => user.value?.id, () => clock.slot.value.key], ([id, slot]) => {
+    if (id) preference.pruneOverride(id, slot)
+  }, { immediate: true })
   function setEntryTheme(value?: string) { entryTheme.value = resolveTheme(value) }
+  function refreshTheme() { clock.refresh(); clock.start() }
   const style = computed(() => themeStyle(theme.value))
   const system = uni.getSystemInfoSync()
   let capsuleBottom = (system.statusBarHeight || 20) + 44
@@ -66,5 +97,5 @@ export function useJourneySession() {
     if (getCurrentPages().length > 1) uni.navigateBack()
     else uni.reLaunch({ url: '/pages/index/index' })
   }
-  return { user, theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, back }
+  return { user, theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, refreshTheme, back }
 }

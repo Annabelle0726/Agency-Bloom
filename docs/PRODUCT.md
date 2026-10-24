@@ -30,7 +30,7 @@
 
 默认只保存问题、确认卡片和反馈，完整聊天由用户选择保留。用户主动打开时接续，无主动提醒。第一版使用微信小程序，Vue 3 + TypeScript + uni-app，Python + FastAPI，Supabase PostgreSQL；H5 只用于本地预览。
 
-登录前统一 Morning Mist：暖白、深色文字、低饱和绿、山湖与自然光影。登录后未手动选择主题时按一天时段自动变化：清晨晨雾、白天森林、近傍晚暮烟、夜晚深夜；手动选择后（深夜、暮烟、森林、薰衣草、极简）不再自动变化。按钮即时反馈，支持减少动效偏好。Insight 使用轻描边与清晰层次，不增加持续发光、随机话术或主动提醒。流畅度、字体设置、键盘和安全区域最终以微信真机验收
+登录前统一 Morning Mist：暖白、深色文字、低饱和绿、山湖与自然光影。登录后默认随时间自动切换：05:00–09:59 晨雾，10:00–15:59 森林，16:00–18:59 暮烟，19:00–04:59 深夜。手动选择（深夜、暮烟、森林、薰衣草、极简）只覆盖当前时段，到下一个 05/10/16/19 边界自动恢复时间主题；设置页「随时间自动切换」默认开启，关闭后手动主题长期保留。输入时不会突然换肤，键盘收起后再应用最新时段。按钮即时反馈，支持减少动效偏好。Insight 使用轻描边与清晰层次，不增加持续发光、随机话术或主动提醒。流畅度、字体设置、键盘和安全区域最终以微信真机验收
 
 The approved running budget is CNY 500/month, including CNY 100/month for AI. Hosting costs depend on the selected deployment. See [response explanations and model pricing](RESPONSE_REASONING.md) for the current model-aware rate cards and configuration.
 

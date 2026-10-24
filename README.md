@@ -90,7 +90,7 @@ Keys live only in that file — never in frontend `VITE_` variables. The backend
   <img src="./assets/readme/themes.png" width="100%" alt="Six theme swatches: Morning Mist, Quiet Night with a faint-star black sky, Evening Smoke, Forest, Lavender, and Minimal.">
 </p>
 
-Morning Mist is the default outside the authenticated space. After login, before any manual pick, the theme follows the day quietly: mist in the early morning, forest through the day, evening smoke toward dusk, and Quiet Night after dark. A manual pick under **My → Appearance** — Quiet Night (deep black with faint stars), Evening Smoke, Forest, Lavender, or Minimal — stops the automatic switching.
+Morning Mist is the default outside the authenticated space. After login, automatic switching is on by default across four local boundaries: Morning Mist (05:00–09:59), Forest (10:00–15:59), Evening Smoke (16:00–18:59), and Quiet Night (19:00–04:59). A manual pick under **My → Appearance** — Quiet Night (deep black with faint stars), Evening Smoke, Forest, Lavender, or Minimal — overrides only the current slot; the next boundary restores the time theme. The **随时间自动切换** switch in Settings, on by default, can be turned off to keep manual choices long-term. Automatic changes wait while the keyboard is open.
 
 ## Alpha features
 

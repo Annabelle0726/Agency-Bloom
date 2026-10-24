@@ -12,6 +12,8 @@ defineProps<{
   activeTheme: ThemeDefinition
   applyingTheme: ThemeId | null
   busy: boolean
+  themeAuto: boolean
+  nextThemeBoundary: string
   error?: string
 }>()
 const emit = defineEmits<{ close: []; select: [theme: ThemeId] }>()
@@ -20,6 +22,9 @@ const emit = defineEmits<{ close: []; select: [theme: ThemeId] }>()
 <template>
   <ModalShell title="选择舒服的光线" :busy="busy" :error="error" appearance @close="emit('close')">
     <text class="page-description">换一种氛围，继续做你自己</text>
+    <text class="appearance-theme-note">
+      {{ themeAuto ? '手动选择只保留到 ' + nextThemeBoundary + '，之后恢复时间主题' : '自动切换已关闭，手动选择的主题会长期保留' }}
+    </text>
     <view class="theme-grid">
       <button v-for="theme in themes" :key="theme.id" class="theme-card" :data-theme="theme.id"
               :aria-label="'使用' + theme.name + '主题'" :aria-pressed="activeTheme.id === theme.id"
