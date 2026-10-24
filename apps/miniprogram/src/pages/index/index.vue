@@ -176,6 +176,9 @@ onPageScroll(event => {
 provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
 provide(SPEECH_KEY, speech)
 const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
+const meRecordsRevision = ref(0)
+function meContextChanged() { workspace.cancelAll(); meRecordsRevision.value++ }
+
 const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.value || !!chatError.value))
 </script>
 
@@ -275,7 +278,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
         </DiscoverView>
         <EmptyDashboard v-else-if="!current && tab !== 'settings' && tab !== 'now'" :tab="tab" :busy="busy"
                         @onboarding="beginOnboarding" @history="showHistory" @chat="selectTab('chat')" />
-        <SettingsView v-else-if="tab === 'settings'" :user="user" :user-avatar="userAvatar"
+        <SettingsView v-else-if="tab === 'settings'" :current="current" :request="request" :records-revision="meRecordsRevision" @context-changed="meContextChanged" @user-changed="user = $event" :user="user" :user-avatar="userAvatar"
                       @speech="speech.manage()"
                       :avatar-busy="avatarBusy" :active-theme="activeTheme" :busy="busy" :usage="usage"
                       :theme-auto="themeAuto" :theme-busy="themeAutoBusy" :next-theme-boundary="nextThemeBoundary"
@@ -320,13 +323,13 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
       <PhaseChangeReview v-if="workspace.active.value.phaseOpen.value && workspace.active.value.phaseChange.value" :key="workspace.activeId.value + workspace.active.value.phaseChange.value.source_id"
                          :change="workspace.active.value.phaseChange.value" :confirmed="workspace.active.value.phaseConfirmed.value" :busy="busy" :error="phaseError"
                          @confirm="workspace.active.value.confirmPhaseChange()" @skip="skipPhaseChange" @close="workspace.active.value.phaseOpen.value = false" @save="savePhaseChange" />
-      <ConversationDrawer v-if="drawer && user" :view="drawer" :conversations="conversations" :active="activeConversation" :issues="archives" :user="user"
+      <ConversationDrawer v-if="drawer && user" :key="user.id" :view="drawer" :conversations="conversations" :active="activeConversation" :issues="archives" :user="user"
                           :summary="workspace.active.value.summary.value" :summary-draft="workspace.active.value.summaryDraft.value"
                           :generating="sending" :running="runningIds" :error="chatError || error" :request="request"
                           @close="drawer = ''" @view-changed="drawer = $event" @select="selectConversation" @refresh="guarded(refreshWorkspace)"
                           @create-issue="beginAnotherExploration" @select-issue="selectExploration" @generate="generateSummary" @reviewed="reviewSummary"
                           @new-chat="startNewChat"
-                          @changed="changedConversation" @deleted="deletedConversation" @user-changed="user = $event" @context-changed="workspace.cancelAll()" />
+                          @changed="changedConversation" @deleted="deletedConversation" @user-changed="user = $event" @context-changed="meContextChanged" />
       <SpeechConsentModal />
       <view v-if="toast" class="toast">{{ toast }}</view>
     </view>

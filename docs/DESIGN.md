@@ -185,3 +185,14 @@ The conversation drawer has two sparse climbing-vine SVG studies at its upper-ri
 Drawer search now uses its own border wrapper and an unpadded, vertically centered input rather than the shared padded `text-input` class. Filter controls retain 44px touch targets, center their labels, and have zero vertical padding. Drawer scroll content has zero bottom padding, removing the previous 12px plus safe-area reservation. These rules do not alter page navigation spacing.
 
 Evidence and local self-review are in `output/drawer-atmosphere-20261024/`. Final H5 captures cover 390 x 844 and 320 x 740; TypeScript, focused drawer tests, native development compilation and bundled WeChat WXML/WXSS checks pass. Native simulator and hardware rendering of the final alignment corrections remain unverified.
+
+## 2026-10-24 Me grouped disclosures
+
+The Me page groups records, permissions and preferences into three initially
+collapsed, single-open accordions. Item typography follows the original settings
+body font and normal weight; only the original page title uses the heading font.
+Quiet Night disabled initial-answer entries have explicit transparent surfaces,
+preventing the native disabled button fill. Usage is condensed, while logout and
+account deletion remain directly reachable outside the disclosures. The existing
+logout button markup and dedicated appearance are unchanged. See [ME_PAGE.md](ME_PAGE.md)
+for data boundaries, correction paths, validation and remaining native limitations.

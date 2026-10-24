@@ -14,7 +14,7 @@ const emit = defineEmits<{ close: []; select: [mode: string] }>()
 </script>
 
 <template>
-  <ModalShell title="此刻，希望怎样被支持" :busy="busy" :error="error" @close="emit('close')">
+  <ModalShell title="新会话的默认回应方式" :busy="busy" :error="error" @close="emit('close')">
     <button v-for="item in supportStyles" :key="item.id" class="support-setting"
             :class="{ selected: selected === item.id }" :disabled="busy || sending"
             @click="emit('select', item.id)" hover-class="pressed" :hover-start-time="0"

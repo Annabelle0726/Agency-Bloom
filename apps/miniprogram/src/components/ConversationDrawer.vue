@@ -2,9 +2,9 @@
 import { computed, getCurrentInstance, inject, isRef, onBeforeUnmount, reactive, ref, watch, type Ref } from 'vue'
 import type { Conversation, ConversationSummary, Issue, Memory, User, InitialSnapshot } from '../domain'
 import SvgIcon from './SvgIcon.vue'
+import MemorySource from './MemorySource.vue'
+import { snapshotRows } from '../me-records'
 import { conversationGreeting } from '../conversation-greeting'
-import { stages, concerns } from '../domain'
-import { lifeContexts, concernOptions } from '../onboarding'
 import { ICON_PALETTE_KEY, fallbackIconPalette, type IconPalette } from '../icon-system'
 import { drawerAtmosphere } from '../drawer-atmosphere'
 // Only this drawer consumes the global theme/form styles; its styles do not leak out.
@@ -54,6 +54,7 @@ watch([() => props.active?.id, () => props.view], () => { savedSummaryFingerprin
 watch(() => props.summaryDraft, value => { if (value) savedSummaryFingerprint.value = '' })
 const detailTitle = ref(props.active?.title || ''), linked = ref<string[]>([...(props.active?.linked_issue_ids || [])])
 const memories = ref<Memory[]>([]), selected = ref<string[]>([]), editing = ref<Memory | null>(null), memoryForm = ref(false), merging = ref(false)
+const memorySource = ref<string | null>(null)
 const memoryContent = ref(''), category = ref<Memory['category']>('fact'), memoryScope = ref(''), memoryFilter = ref('all')
 const horizon = ref<NonNullable<Memory['horizon']>>('long_term'), status = ref<NonNullable<Memory['status']>>('active'), keepHistory = ref(false)
 const snapshots = ref<InitialSnapshot[]>([])
@@ -116,10 +117,11 @@ async function clearSummary() { if (!props.active || !await confirm('清除会�
   if (props.user?.save_chat) emit('changed', await props.request<Conversation>('PUT', `/conversations/${props.active!.id}/summary`, { version: props.active!.version, summary: null }))
   emit('reviewed', null); savedSummaryFingerprint.value = ''; notice.value = '总结已清除'
 }) }
-function editMemory(item?: Memory, content = '') { editing.value = item || null; merging.value = false; memoryContent.value = item?.content || content; category.value = item?.category || 'fact'; memoryScope.value = item?.issue_id || ''; horizon.value = item?.horizon || (props.view === 'direction' ? 'current_phase' : 'long_term'); status.value = item?.status || 'active'; keepHistory.value = false; memoryForm.value = true }
+function editMemory(item?: Memory, content = '', sourceId: string | null = null) { memorySource.value = item ? item.source_conversation_id : sourceId; editing.value = item || null; merging.value = false; memoryContent.value = item?.content || content; category.value = item?.category || 'fact'; memoryScope.value = item?.issue_id || ''; horizon.value = item?.horizon || (props.view === 'direction' ? 'current_phase' : 'long_term'); status.value = item?.status || 'active'; keepHistory.value = false; memoryForm.value = true }
 function prepareMerge() {
   const chosen = memories.value.filter(m => selected.value.includes(m.id)); if (chosen.length < 2) return
   editing.value = null; merging.value = true; memoryContent.value = chosen.map(m => m.content).join('\n'); category.value = chosen[0].category
+  memorySource.value = chosen.every(m => m.source_conversation_id === chosen[0].source_conversation_id) ? chosen[0].source_conversation_id : null
   memoryScope.value = chosen.every(m => m.issue_id === chosen[0].issue_id) ? chosen[0].issue_id || '' : props.active?.issue_id || ''
   horizon.value = chosen[0].horizon || 'long_term'; status.value = 'active'; keepHistory.value = false
   memoryForm.value = true
@@ -128,7 +130,7 @@ async function saveMemory() { await run(async () => {
   if (!memoryContent.value.trim() || memoryContent.value.length > 400) throw Error('请整理成1到400字，再确认保存')
   const body = { content: memoryContent.value.trim(), category: category.value, issue_id: memoryScope.value || null,
     horizon: horizon.value, status: status.value,
-    source_conversation_id: editing.value?.source_conversation_id || props.active?.id || null, enabled: editing.value?.enabled ?? true, confirmed: true }
+    source_conversation_id: memorySource.value, enabled: editing.value?.enabled ?? true, confirmed: true }
   if (merging.value) await props.request('POST', '/memories/merge', { ...body, items: memories.value.filter(m => selected.value.includes(m.id)).map(({ id, version }) => ({ id, version })) })
   else if (editing.value && keepHistory.value) {
     if (category.value !== editing.value.category || memoryScope.value !== (editing.value.issue_id || '') || horizon.value !== (editing.value.horizon || 'long_term') || status.value !== 'active') throw Error('保留历史时沿用原分类与范围；若要调整它们，请先取消保留历史')
@@ -147,7 +149,7 @@ async function deleteMemory(item: Memory) { if (!await confirm('删除这条记�
 }) }
 function toggleSelection(id: string) { if (selected.value.includes(id)) selected.value = selected.value.filter(x => x !== id); else if (selected.value.length < 10) selected.value.push(id) }
 async function toggleUseMemory() { await run(async () => { emit('userChanged', await props.request<User>('PUT', '/me', { use_memory: !props.user?.use_memory })); emit('contextChanged') }) }
-function rememberSummary(content: string) { emit('viewChanged', 'memories'); editMemory(undefined, content) }
+function rememberSummary(content: string) { emit('viewChanged', 'memories'); editMemory(undefined, content, props.active?.id || null) }
 </script>
 
 <template>
@@ -217,21 +219,18 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
           <view class="drawer-tabs"><button :class="{ selected: memoryFilter === 'all' }" @click="memoryFilter = 'all'">全部</button><button v-for="kind in categories" :key="kind.id" :class="{ selected: memoryFilter === kind.id }" @click="memoryFilter = kind.id">{{ kind.label }}</button></view>
           <text v-if="!shownMemories.length" class="muted drawer-empty">这里还没有记忆，由你决定留下什么</text>
           <view v-for="item in shownMemories" :key="item.id" class="memory-item" :class="{ disabled: !item.enabled }">
-            <button class="memory-select" :aria-pressed="selected.includes(item.id)" @click="toggleSelection(item.id)"><text>{{ selected.includes(item.id) ? '☑' : '□' }}</text><text>{{ item.content }}</text></button>
+            <view class="memory-record-head"><button class="memory-merge-select" :aria-label="'选择用于合并：' + item.content" :aria-pressed="selected.includes(item.id)" :disabled="busy" @click="toggleSelection(item.id)"><text>{{ selected.includes(item.id) ? '☑' : '□' }}</text></button><button class="memory-select" :aria-label="'查看与修改：' + item.content" :disabled="busy" @click="editMemory(item)"><text>{{ item.content }}</text></button></view>
             <text class="muted small">{{ categories.find(k => k.id === item.category)?.label }} · {{ issueName(item.issue_id) }} · {{ item.enabled ? '启用' : '停用' }}</text>
             <text class="muted small">{{ item.horizon === 'current_phase' ? '当前阶段' : '长期' }} · {{ statusLabels[item.status || 'active'] }} · 来源：{{ item.source === 'user_revision' ? '用户确认的更新' : '用户确认' }}</text>
             <text class="muted small">创建 {{ item.created_at?.slice(0, 10) || '时间未知' }} · 确认 {{ item.confirmed_at?.slice(0, 10) || '旧记录未记载' }} · 最近核实 {{ item.last_verified_at?.slice(0, 10) || '未记载' }}</text>
+            <MemorySource :item="item" :user-id="user?.id || ''" :retain-chat="!!user?.save_chat" :request="request" />
             <view class="memory-actions"><button @click="editMemory(item)">编辑</button><button :disabled="busy" @click="toggleMemory(item)">{{ item.enabled ? '停用' : '启用' }}</button><button :disabled="busy" @click="deleteMemory(item)">删除</button></view>
           </view>
           <template v-if="view === 'direction'">
             <text class="field-label">初始快照</text><text class="muted small">注册时留下的背景，不是永久定义，无需重做问卷</text>
             <view v-for="item in snapshots" :key="item.id" class="memory-item">
               <text class="body-copy">{{ item.direction || '当时尚未确定方向' }}</text><text class="muted small">来源：注册问卷 · {{ item.captured_at.slice(0, 10) }}</text>
-              <text class="body-copy">{{ item.background }}</text><text class="body-copy">{{ item.answers.question }}</text><text class="body-copy">{{ item.answers.response }}</text>
-              <text v-for="constraint in item.constraints" :key="constraint" class="body-copy">当时限制：{{ constraint }}</text>
-              <text class="muted small">当时阶段：{{ stages.find(s => s.id === item.stage)?.label || '未记载' }}</text>
-              <text v-if="item.life_contexts.length" class="muted small">当时背景：{{ item.life_contexts.map(id => lifeContexts.find(c => c.id === id)?.title || '其他').join('、') }}</text>
-              <text v-if="item.concerns.length" class="muted small">当时关注：{{ item.concerns.map(id => concernOptions.find(c => c.id === id)?.title || concerns.find(c => c.id === id)?.title || '其他').join('、') }}</text>
+              <view v-for="(row, index) in snapshotRows(item)" :key="index" class="memory-snapshot-answer"><text class="muted small">{{ row.label }}</text><text class="body-copy">{{ row.value }}</text></view>
               <button class="text-button delete-snapshot" :disabled="busy" @click="deleteSnapshot(item)">删除初始资料</button>
             </view>
           </template>
@@ -243,3 +242,9 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
     </view>
   </view>
 </template>
+
+<style scoped lang="scss">
+.memory-record-head { display:flex; align-items:flex-start; gap:4px; }
+.memory-merge-select { flex:0 0 44px; width:44px; min-height:44px; color:var(--accent); background:transparent; font-size:17px; line-height:1.6; }
+.memory-record-head .memory-select { flex:1; min-width:0; }
+</style>

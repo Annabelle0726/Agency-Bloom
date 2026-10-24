@@ -8,6 +8,7 @@ import type { CandidatePage, JourneyEvent, JourneyPage } from '../../journey'
 import type { Issue } from '../../domain'
 const { theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, refreshTheme, back } = useJourneySession()
 const issues = ref<Issue[]>([]), events = ref<JourneyEvent[]>([]), cursor = ref<string | null>(null)
+const entryFromMe = ref(false)
 const selectedIssue = ref(''), pendingCount = ref(0), pendingOffset = ref<number | null>(null)
 const loaded = ref(false), moreBusy = ref(false), navigating = ref(false)
 const selectedIndex = computed(() => Math.max(0, issues.value.findIndex(item => item.id === selectedIssue.value) + 1))
@@ -72,13 +73,13 @@ function record() {
   if (id) open('/pages/journey/detail?mode=new&issue=' + encodeURIComponent(id))
 }
 function openDirection(id: string) { open('/pages/journey/detail?mode=direction&issue=' + encodeURIComponent(id)) }
-onLoad(options => { setEntryTheme(options?.theme) })
+onLoad(options => { setEntryTheme(options?.theme); selectedIssue.value = typeof options?.issue === 'string' ? options.issue : ''; entryFromMe.value = options?.from === 'me' })
 onShow(() => { refreshTheme(); void load() })
 </script>
 <template>
   <view class="journey-page preview-stage" :class="'theme-' + theme.id" :style="{ ...style, '--journey-top': capsuleBottom + 'px' }">
     <view class="journey-scene" aria-hidden="true"><image :src="hero" mode="aspectFill" /><view /></view>
-    <view class="journey-nav"><button class="journey-back" aria-label="返回发现" @click="back" hover-class="journey-pressed" :hover-start-time="0"><SvgIcon name="back" :size="23" /></button></view>
+    <view class="journey-nav"><button class="journey-back" :aria-label="entryFromMe ? '返回我的' : '返回上一页'" @click="back" hover-class="journey-pressed" :hover-start-time="0"><SvgIcon name="back" :size="23" /></button></view>
     <view class="journey-body">
       <view class="journey-intro"><text class="journey-kicker">YOUR JOURNEY</text><text class="journey-title">走过的路</text><text class="journey-subtitle">那些重要的时刻，都还在这里</text><view class="journey-rule" /></view>
       <view v-if="error" class="journey-error"><text>{{ error }}</text><button class="journey-link" :disabled="loading" @click="load()">重新读取</button></view>
