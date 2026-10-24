@@ -32,13 +32,15 @@ alt="Agency Bloom — a WeChat Mini Program for exploring career choices, compar
   <img src="https://img.shields.io/badge/platform-WeChat_Mini_Program-07C160?style=flat-square&logo=wechat&logoColor=white" alt="Platform: WeChat Mini Program">
 </p>
 
-**Agency Bloom** is a mobile-first WeChat Mini Program for adults who want to understand their circumstances, clarify a current concern, compare possibilities, and choose one small, affordable real-world step. The Alpha follows one current issue at a time, and every AI suggestion stays a draft until you confirm it.
+**Agency Bloom** is a mobile-first WeChat Mini Program that helps adults understand their own value, explore possibilities in a changing world, and make choices according to their own wishes. Career exploration is the first validation scenario. Understand, Question, Explore and Become are revisitable dimensions of thinking; listening, rest and changing direction remain valid choices.
+
+Multiple explorations and independent conversations can be resumed. Changes to cards, memories and recorded personal understandings require the user's explicit confirmation. See [Product direction](docs/PRODUCT_DIRECTION.md) for the mission, existing capabilities and validation priorities.
 
 ## Why it is different
 
 - **You hold the pen.** The model proposes; only explicit confirmation turns a suggestion into card content. Assumptions, unknowns, and confirmed facts stay visually separated.
 - **Grounded or dropped.** Optional insights must quote at least two verbatim clues from your own words. The backend discards anything it cannot ground.
-- **Consent by default, memory by choice.** Chat retention is opt-in. Long-term memories are user-confirmed, scoped (global or per exploration), and their use is a separate switch, off by default.
+- **Separate consent and control.** AI processing requires consent. Chat retention is on by default and can be disabled. Long-term memories are user-confirmed, scoped (global or per exploration), and their use is a separate switch, off by default.
 - **Bounded context.** Each conversation sends only its own recent messages, its reviewed summary, and explicitly linked context — never a silent merge of other transcripts.
 - **Budget discipline.** Every model call reserves against a CNY ledger before it happens and settles from the token receipt. No retries, no silent fallback to demo replies.
 

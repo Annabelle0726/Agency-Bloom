@@ -2,7 +2,15 @@
 
 ## Product intent
 
-Agency Bloom helps people explore career possibilities, compare choices, and learn from affordable real-world experiments. Preserve the user's decision-making authority. It is not therapy, a generic planner, or an AI relationship substitute.
+Agency Bloom helps people understand their own value, explore possibilities in a changing world, and make choices according to their own wishes within real constraints. Its purpose is to strengthen human agency. Career exploration is the first validation scenario, not the whole product identity. Read [docs/PRODUCT_DIRECTION.md](docs/PRODUCT_DIRECTION.md) for the current product direction.
+
+- Understand, Question, Explore and Become are revisitable dimensions of thinking, not compulsory conversation stages, user types, or progress levels. Listening, rest, asking for direct advice and changing one's mind are valid choices.
+- Support both practical livelihood and personally meaningful living. A skill's market price does not define a person's whole value. Do not promise that unique value makes someone immune to AI displacement, or replace realistic discussion of income and constraints with reassurance.
+- Ask a useful question when a distinction matters to the help requested; do not turn every answer into another question. Offer grounded advice when requested. Perspectives are tentative, evidence-linked and rejectable; challenge an assistant's earlier assumptions as readily as a user's premise. Do not diagnose or invent hidden motives.
+- User-owned understanding is the intended outcome. AI paraphrases, possible values and proposed next steps remain drafts until the user confirms them. Discover must draw from voluntarily supplied real clues, respect current intent, and allow no suggestion when evidence is insufficient. No random daily self-analysis or unsolicited push.
+- Preserve the existing pages and conversation system. The Perspective Shift implementation remains an offline, default-off Mock prototype until a separate implementation and validation task enables it. Product direction documents do not themselves activate features or establish model quality.
+
+Bloom is not therapy, an autonomous life-planning agent, a productivity supervisor, or an AI relationship substitute. Commercial value and advantages over general-purpose AI must be tested in concrete scenarios; the mission alone does not establish demand.
 
 Use confirmed user information as facts. Keep model assumptions and unverified market information separate. Suggestions and insights are optional; only explicit user confirmation can turn them into saved decision-card content. Do not add automatic career research, unsolicited reminders, or extra model calls.
 

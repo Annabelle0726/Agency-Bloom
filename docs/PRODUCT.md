@@ -1,5 +1,7 @@
 # 第一版产品约定
 
+> Current product direction (2026-10-24): [PRODUCT_DIRECTION.md](PRODUCT_DIRECTION.md) defines Agency Bloom around human agency, with career exploration as its first validation scenario. It supersedes career-only positioning and mandatory-action interpretations in this historical note. Current privacy and retention rules are governed by [AGENT.md](../AGENT.md).
+
 > Current conversation architecture (2026-10-18): see [CONVERSATIONS.md](CONVERSATIONS.md). Its multi-exploration, independent-conversation, reviewed-summary and user-controlled-memory contracts supersede the single-current-question assumptions in this earlier product note.
 
 我们不断向前，是想靠近怎样的生活

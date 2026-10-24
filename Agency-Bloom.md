@@ -1,6 +1,31 @@
 # Agency Bloom
 
-**Your Life. Your Direction. Your Agency.** Explore more possibilities, compare different choices, and take one small, real step forward. Every decision card is yours to control.
+**Your Life. Your Direction. Your Agency.**
+
+Agency Bloom helps people understand their own value, explore possibilities in a changing world, and make choices according to their own wishes.
+
+## Product direction — 2026-10-24
+
+As AI makes many tasks easier and changes the market value of skills, people can still face difficult questions: What matters to me? What kind of life feels worth living? Which possibilities can I create within conditions I cannot fully control?
+
+Bloom supports the person's thinking and decision-making. Practical questions about income, skills and responsibilities belong alongside questions about relationships, interests, values and desired ways of living. A skill's market price is not a complete measure of a person's value; neither personal uniqueness nor a meaningful mission guarantees protection from job displacement.
+
+Four revisitable dimensions express the experience:
+
+| Dimension | The user's question |
+| --- | --- |
+| **01 · UNDERSTAND** | What do I care about, what have I experienced, and what feels valuable to me? |
+| **02 · QUESTION** | Is the premise I currently believe the only possible interpretation? |
+| **03 · EXPLORE** | What other possibilities could I investigate or create? |
+| **04 · BECOME** | With this new understanding, what do I choose now, including rest or changing my mind? |
+
+These dimensions can be skipped, revisited or combined. They are not a four-step interview that every conversation must complete. Useful advice, ordinary conversation and listening all remain welcome; decisions and saved understandings belong to the user.
+
+Career exploration is the first scenario in which to validate this purpose. Creative work, life choices and preparing a real conversation are related possibilities, not simultaneous commitments to launch new modules. The first evidence of value should be a clearer, user-owned understanding or choice in a concrete situation. Commercial demand still needs separate validation.
+
+**Mission:** We cannot decide what kind of life is worth living for you. We hope to help you see more possibilities, think more clearly, and develop the courage and ability to choose according to your own wishes.
+
+The current product contract, page responsibilities, implementation limits and validation criteria are recorded in [Product direction](docs/PRODUCT_DIRECTION.md). The following essay preserves the project's starting point.
 
 Recently, I've been thinking about one thing: we live in an era of rapid technological development, where AI brings new surprises almost every day. Many tasks that once required long-term study can now be accomplished with tools. Logically, as our capabilities grow stronger, life should become easier and offer more choices. But reality doesn't seem to be exactly that way. Questions like whether work is stable, what to learn in the future, whether current efforts will soon lose value, and what kind of life truly suits us—none of these have disappeared because of technological progress. On the contrary, as the world changes faster and faster, we sometimes can't even understand what happened yesterday before we start worrying about tomorrow. I've experienced this confusion myself. I worked hard to learn new knowledge, tried different technologies and projects, hoping to give myself more choices, only to gradually realize that when a person gets used to constantly pursuing better, even stopping to rest can feel like a waste of time. So I began to ask: are we really striving to get closer to the life we want, or just striving to become an excellent person who meets expectations? This question later became the starting point of my design of Agency Bloom.
 
