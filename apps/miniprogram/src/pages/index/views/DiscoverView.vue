@@ -25,10 +25,10 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
   <view class="workspace discover-content bloom-content">
     <view class="discover-atmosphere" aria-hidden="true">
       <view class="discover-botanical discover-petals" :style="botanicalStyles.petals">
-        <image class="discover-botanical-art" :src="petals" mode="aspectFill" />
+        <image class="discover-botanical-art" :src="petals" mode="aspectFit" />
       </view>
       <view class="discover-botanical discover-leaves" :style="botanicalStyles.leaves">
-        <image class="discover-botanical-art" :src="leaves" mode="aspectFill" />
+        <image class="discover-botanical-art" :src="leaves" mode="aspectFit" />
       </view>
     </view>
     <view class="discover-foreground">
@@ -69,7 +69,7 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
 /* Kept local to Discover: the Plan page still owns its atmospheric hero. */
 .theme-space .discover-content { padding: 8px 22px 32px; }
 .discover-content {
-  .discover-atmosphere { position: fixed; z-index: 0; top: 0; bottom: 0; left: 0; right: 0; margin: auto; width: 100%; max-width: 440px; height: 100vh; overflow: hidden; pointer-events: none; }
+  .discover-atmosphere { position: fixed; z-index: 0; top: calc(var(--capsule-bottom, 0px) + 6px); bottom: 0; left: 0; right: 0; margin: auto; width: 100%; max-width: 440px; overflow: hidden; pointer-events: none; }
   .discover-botanical { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; transition: transform 140ms cubic-bezier(.16, 1, .3, 1); will-change: transform; }
   .discover-petals { transform-origin: 100% 0; }
   .discover-leaves { transform-origin: 0 68%; }

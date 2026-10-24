@@ -2,12 +2,27 @@ import { expect, it } from 'vitest'
 import { discoverAtmosphere } from '../src/discover-atmosphere'
 import { themes } from '../src/themes'
 
+function expectFullCanvas(svg: string) {
+  const [left, top, width, height] = svg.match(/viewBox="([^"]+)"/)![1].split(' ').map(Number)
+  // All paths use absolute coordinates. Their control hulls must fit with a margin,
+  // including tips that used to lie outside the original 900 x 1600 canvas.
+  for (const match of svg.matchAll(/<path d="([^"]+)"/g)) {
+    const values = (match[1].match(/-?\d+(?:\.\d+)?/g) || []).map(Number)
+    for (let index = 0; index < values.length; index += 2) {
+      expect(values[index]).toBeGreaterThan(left + 8)
+      expect(values[index]).toBeLessThan(left + width - 8)
+      expect(values[index + 1]).toBeGreaterThan(top + 8)
+      expect(values[index + 1]).toBeLessThan(top + height - 8)
+    }
+  }
+}
+
 it('uses a local SVG for each theme, with no external media, scripts or user information', () => {
   const sources = new Set<string>()
   for (const theme of themes) {
     const uri = discoverAtmosphere(theme.id), svg = Buffer.from(uri.split(',')[1], 'base64').toString('utf8')
     expect(svg).toContain(theme.palette.accent); expect(svg).toContain(theme.palette.gold)
-    expect(svg).toContain('viewBox="0 0 900 1600"')
+    expectFullCanvas(svg)
     expect(svg).not.toMatch(/<script|<image|foreignObject|https?:\/\/(?!www.w3.org)/)
     expect(Buffer.byteLength(svg)).toBeLessThan(5000)
     expect(discoverAtmosphere(theme.id)).toBe(uri); sources.add(uri)
@@ -29,7 +44,7 @@ it('separates the two botanical forms for independent motion without changing th
     const paths = (svg: string) => svg.match(/<path\b[^>]*\/>/g) || []
     expect([...paths(petals), ...paths(leaves)]).toEqual(paths(combined))
     for (const svg of [petals, leaves]) {
-      expect(svg).toContain('viewBox="0 0 900 1600"')
+      expectFullCanvas(svg)
       expect(svg).not.toMatch(/<animate|<script|<image|foreignObject/)
     }
     expect(discoverAtmosphere(theme.id, 'petals')).toBe(discoverAtmosphere(theme.id, 'petals'))

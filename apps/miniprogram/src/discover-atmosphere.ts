@@ -10,7 +10,8 @@ export function discoverAtmosphere(themeId: string, layer: 'all' | 'petals' | 'l
   if (cached) return cached
   const { accent, gold, soft } = theme.palette
   const strength = theme.dark ? '.155' : '.135'
-  const source = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1600" viewBox="0 0 900 1600" fill="none">
+  // Include off-canvas tips and leave room for the existing scroll-driven drift.
+  const source = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1600" viewBox="-160 -180 1320 2020" fill="none">
 <defs>
  <linearGradient id="petal" x1="830" y1="0" x2="280" y2="780" gradientUnits="userSpaceOnUse"><stop stop-color="${accent}" stop-opacity="${theme.dark ? '.055' : '.04'}"/><stop offset="1" stop-color="${soft}" stop-opacity="0"/></linearGradient>
  <linearGradient id="leaf" x1="0" y1="1160" x2="550" y2="1500" gradientUnits="userSpaceOnUse"><stop stop-color="${gold}" stop-opacity=".035"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></linearGradient>
