@@ -1,10 +1,11 @@
-import { onHide } from '@dcloudio/uni-app'
+import { onHide, onReady } from '@dcloudio/uni-app'
 import { computed, onUnmounted, provide, ref, watch } from 'vue'
 import { createApi } from './http'
 import { ICON_PALETTE_KEY } from './icon-system'
 import { resolveTheme, themeStyle } from './themes'
 import { createThemePreference, personalSpaceTheme } from './theme-preference'
 import { createThemeClock } from './theme-clock'
+import { createThemePaintCache } from './theme-paint'
 import type { Issue, User } from './domain'
 
 export interface JourneyEvent {
@@ -43,7 +44,12 @@ export function reflectionFor(events: JourneyEvent[], issues: Issue[]) {
 }
 export function useJourneySession() {
   const user = ref<User | null>(null), error = ref(''), loading = ref(false)
-  const entryTheme = ref(resolveTheme('light'))
+  const paint = createThemePaintCache({
+    read: key => uni.getStorageSync(key),
+    write: (key, value) => uni.setStorageSync(key, value),
+    remove: key => uni.removeStorageSync(key),
+  })
+  const entryTheme = ref(paint.read(uni.getStorageSync('agency.session') || ''))
   const preference = createThemePreference({
     read: key => uni.getStorageSync(key),
     write: (key, value) => uni.setStorageSync(key, value),
@@ -74,7 +80,7 @@ export function useJourneySession() {
   watch([() => user.value?.id, () => clock.slot.value.key], ([id, slot]) => {
     if (id) preference.pruneOverride(id, slot)
   }, { immediate: true })
-  function setEntryTheme(value?: string) { entryTheme.value = resolveTheme(value) }
+  function setEntryTheme(value?: string) { if (value) entryTheme.value = resolveTheme(value) }
   function refreshTheme() { clock.refresh(); clock.start() }
   const style = computed(() => themeStyle(theme.value))
   const system = uni.getSystemInfoSync()
@@ -82,9 +88,23 @@ export function useJourneySession() {
   // #ifdef MP-WEIXIN
   try { capsuleBottom = uni.getMenuButtonBoundingClientRect().bottom } catch { /* System fallback. */ }
   // #endif
-  watch(theme, value => {
+  function syncPagePaint() {
+    const value = theme.value
+    if (user.value) paint.remember(uni.getStorageSync('agency.session') || '', value.id, auto.value, override.value ? clock.slot.value.end : 0)
+    // #ifdef H5
+    const root = document.documentElement.style
+    root.setProperty('--startup-bg', value.palette.bg)
+    root.setProperty('--startup-ink', value.palette.ink)
+    root.backgroundColor = value.palette.bg
+    root.colorScheme = value.dark ? 'dark' : 'light'
+    // #endif
     uni.setNavigationBarColor({ frontColor: value.dark ? '#ffffff' : '#000000', backgroundColor: value.palette.bg })
-  }, { immediate: true })
+    // #ifdef MP-WEIXIN
+    uni.setBackgroundColor({ backgroundColor: value.palette.bg, backgroundColorTop: value.palette.bg, backgroundColorBottom: value.palette.bg })
+    // #endif
+  }
+  onReady(syncPagePaint)
+  watch([theme, auto, override, () => clock.slot.value.end, user], syncPagePaint, { immediate: true })
   provide(ICON_PALETTE_KEY, computed(() => theme.value.palette))
   const api = createApi(options => uni.request(options), () => uni.getStorageSync('agency.session') || '',
     () => { user.value = null; error.value = '登录已失效，请返回后重新登录' },

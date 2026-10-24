@@ -58,8 +58,8 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
   .discover-atmosphere { position: fixed; z-index: 0; top: 0; bottom: 0; left: 0; right: 0; margin: auto; width: 100%; max-width: 440px; height: 100vh; pointer-events: none; }
   .discover-foreground { position: relative; z-index: 1; }
   .discover-intro { padding: 10px 0 24px; }
-  .discover-title { display: block; font-family: var(--font-heading); color: var(--ink); font-size: 25px; line-height: 1.4; }
-  .discover-subtitle { display: block; margin-top: 10px; font-size: 14px; line-height: 1.7; color: var(--muted); }
+  .discover-title { display:block; font-family:var(--font-heading); color:var(--ink); font-size:var(--type-title); font-weight:500; line-height:1.5; }
+  .discover-subtitle { display:block; margin-top:10px; font-family:var(--font-body); font-size:var(--type-subtitle); font-weight:400; line-height:1.75; color:var(--muted); }
   .discover-moment { margin-bottom: 30px; }
   .discover-section { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; font-size: 14px; color: var(--muted); }
   .discover-rule { flex: 1; height: 1px; background: var(--line); }
@@ -70,7 +70,7 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
   .discovery-copy { flex: 1; min-width: 0; padding: 0; }
   .bloom-discovery-card .discovery-photo { flex: 0 0 60px; width: 60px; height: 70px; min-height: 0; align-self: center; border-radius: 6px; }
   .bloom-discovery-card .discovery-heading > text { font-size: 13px; color: var(--muted); }
-  .bloom-discovery-card .discovery-title { font-family: var(--font-heading); font-size: 19px; line-height: 1.5; margin: 6px 0 0; }
+  .bloom-discovery-card .discovery-title { font-family:var(--font-body); font-size:var(--type-card); font-weight:500; line-height:1.65; margin:6px 0 0; }
   .discovery-question-row { display: flex; align-items: center; gap: 16px; margin-top: 13px; }
   .bloom-discovery-card .discovery-question { flex: 1; font-size: 14px; line-height: 1.75; color: var(--ink); opacity: 1; }
   .discovery-meta, .discovery-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -86,6 +86,6 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
 }
 @media (max-width: 360px) {
   .theme-space .discover-content { padding-left: 16px; padding-right: 16px; }
-  .discover-content .discover-title { font-size: 23px; }
+  .discover-content .discover-title { font-size:var(--type-title); }
 }
 </style>

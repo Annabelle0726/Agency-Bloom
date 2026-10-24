@@ -1,0 +1,108 @@
+/* Shared semantic type and controls. Imported directly for native shared styles. */
+.preview-stage .app-shell .page-title,
+.preview-stage .app-shell .hero-title,
+.preview-stage .app-shell .discover-title,
+.preview-stage .auth-welcome .auth-title,
+.preview-stage .onboarding-flow .flow-title,
+.preview-stage .opening-story .story-title,
+.preview-stage .journey-title {
+  font-family:var(--font-heading); font-size:var(--type-title); font-weight:500;
+  line-height:1.5; letter-spacing:0; white-space:normal; overflow-wrap:break-word;
+}
+.preview-stage .app-shell .section-title,
+.preview-stage .workspace-drawer .section-title,
+.preview-stage .modal-sheet .section-title {
+  font-family:var(--font-heading); font-size:var(--type-section); font-weight:500; line-height:1.5;
+}
+.preview-stage .workspace-drawer .drawer-heading .section-title { font-size:var(--type-title); }
+.preview-stage .app-shell .card-title,
+.preview-stage .app-shell .next-title,
+.preview-stage .app-shell .discovery-title,
+.preview-stage .app-shell .mission-title {
+  font-family:var(--font-body); font-size:var(--type-card); font-weight:500; line-height:1.65; overflow-wrap:break-word;
+}
+.preview-stage .app-shell .body-copy,
+.preview-stage .workspace-drawer .body-copy,
+.preview-stage .opening-story .story-body,
+.preview-stage .onboarding-flow .reflection-copy,
+.preview-stage .app-shell .message-bubble {
+  font-family:var(--font-body); font-size:var(--type-body); font-weight:400; line-height:1.8;
+}
+.preview-stage .app-shell .page-description,
+.preview-stage .app-shell .hero-subtitle,
+.preview-stage .app-shell .discover-subtitle,
+.preview-stage .onboarding-flow .flow-description,
+.preview-stage .auth-welcome .auth-subtitle,
+.preview-stage .app-shell .setting-description,
+.preview-stage .app-shell .decision-row-hint {
+  font-family:var(--font-body); font-size:var(--type-subtitle); font-weight:400; line-height:1.75;
+}
+.preview-stage .app-shell .primary,
+.preview-stage .app-shell .secondary,
+.preview-stage .action-button,
+.preview-stage .action-button .action-label,
+.preview-stage .app-shell .text-button,
+.preview-stage .plan-empty-actions button {
+  font-family:var(--font-body); font-size:var(--type-button); font-weight:500; line-height:1.5;
+}
+/* Keep every text-bearing stop dark enough for white labels; gems remain on the tabbar. */
+.preview-stage .app-shell .primary,
+.preview-stage .action-button.action-primary,
+.preview-stage .action-button.action-quiet {
+  background:linear-gradient(180deg,var(--cta-highlight),var(--cta-fill) 45%,var(--cta-deep));
+  color:var(--cta-ink); border:1px solid var(--cta-border); border-radius:8px;
+  text-shadow:none; box-shadow:var(--cta-shadow); animation:none;
+}
+.preview-stage .app-shell .primary > text { font-size:var(--type-button); font-weight:500; }
+.preview-stage .app-shell .secondary { background:transparent; color:var(--ink); }
+.preview-stage .app-shell .setting-row,
+.preview-stage .app-shell .setting-row[disabled] { background:transparent; color:var(--ink); }
+.preview-stage .app-shell .setting-row[disabled] { opacity:.65; }
+.preview-stage .app-shell .plan-empty-edit,
+.preview-stage .app-shell .text-button,
+.preview-stage .auth-welcome .auth-policy { color:var(--action-text,var(--accent)); }
+.preview-stage .plan-empty-actions .plan-empty-edit { border-radius:8px; }
+.preview-stage .app-shell .primary[disabled],
+.preview-stage .app-shell .secondary[disabled],
+.preview-stage .action-button[disabled] {
+  background:var(--control-disabled-bg,var(--soft)); color:var(--control-disabled-ink,var(--muted));
+  border:1px solid var(--line); opacity:1; text-shadow:none; box-shadow:none; animation:none;
+}
+.preview-stage .app-shell .primary[disabled] > text { color:inherit; }
+.preview-stage .app-shell .conversation-actions button,
+.preview-stage .app-shell .message-tools button,
+.preview-stage .app-shell .composer-error-dismiss,
+.preview-stage .app-shell .composer-error-close,
+.preview-stage .drawer-tabs button,
+.preview-stage .scope-filters button { min-width:44px; min-height:44px; }
+.preview-stage .conversation-actions button { padding:10px 8px; }
+.preview-stage .composer-error button { min-height:44px; }
+.preview-stage .composer-error .notice-close,
+.preview-stage .composer-error .error-close { min-width:44px; min-height:44px; }
+.preview-stage .memory-toolbar button { min-height:44px; }
+.preview-stage .workspace-drawer .small { font-size:var(--type-caption); }
+.preview-stage .workspace-drawer .drawer-empty { font-family:var(--font-body); font-size:var(--type-body); line-height:1.8; }
+.memory-merge-hint { display:block; color:var(--muted); font-size:var(--type-caption); line-height:1.7; margin:-4px 0 12px; }
+.summary-confirmation-status { display:block; padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:var(--soft); color:var(--ink); font-size:var(--type-body); line-height:1.75; margin:16px 0 0; }
+.summary-save-error { display:block; color:var(--ink); font-size:var(--type-body); line-height:1.75; margin-top:12px; }
+.preview-stage .opening-story .story-body { font-weight:400; }
+.preview-stage .opening-story .story-emphasis { font-weight:600; }
+.preview-stage .opening-story .story-closing {
+  max-width:100%; font-family:var(--font-heading); font-size:var(--type-section); font-weight:500;
+  line-height:1.8; letter-spacing:0; text-wrap:pretty;
+}
+.preview-stage .opening-story .story-next {
+  display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:44px;
+  padding:10px 16px; margin:0; border:1px solid rgba(255,255,255,.35); border-radius:8px;
+  background:rgba(12,26,22,.5); color:#fff; font-family:var(--font-body); font-size:var(--type-button); font-weight:500;
+}
+.preview-stage .onboarding-flow .flow-heading .eyebrow { display:none; }
+.preview-stage .onboarding-flow .selection-detail { font-family:var(--font-body); font-size:var(--type-subtitle); line-height:1.65; }
+.preview-stage .onboarding-flow .flow-heading { margin-bottom:20px; }
+.chat-atmosphere { position:fixed; z-index:0; top:0; left:0; right:0; width:100%; max-width:440px; height:100vh; margin:0 auto; pointer-events:none; }
+.chat-surface { position:relative; z-index:1; }
+@media(max-width:350px) {
+  .preview-stage { --type-title:22px; }
+  .preview-stage .plan-empty-actions { gap:8px 12px; }
+  .preview-stage .plan-empty-actions .plan-empty-edit { padding-left:10px; padding-right:7px; gap:6px; }
+}

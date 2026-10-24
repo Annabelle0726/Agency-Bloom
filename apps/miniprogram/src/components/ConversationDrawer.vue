@@ -42,6 +42,12 @@ const activeIssues = computed(() => props.issues.filter(i => !i.ended_at))
 const visible = computed(() => props.conversations.filter(c => Boolean(c.archived_at) === archive.value && (!filterIssue.value || c.issue_id === filterIssue.value) && (!search.value.trim() || c.title.toLowerCase().includes(search.value.trim().toLowerCase()))))
 const edited = reactive({ overview: '', decisions: '', open_questions: '', next_steps: '' })
 const summaryFields = [{ key: 'decisions', label: '已经决定的' }, { key: 'open_questions', label: '还没弄清的' }, { key: 'next_steps', label: '接下来可做的' }] as const
+const savedSummaryFingerprint = ref('')
+const summarySaveError = ref('')
+const summaryFingerprint = computed(() => JSON.stringify([edited.overview.trim(), ...summaryFields.map(field => edited[field.key].split('\n').map(line => line.trim()).filter(Boolean))]))
+const summaryConfirmed = computed(() => !!savedSummaryFingerprint.value && savedSummaryFingerprint.value === summaryFingerprint.value)
+watch([() => props.active?.id, () => props.view], () => { savedSummaryFingerprint.value = ''; summarySaveError.value = '' })
+watch(() => props.summaryDraft, value => { if (value) savedSummaryFingerprint.value = '' })
 const detailTitle = ref(props.active?.title || ''), linked = ref<string[]>([...(props.active?.linked_issue_ids || [])])
 const memories = ref<Memory[]>([]), selected = ref<string[]>([]), editing = ref<Memory | null>(null), memoryForm = ref(false), merging = ref(false)
 const memoryContent = ref(''), category = ref<Memory['category']>('fact'), memoryScope = ref(''), memoryFilter = ref('all')
@@ -91,7 +97,7 @@ async function saveDetails() { if (!props.active) return; await run(async () => 
   emit('changed', item); emit('contextChanged'); notice.value = '会话设置已保存'
 }) }
 function toggleLink(id: string) { if (linked.value.includes(id)) linked.value = linked.value.filter(x => x !== id); else if (linked.value.length < 3) linked.value.push(id) }
-async function saveSummary() { if (!props.active) return; await run(async () => {
+async function saveSummary() { if (!props.active || summaryConfirmed.value) return; summarySaveError.value = ''; await run(async () => {
   const summary: ConversationSummary = { overview: edited.overview.trim(), decisions: [], open_questions: [], next_steps: [] }
   for (const field of summaryFields) {
     summary[field.key] = edited[field.key].split('\n').map(s => s.trim()).filter(Boolean)
@@ -100,10 +106,11 @@ async function saveSummary() { if (!props.active) return; await run(async () => 
   if (!summary.overview && !summary.decisions.length && !summary.open_questions.length && !summary.next_steps.length) throw Error('先留下要接续的内容')
   if (props.user?.save_chat) emit('changed', await props.request<Conversation>('PUT', `/conversations/${props.active!.id}/summary`, { version: props.active!.version, summary }))
   emit('reviewed', summary); notice.value = props.user?.save_chat ? '已保存审阅后的总结，下次对话会接续' : '已用于本次会话；退出后不会保留'
-}) }
+  savedSummaryFingerprint.value = summaryFingerprint.value
+}); if (!summaryConfirmed.value) summarySaveError.value = notice.value }
 async function clearSummary() { if (!props.active || !await confirm('清除会话总结？', '之后不再将这份总结作为上下文，消息与长期记忆保持独立')) return; await run(async () => {
   if (props.user?.save_chat) emit('changed', await props.request<Conversation>('PUT', `/conversations/${props.active!.id}/summary`, { version: props.active!.version, summary: null }))
-  emit('reviewed', null); notice.value = '总结已清除'
+  emit('reviewed', null); savedSummaryFingerprint.value = ''; notice.value = '总结已清除'
 }) }
 function editMemory(item?: Memory, content = '') { editing.value = item || null; merging.value = false; memoryContent.value = item?.content || content; category.value = item?.category || 'fact'; memoryScope.value = item?.issue_id || ''; horizon.value = item?.horizon || (props.view === 'direction' ? 'current_phase' : 'long_term'); status.value = item?.status || 'active'; keepHistory.value = false; memoryForm.value = true }
 function prepareMerge() {
@@ -173,7 +180,9 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
           <text v-if="summaryDraft" class="summary-status">待你审阅的草稿</text>
           <text class="field-label">这次聊到了什么</text><textarea v-model="edited.overview" class="text-area" maxlength="1200" placeholder="主题、关键进展，以及仍然不确定的地方" />
           <view v-for="field in summaryFields" :key="field.key"><text class="field-label">{{ field.label }} · 每行一项</text><textarea v-model="edited[field.key]" class="text-area compact" maxlength="4800" /></view>
-          <button class="primary confirm-summary" :disabled="busy || generating || !active" @click="saveSummary">确认这份总结</button>
+          <text v-if="summaryConfirmed" class="summary-confirmation-status" role="status" aria-live="polite">{{ user?.save_chat ? '已保存，下次对话会接续这份总结' : '已用于本次会话，退出后不会保留' }}</text>
+          <text v-if="summarySaveError" class="summary-save-error" role="alert">{{ summarySaveError }}</text>
+          <button class="primary confirm-summary" :disabled="busy || generating || !active || summaryConfirmed" @click="saveSummary">{{ busy ? '正在保存…' : summaryConfirmed ? (user?.save_chat ? '已保存' : '已用于本次会话') : '确认这份总结' }}</button>
           <button v-if="summary" class="text-button" :disabled="busy || generating" @click="clearSummary">清除已确认总结</button>
           <view v-if="summary" class="summary-to-memory"><text class="field-label">哪些内容值得长期记住？</text><text class="muted small">选择后仍可编辑，单独确认保存</text><button v-for="line in summary.decisions" :key="line" class="memory-candidate" @click="rememberSummary(line)">{{ line }} ＋</button><button class="text-button" @click="rememberSummary('')">自己写一条长期记忆</button></view>
         </template>
@@ -188,6 +197,7 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
           <button class="memory-use setting-row" :aria-pressed="!!user?.use_memory" :disabled="busy" @click="toggleUseMemory"><view><text class="setting-title">在回复中使用长期记忆</text><text class="setting-description">{{ user?.use_memory ? '仅使用启用且范围匹配的记忆' : '已关闭 · 保存的记忆仍可整理' }}</text></view><view class="toggle" :class="{ on: user?.use_memory }"><view /></view></button>
           <text class="muted small">最多40条；只保存你明确确认的内容。删除记忆不会删除历史聊天中的原文</text>
           <view class="memory-toolbar"><button class="secondary" :disabled="busy" @click="editMemory()">{{ view === 'direction' ? '＋ 添加当前方向' : '＋ 添加记忆' }}</button><button class="secondary" :disabled="busy || selected.length < 2" @click="prepareMerge">合并选中 {{ selected.length || '' }}</button></view>
+          <text class="memory-merge-hint">{{ selected.length < 2 ? '选中至少两条记忆后可以合并' : `已选 ${selected.length} 条记忆，可合并整理` }}</text>
           <view v-if="memoryForm" class="drawer-form memory-editor">
             <text class="field-label">{{ merging ? '审阅合并结果 · 保存后替换选中的记忆' : editing ? '编辑记忆' : '你希望长期记住什么？' }}</text>
             <textarea v-model="memoryContent" class="text-area" :maxlength="-1" placeholder="写具体事实或偏好，避免替自己下结论" /><text class="muted small">{{ memoryContent.length }} / 400</text>

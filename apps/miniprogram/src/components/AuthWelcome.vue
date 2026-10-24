@@ -16,63 +16,76 @@ function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value
     <scroll-view class="auth-scroll" scroll-y :show-scrollbar="false">
       <view class="auth-content">
         <view class="auth-top"><text>AGENCY BLOOM</text><button :disabled="busy" @click="emit('replay')" hover-class="pressed">重看开场</button></view>
-        <view class="auth-heading"><text class="auth-eyebrow">A LITTLE SPACE FOR YOURSELF</text><text class="auth-title">给自己一点空间</text><text class="auth-subtitle">{{ '让每一次向前\n都更靠近你愿意亲自度过的生活' }}</text></view>
-        <view class="auth-letter"><text>不必先想清楚一切。</text><text>带着困惑，或一点好奇来就好。</text><text>我们可以从一件小事，慢慢聊起。</text></view>
+        <view class="auth-main">
+        <view class="auth-heading"><text class="auth-title">给自己一点空间</text><text class="auth-subtitle">让每一次向前，都更靠近你愿意亲自度过的生活</text></view>
+        <view class="auth-entry">
+        <view class="auth-quote-scene">
+          <view class="auth-quote-plane" aria-hidden="true" />
+          <view class="auth-quote-passage">
+            <text class="auth-quote-mark auth-quote-open" aria-hidden="true">“</text>
+            <text class="auth-quote-copy">不必先想清楚一切，带着困惑或好奇来就好。我们从一件小事，慢慢聊起</text>
+            <text class="auth-quote-mark auth-quote-close" aria-hidden="true">”</text>
+          </view>
+        </view>
         <view class="auth-actions">
           <text v-if="error" class="notice">{{ error }}</text>
           <view v-if="offline || connecting" class="auth-connection"><text>{{ connecting ? '正在连接服务…' : '暂时无法连接服务，请稍后重试' }}</text><button :disabled="connecting || busy" @click="emit('retry')">重试</button></view>
           <view class="auth-consent">
-            <button class="auth-check" :aria-pressed="accepted" aria-label="同意用户协议与隐私政策" :disabled="busy" @click="accepted = !accepted"><view :class="{ checked: accepted }"><SvgIcon v-if="accepted" name="check" light :size="12" /></view></button>
-            <view><text>我已阅读并同意</text><button class="auth-policy" @click="emit('privacy')">《用户协议》与《隐私政策》</button></view>
+            <button class="auth-check" :aria-pressed="accepted" aria-label="同意用户协议与隐私政策" :disabled="busy" hover-class="auth-control-pressed" :hover-start-time="0" :hover-stay-time="70" @click="accepted = !accepted"><view :class="{ checked: accepted }"><SvgIcon v-if="accepted" name="check" light :size="12" /></view></button>
+            <view class="auth-consent-copy"><text>我已阅读并同意</text><button class="auth-policy" hover-class="auth-control-pressed" :hover-start-time="0" :hover-stay-time="70" @click="emit('privacy')">用户协议与隐私政策</button></view>
           </view>
           <!-- #ifdef MP-WEIXIN -->
           <view class="auth-action"><ActionButton kind="auth-wechat" :disabled="!accepted || wechatAuth === false || connecting" :loading="busy" @click="login('wechat')">微信登录 / 注册</ActionButton></view>
-          <text v-if="wechatAuth === false && ready" class="auth-note">微信登录尚未配置，请稍后再来</text>
           <!-- #endif -->
           <view v-if="devAuth" class="auth-action"><ActionButton kind="auth-demo" :disabled="!accepted || connecting" :loading="busy" @click="login(hasDemo ? 'demo-resume' : 'demo-new')">{{ hasDemo ? '继续本机演示' : '创建演示账号' }}</ActionButton></view>
-          <text v-if="devAuth" class="auth-note">{{ hasDemo ? '登录之前的演示账号，恢复已有记录' : '首次创建后，本机可在 30 天内重新登录' }}</text>
-          <button v-if="devAuth && hasDemo" class="auth-new-demo" :disabled="!accepted || busy || connecting" @click="login('demo-new')">创建新的演示账号</button>
-          <text v-if="devAuth" class="auth-note">演示账号与微信账号独立 · 不跨设备同步</text>
-          <!-- #ifdef H5 -->
-          <text v-if="!devAuth && ready" class="auth-note">请在微信小程序中登录，继续你的探索</text>
-          <!-- #endif -->
-          <text v-if="wechatAuth !== false" class="auth-note">首次微信登录将创建账号；回来时，接着上次的进展。</text>
-          <text class="auth-note">登录后点选几项即可开始，也可以稍后再答。</text>
         </view>
-        <text class="auth-signature">YOUR LIFE, YOUR WAY</text>
+        </view>
+        </view>
       </view>
     </scroll-view>
   </view>
 </template>
 
 <style scoped>
-.auth-welcome { height:var(--app-height,100vh); position:relative; overflow:hidden; background:var(--bg); color:var(--ink); }
+.auth-welcome { --auth-height:var(--app-height,100vh); height:var(--auth-height); position:relative; overflow:hidden; background:var(--bg); color:var(--ink); }
 .auth-background,.auth-shade { position:absolute; inset:0; width:100%; height:100%; }
-.auth-background { height:510px; }
-.auth-shade { height:540px; background:linear-gradient(180deg,var(--hero-top) 0%,var(--hero-top) 33%,var(--hero-middle) 60%,var(--hero-middle) 69%,var(--bg)); }
+.auth-background { min-height:490px; transform:scale(1.035); transform-origin:50% 40%; }
+.auth-shade { background:linear-gradient(180deg,var(--hero-top) 0%,var(--hero-top) 14%,var(--hero-middle) 32%,var(--hero-soft) 44%,var(--hero-mid) 54%,var(--hero-top) 74%,var(--bg) 90%,var(--bg) 100%); }
 .auth-scroll { height:100%; position:relative; }
-.auth-content { min-height:var(--app-height,100vh); padding:calc(var(--capsule-bottom,64px) + 16px) 30px calc(24px + env(safe-area-inset-bottom)); box-sizing:border-box; display:flex; flex-direction:column; }
+.auth-content { min-height:var(--auth-height); padding:calc(var(--capsule-bottom,64px) + 18px) 26px calc(28px + env(safe-area-inset-bottom,0px)); box-sizing:border-box; display:flex; flex-direction:column; }
 .auth-top { display:flex; align-items:center; justify-content:space-between; font-size:12px; letter-spacing:3px; }
-.auth-top button { padding:12px 0 12px 16px; margin:0; font-size:12px; line-height:1.6; color:var(--muted); background:transparent; letter-spacing:0; }
+.auth-top button { min-height:44px; padding:10px 0 10px 16px; margin:0; font-size:12px; line-height:1.6; color:var(--muted); background:transparent; letter-spacing:0; }
 button::after { border:0; }
-.auth-heading { margin-top:24px; min-height:260px; }
-.auth-eyebrow { display:block; font-size:9px; letter-spacing:2px; color:var(--muted); margin-bottom:20px; }
-.auth-title { display:block; font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:36px; letter-spacing:2px; line-height:1.6; }
-.auth-subtitle { display:block; font-weight:500; text-shadow:0 1px 6px var(--bg); white-space:pre-line; font-family:var(--font-heading); margin-top:18px; font-size:16px; line-height:2; color:var(--ink); }
-.auth-letter { background:var(--surface-glass); border:1px solid var(--paper); border-radius:10px; padding:18px 20px; margin:10px 0 20px; font-family:var(--font-heading); font-size:13px; line-height:2.1; }
-.auth-letter text { display:block; }
-.auth-actions { margin-top:auto; }
-.auth-action { margin-top:12px; }
-.auth-consent { display:flex; align-items:center; font-size:11px; line-height:1.9; color:var(--muted); }
-.auth-check { flex-shrink:0; width:44px; height:44px; padding:13px; margin:0 4px 0 -13px; display:flex; align-items:center; justify-content:center; background:transparent; }
+.auth-main { position:relative; flex:1; display:flex; flex-direction:column; justify-content:center; padding:36px 0 76px; }
+.auth-heading { margin-top:0; }
+.auth-title { display:block; font-family:var(--font-heading); font-size:var(--type-title); font-weight:500; line-height:1.5; }
+.auth-subtitle { display:block; max-width:24em; margin-top:14px; font-family:var(--font-body); font-size:var(--type-subtitle); font-weight:400; line-height:1.8; color:var(--ink); text-shadow:0 1px 8px var(--bg); }
+.auth-entry { margin-top:26px; }
+.auth-quote-scene { position:relative; z-index:1; margin:0 2px 18px; }
+.auth-quote-plane { position:absolute; inset:0; border:1px solid var(--quote-border); border-radius:10px; background:linear-gradient(150deg,var(--quote-fill-a),var(--quote-fill-b)); box-shadow:var(--quote-inset),0 3px 0 rgba(72,84,101,.08),0 16px 28px rgba(41,55,75,.12); transform:perspective(900px) rotateX(5deg) rotateY(-3deg); transform-origin:center bottom; pointer-events:none; }
+.auth-quote-passage { position:relative; padding:27px 31px 25px; }
+.auth-quote-mark { position:absolute; font-family:Georgia,'Times New Roman',serif; font-size:40px; font-weight:400; line-height:1; color:var(--accent); opacity:.45; pointer-events:none; }
+.auth-quote-open { left:13px; top:10px; }
+.auth-quote-close { right:13px; bottom:0; }
+.auth-quote-copy { display:block; font-family:var(--font-heading); font-size:var(--type-card); font-weight:400; line-height:1.95; color:var(--ink); }
+.auth-actions { position:relative; z-index:0; }
+.auth-action { margin-top:10px; }
+.auth-consent { display:flex; align-items:center; gap:0; min-height:44px; font-family:var(--font-body); font-size:var(--type-subtitle); line-height:1.7; color:var(--muted); }
+.auth-consent-copy { display:flex; align-items:center; flex-wrap:wrap; column-gap:4px; flex:1; min-width:0; }
+.auth-check { flex:0 0 44px; width:44px; height:44px; padding:13px; margin:0; display:flex; align-items:center; justify-content:center; background:transparent; }
 .auth-check view { width:16px; height:16px; border:1px solid #8a947e; border-radius:4px; display:flex; align-items:center; justify-content:center; }
 .auth-check .checked { background:var(--accent); border-color:var(--accent); }
-.auth-policy { display:inline; padding:0; margin:0 0 0 3px; background:transparent; color:var(--accent); font-size:11px; line-height:1.9; }
-.auth-note { display:block; margin-top:10px; text-align:center; font-size:10px; line-height:1.8; color:var(--muted); }
-.auth-signature { text-align:center; font-size:9px; letter-spacing:3px; color:var(--muted); margin-top:24px; }
+.auth-policy { display:inline-flex; align-items:center; min-height:44px; max-width:100%; padding:0; margin:0; background:transparent; color:var(--action-text); font-family:inherit; font-size:inherit; line-height:1.7; text-decoration:underline; text-underline-offset:3px; }
 .auth-connection { display:flex; align-items:center; gap:10px; font-size:12px; }
 .auth-connection button { margin:0 0 0 auto; font-size:12px; color:var(--accent); background:transparent; }
-@media(max-height:740px) { .auth-heading { margin-top:24px; } .auth-letter { margin:22px 0 28px; } .auth-title { font-size:32px; } .auth-signature { margin-top:24px; } }
-.auth-new-demo { width:100%; text-align:center; background:transparent; color:var(--accent); font-size:12px; line-height:1.7; margin:8px auto 0; min-height:44px; padding:12px; }
-.auth-new-demo[disabled] { color:var(--muted); }
+.auth-welcome button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+.auth-welcome button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.auth-control-pressed,.auth-check:active,.auth-policy:active { opacity:.65; }
+@media(max-width:350px) { .auth-content { padding-left:22px; padding-right:22px; } .auth-quote-passage { padding-left:26px; padding-right:26px; } }
+@media(max-height:740px) { .auth-main { padding-top:28px; padding-bottom:44px; } .auth-entry { margin-top:22px; } .auth-quote-scene { margin-bottom:16px; } }
+/* #ifdef H5 */
+.auth-scroll :deep(.uni-scroll-view) { overscroll-behavior:contain; }
+@supports(height:100dvh) { .auth-welcome { --auth-height:100dvh; } }
+/* #endif */
+@media(prefers-reduced-motion:reduce) { .auth-welcome button { transition:none; } }
 </style>

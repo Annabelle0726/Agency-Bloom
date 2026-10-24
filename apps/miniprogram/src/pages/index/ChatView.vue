@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { chatAtmosphere } from '../../chat-atmosphere'
 import { PERSPECTIVE_PROTOTYPE, publicPerspective, type PerspectiveAction } from '../../perspective-shift'
 import SvgIcon from '../../components/SvgIcon.vue'
 import ChatHeader from './chat/ChatHeader.vue'
@@ -60,6 +61,7 @@ const props = defineProps<{
   themeId: string
 }>()
 const selectionIndex = ref<number | null>(null)
+const atmosphere = computed(() => chatAtmosphere(props.themeId))
 function selectMessage(index: number, active: boolean) {
   if (active) { selectionIndex.value = index; emit('selection', true) }
   else if (selectionIndex.value === index) { selectionIndex.value = null; emit('selection', false) }
@@ -88,6 +90,8 @@ const emit = defineEmits<{
 
 <template>
   <view class="chat-content">
+    <image class="chat-atmosphere" :src="atmosphere" mode="aspectFill" aria-hidden="true" />
+    <view class="chat-surface">
     <ChatHeader
       :busy="busy"
       :sending="sending"
@@ -167,5 +171,6 @@ const emit = defineEmits<{
       :reaction="insightReaction"
       @react="emit('reactInsight', $event)"
     />
+    </view>
   </view>
 </template>

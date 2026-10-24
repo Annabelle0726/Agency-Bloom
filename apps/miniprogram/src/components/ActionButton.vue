@@ -5,12 +5,12 @@ defineEmits<{ click: [] }>()
 </script>
 <template>
   <button class="action-button" :class="[`action-${kind}`, { 'is-loading': loading, 'has-arrow': arrow, 'is-locked': locked && !disabled }]" :disabled="disabled || loading || locked" :loading="loading" hover-class="action-pressed" :hover-start-time="0" :hover-stay-time="70" @click="!disabled && !loading && !locked && $emit('click')">
-    <text class="action-label"><slot /></text><view v-if="arrow && !loading" class="action-arrow"><SvgIcon name="arrow" :light="(kind === 'primary' || kind === 'wechat' || kind === 'quiet') && (!disabled || locked)" :tone="disabled && !locked ? 'muted' : 'ink'" :color="kind === 'opening' ? '#514331' : kind === 'auth-wechat' ? (disabled || loading ? '#7b858c' : '#ffffff') : kind === 'auth-demo' ? (disabled || loading ? '#8a857a' : '#65543d') : undefined" :size="22" /></view>
+    <text class="action-label"><slot /></text><view v-if="arrow && !loading" class="action-arrow"><SvgIcon :name="kind === 'auth-wechat' || kind === 'auth-demo' ? 'chevron' : 'arrow'" :light="(kind === 'primary' || kind === 'wechat' || kind === 'quiet' || kind === 'auth-wechat') && (!disabled || locked)" :tone="disabled && !locked ? 'muted' : 'ink'" :color="kind === 'opening' ? '#514331' : undefined" :size="kind === 'auth-wechat' || kind === 'auth-demo' ? 18 : 22" /></view>
   </button>
 </template>
 
 <style scoped>
-.action-button { display:flex; align-items:center; justify-content:center; gap:14px; width:100%; min-height:58px; margin:0; padding:11px 18px 11px 24px; box-sizing:border-box; border-radius:var(--radius-button); font-size:15px; font-weight:500; line-height:1.6; transition:transform var(--motion-press), opacity var(--motion-press), background var(--motion-press), box-shadow var(--motion-press); touch-action:manipulation; }
+.action-button { display:flex; align-items:center; justify-content:center; gap:14px; width:100%; min-height:58px; margin:0; padding:11px 18px 11px 24px; box-sizing:border-box; border-radius:var(--radius-button); font-family:var(--font-body); font-size:var(--type-button); font-weight:500; line-height:1.6; transition:transform var(--motion-press), opacity var(--motion-press), background var(--motion-press), box-shadow var(--motion-press); touch-action:manipulation; }
 .has-arrow { justify-content:space-between; }
 .action-label { display:block; letter-spacing:.5px; }
 .action-button::after { border: none; }
@@ -61,10 +61,10 @@ defineEmits<{ click: [] }>()
 /* Opening-only champagne finish echoes the meadow sunlight. */
 .action-opening {
   position:relative; overflow:hidden; justify-content:center; gap:18px;
-  min-height:54px; padding:13px 26px; border-radius:999px;
+  min-height:54px; padding:13px 26px; border-radius:var(--radius-button);
   border:1px solid rgba(255,244,211,.85);
   background:linear-gradient(165deg,#fff7e3 0%,#f3e3bd 38%,#ddc493 100%);
-  color:#514331; font-size:16px; font-weight:500; text-shadow:0 1px 0 rgba(255,255,255,.5);
+  color:#514331; font-size:var(--type-button); font-weight:500; text-shadow:0 1px 0 rgba(255,255,255,.5);
   box-shadow:0 7px 18px rgba(17,27,20,.23),0 2px 4px rgba(17,27,20,.12),inset 0 1px 0 rgba(255,255,255,.9),inset 0 -2px 3px rgba(141,107,53,.16);
   transition:transform 150ms ease,box-shadow 150ms ease;
 }
@@ -73,7 +73,7 @@ defineEmits<{ click: [] }>()
   border:1px solid rgba(255,253,242,.24);
   background:linear-gradient(180deg,rgba(255,255,255,.23),rgba(255,255,255,0) 48%);
 }
-.action-opening .action-label { position:relative; font-family:var(--font-heading); letter-spacing:1.5px; }
+.action-opening .action-label { position:relative; font-family:inherit; letter-spacing:.5px; }
 .action-opening .action-arrow { position:relative; width:22px; height:22px; border:0; border-radius:0; transition:transform 150ms ease; }
 .action-opening.action-pressed, .action-opening:active:not([disabled]) {
   transform:translateY(1px) scale(.985);
@@ -82,34 +82,32 @@ defineEmits<{ click: [] }>()
 .action-opening:focus-visible { outline:2px solid #fff9e9; outline-offset:4px; }
 /* Auth-only finishes follow the mountain mist and warm morning light. */
 .action-auth-wechat, .action-auth-demo {
-  position:relative; overflow:hidden; justify-content:center; gap:18px;
-  min-height:54px; padding:13px 26px; border-radius:999px;
-  font-size:16px; font-weight:500;
-  transition:transform 150ms ease,box-shadow 150ms ease;
+  position:relative; overflow:hidden; justify-content:space-between; gap:16px;
+  min-height:56px; padding:11px 16px 11px 20px; border-radius:var(--radius-button);
+  font-size:var(--type-button); font-weight:500;
+  transition:transform 130ms cubic-bezier(.23,1,.32,1),background 130ms ease-out,box-shadow 130ms ease-out;
 }
 .action-auth-wechat {
-  background:linear-gradient(160deg,#81949e 0%,#526e7c 42%,#354f60 100%);
-  color:#fff; border:1px solid #9eafb7; text-shadow:0 1px 2px rgba(24,43,55,.2);
-  box-shadow:0 5px 13px rgba(43,66,82,.16),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 3px rgba(22,42,56,.16);
+  background:linear-gradient(150deg,var(--button-fill),var(--ink));
+  color:#fff; border:1px solid var(--button-fill); text-shadow:none;
+  box-shadow:0 6px 16px rgba(41,55,75,.14),inset 0 1px 0 rgba(255,255,255,.12);
 }
 .action-auth-demo {
-  background:linear-gradient(160deg,#fffaf0 0%,#f5e9d2 45%,#e9d7b6 100%);
-  color:#65543d; border:1px solid #dfcda9; text-shadow:0 1px 0 rgba(255,255,255,.7);
-  box-shadow:0 3px 9px rgba(100,83,54,.09),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -2px 3px rgba(141,107,53,.09);
+  background:var(--paper); color:var(--ink); border:1px solid var(--line); text-shadow:none;
+  box-shadow:0 1px 2px rgba(41,55,75,.04);
 }
 .action-auth-wechat::before, .action-auth-demo::before {
-  content:''; position:absolute; inset:1px; border-radius:inherit; pointer-events:none;
-  border:1px solid rgba(255,255,255,.18);
-  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 48%);
+  content:none;
 }
-.action-auth-wechat .action-label, .action-auth-demo .action-label { position:relative; font-family:var(--font-heading); letter-spacing:1px; }
-.action-auth-wechat .action-arrow, .action-auth-demo .action-arrow { position:relative; width:22px; height:22px; border:0; border-radius:0; transition:transform 150ms ease; }
-.action-auth-wechat[disabled] { background:linear-gradient(160deg,#e6ebee,#d7dfe4); border-color:#d0d9df; color:#7b858c; text-shadow:none; box-shadow:inset 0 1px 0 rgba(255,255,255,.7); }
-.action-auth-demo[disabled] { background:linear-gradient(160deg,#f7f4ed,#eae4d8); border-color:#e1dbcf; color:#8a857a; text-shadow:none; box-shadow:inset 0 1px 0 rgba(255,255,255,.8); }
+.action-auth-wechat .action-label, .action-auth-demo .action-label { position:relative; flex:1; min-width:0; text-align:left; font-family:inherit; letter-spacing:.2px; }
+.action-auth-wechat .action-arrow, .action-auth-demo .action-arrow { position:relative; width:30px; height:30px; border:1px solid rgba(255,255,255,.22); border-radius:50%; background:rgba(255,255,255,.08); transition:transform 130ms cubic-bezier(.23,1,.32,1); }
+.action-auth-demo .action-arrow { border-color:var(--line); background:var(--soft); }
+.action-auth-wechat[disabled], .action-auth-demo[disabled] { background:var(--soft); border-color:var(--line); color:var(--muted); text-shadow:none; box-shadow:none; }
+.action-auth-wechat[disabled] .action-arrow, .action-auth-demo[disabled] .action-arrow { opacity:1; border-color:var(--line); background:transparent; }
 .action-auth-wechat.action-pressed:not([disabled]), .action-auth-demo.action-pressed:not([disabled]),
 .action-auth-wechat:active:not([disabled]), .action-auth-demo:active:not([disabled]) {
-  transform:translateY(1px) scale(.985);
-  box-shadow:0 2px 5px rgba(43,53,61,.12),inset 0 1px 3px rgba(43,53,61,.16);
+  transform:translateY(1px) scale(.98);
+  box-shadow:0 1px 3px rgba(41,55,75,.09);
 }
 .action-auth-wechat:focus-visible, .action-auth-demo:focus-visible { outline:2px solid #526e7c; outline-offset:3px; }
 @media (prefers-reduced-motion: reduce) {

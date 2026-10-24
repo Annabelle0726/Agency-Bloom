@@ -7,7 +7,10 @@
   --bloom-online: #58a06c; --bloom-waiting: #d8a33e; --bloom-offline: #cf5f5b;
   --shadow: 0 8px 30px rgba(37,49,72,.035); --app-height: 100vh;
   --font-heading: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'SimSun', serif;
-  background: #eeeff3; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --type-title:24px; --type-section:18px; --type-card:16px;
+  --type-body:14px; --type-subtitle:13px; --type-button:14px; --type-caption:12px;
+  background:var(--bg); font-family:var(--font-body);
 }
 .preview-stage.dark {
   --bg: #151e30; --paper: #202b40; --ink: #edf1f8; --muted: #a0aec3; --line: #354157;
@@ -15,5 +18,5 @@
   --selection: #2d3c59; --selection-border: #8da7d2; --button-fill: #516580; --disabled-fill: #283449; --shadow: none;
   --bloom-online: #75c78c; --bloom-waiting: #eac263; --bloom-offline: #ef8a84;
   --icon-filter: brightness(0) invert(.91);
-  background: #111827;
+  background:var(--bg);
 }

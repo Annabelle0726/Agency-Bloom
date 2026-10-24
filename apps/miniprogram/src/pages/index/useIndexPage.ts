@@ -23,6 +23,7 @@ import type {ConversationAction, ConversationMenuAction} from '../../conversatio
 import {createAvatarStore} from '../../avatar'
 import {createThemePreference, formatThemeBoundary, personalSpaceTheme} from '../../theme-preference'
 import {createThemeClock} from '../../theme-clock'
+import {createThemePaintCache} from '../../theme-paint'
 import {newChatStarters, experimentFields, editFields, todayLabel, greeting} from './data'
 
 
@@ -133,6 +134,11 @@ export function useIndexPage() {
     write: (key, value) => uni.setStorageSync(key, value),
     remove: key => uni.removeStorageSync(key),
   })
+  const themePaint = createThemePaintCache({
+    read: key => uni.getStorageSync(key),
+    write: (key, value) => uni.setStorageSync(key, value),
+    remove: key => uni.removeStorageSync(key),
+  })
   const themeClock = createThemeClock()
   themeClock.start()
   onUnmounted(themeClock.stop)
@@ -148,6 +154,9 @@ export function useIndexPage() {
   })
   const nextThemeBoundary = computed(() => formatThemeBoundary(themeSlot.value.end))
   const desiredTheme = computed(() => {
+    // Account restoration can take a full network round trip. Its first view
+    // uses the local paint hint rather than briefly rendering Morning Mist.
+    if (screen.value === 'restore') return themePaint.read(token.value, themeSlot.value.start)
     if (screen.value !== 'space') return themeForSession(user.value, false)
     return personalSpaceTheme(user.value, {
       auto: themeAuto.value,
@@ -169,6 +178,20 @@ export function useIndexPage() {
     if (id) themePreference.pruneOverride(id, slot)
   }, { immediate: true })
   const activeThemeStyle = computed(() => themeStyle(activeTheme.value))
+  watch([activeTheme, themeAuto, themeOverride, () => themeSlot.value.end, () => screen.value], () => {
+    if (screen.value === 'space' && user.value && token.value) {
+      themePaint.remember(token.value, activeTheme.value.id, themeAuto.value, themeOverride.value ? themeSlot.value.end : 0)
+    }
+    // #ifdef H5
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement.style
+      root.setProperty('--startup-bg', activeTheme.value.palette.bg)
+      root.setProperty('--startup-ink', activeTheme.value.palette.ink)
+      root.backgroundColor = activeTheme.value.palette.bg
+      root.colorScheme = activeTheme.value.dark ? 'dark' : 'light'
+    }
+    // #endif
+  }, { immediate: true })
   const dark = computed(() => activeTheme.value.dark)
   const applyingTheme = ref<ThemeId | null>(null)
   const themeAutoBusy = ref(false)
@@ -183,6 +206,11 @@ export function useIndexPage() {
     uni.setNavigationBarColor({
       frontColor: dark.value ? '#ffffff' : '#000000',
       backgroundColor: activeTheme.value.palette.bg,
+    })
+    uni.setBackgroundColor?.({
+      backgroundColor: activeTheme.value.palette.bg,
+      backgroundColorTop: activeTheme.value.palette.bg,
+      backgroundColorBottom: activeTheme.value.palette.bg,
     })
   }
 
@@ -423,6 +451,7 @@ export function useIndexPage() {
   }
 
   function clearSession() {
+    themePaint.clear()
     speech.reset()
     conversationAction.value = null
     for (const key of creatingDrafts.value) draftCreationCancelled.add(key)

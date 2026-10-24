@@ -115,14 +115,14 @@ onUnmounted(() => clearTimeout(timer))
 .moment-brand { font-family: var(--font-heading); font-size: 15px; color: var(--accent); letter-spacing: .3px; }
 .moment-heading { display: flex; align-items: center; gap: 16px; padding: 22px 0 20px; }
 .moment-heading-copy { flex: 1; min-width: 0; }
-.moment-title { display: block; font-family: var(--font-heading); font-size: 23px; line-height: 1.45; overflow-wrap: anywhere; }
+.moment-title { display:block; font-family:var(--font-heading); font-size:var(--type-section); font-weight:500; line-height:1.5; overflow-wrap:anywhere; }
 .moment-intro { display: block; margin-top: 10px; font-size: 14px; line-height: 1.8; color: var(--muted); white-space: pre-line; }
 /* A small photograph, bounded independently of any generated text length. */
 .moment-picture { flex: 0 0 76px; width: 76px; height: 94px; box-sizing: border-box; padding: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; transform: rotate(3deg); }
 .moment-image { display: block; width: 100%; height: 100%; border-radius: 6px; background: var(--soft); }
 .moment-flavor { display: block; margin-bottom: 8px; font-size: 13px; color: var(--accent); line-height: 1.6; }
 .moment-detail { padding-bottom: 20px; }
-.moment-body { display: block; font-size: 15px; line-height: 1.85; white-space: pre-line; overflow-wrap: anywhere; }
+.moment-body { display:block; font-family:var(--font-body); font-size:var(--type-body); font-weight:400; line-height:1.8; white-space:pre-line; overflow-wrap:anywhere; }
 .moment-question { display: flex; flex-wrap: wrap; margin-top: 16px; font-family: var(--font-heading); font-size: 18px; line-height: 1.7; color: var(--accent); overflow-wrap: anywhere; }
 .moment-question > text { max-width: 100%; }
 .moment-phrase { white-space: nowrap; }
@@ -168,7 +168,7 @@ onUnmounted(() => clearTimeout(timer))
 @media (max-width: 360px) {
   .bloom-moment { padding: 16px; }
   .moment-heading { gap: 12px; }
-  .moment-title { font-size: 21px; }
+  .moment-title { font-size:var(--type-section); }
   .moment-picture { flex-basis: 62px; width: 62px; height: 80px; }
 }
 @media (prefers-reduced-motion: reduce) { .moment-fold-icon { transition: none; } .bloom-moment button { transition: none; } .is-arriving .moment-detail { animation: none; } .moment-pressed { transform: none; } }

@@ -49,6 +49,12 @@ function contrast(a: string, b: string) {
   const l = [luminance(a), luminance(b)].sort((x, y) => y - x)
   return (l[0] + .05) / (l[1] + .05)
 }
+it('keeps compact action labels readable on their soft theme background', () => {
+  for (const theme of themes) {
+    const style = themeStyle(theme)
+    expect(contrast(style['--action-text'] || style['--accent'], style['--soft']), theme.id + ' soft action label').toBeGreaterThanOrEqual(4.5)
+  }
+})
 it('keeps body, muted text and button labels readable in every palette', () => {
   for (const theme of themes) {
     const style = themeStyle(theme)

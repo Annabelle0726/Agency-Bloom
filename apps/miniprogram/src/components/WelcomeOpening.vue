@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import ActionButton from './ActionButton.vue'
+import SvgIcon from './SvgIcon.vue'
 const emit = defineEmits<{ start: [] }>()
 const current = ref(0)
 const reducedMotion = ref(false)
@@ -132,6 +133,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
       </view>
       <text v-if="current === slides.length - 1" class="story-note">{{ slides[current].note }}</text>
       <ActionButton v-if="current === slides.length - 1" kind="opening" @click="next">开始我的探索</ActionButton>
+      <button v-else class="story-next" hover-class="pressed" :hover-start-time="0" @click="next"><text>继续阅读</text><SvgIcon name="arrow" light :size="17" /></button>
     </view>
   </view>
 </template>
@@ -193,7 +195,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
 .story-body { font-family:var(--font-heading); font-size:14px; line-height:2.15; margin-top:22px; }
 .story-body-line:last-child { color:var(--story-accent); }
 .story-closing { align-self:flex-end; max-width:86%; margin-top:auto; padding-top:40px; white-space:pre-line; text-align:right; font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:19px; font-weight:400; line-height:1.8; letter-spacing:1px; color:#fffaf1; text-shadow:0 2px 12px rgba(14,28,32,.6); }
-.scene-0 .story-closing { max-width:70%; font-size:18px; }
+.scene-0 .story-closing { max-width:100%; font-size:var(--type-section); }
 .scene-1 .story-page { padding-top:48px; }
 .scene-2 .story-title { font-size:27px; }
 .scene-3 .story-body { margin-left:24px; }

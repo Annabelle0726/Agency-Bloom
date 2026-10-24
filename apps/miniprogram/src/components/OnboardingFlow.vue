@@ -321,7 +321,7 @@ defineExpose({ clearDraft })
 .selection-stack { gap:12px; }
 .flow-footer { background:var(--nav-glass); border-top:1px solid var(--line); padding-top:10px; box-shadow:none; }
 .selection-reassurance { display:block; text-align:center; color:var(--muted); font-size:11px; line-height:1.8; margin:0 0 9px; }
-.flow-footer :deep(.action-button) { border-radius:16px; }
+.flow-footer :deep(.action-button) { border-radius:var(--radius-button); }
 .flow-footer-detail { justify-content:space-between; }
 .flow-footer .flow-skip { color:var(--ink); font-size:12px; }
 .flow-footer .draft-link { font-size:10px; }
