@@ -3,10 +3,17 @@ import { computed } from 'vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
 import { resolveDiscoverVisuals } from '../../../visual-library'
 import { discoverAtmosphere } from '../../../discover-atmosphere'
+import { discoverScrollPose } from '../../../discover-scroll'
 import type { DiscoveryRecommendation } from '../../../discovery'
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
-const props = defineProps<{ themeId: string; recommendations: DiscoveryRecommendation[]; loading: boolean; error: string; loaded: boolean }>()
-const atmosphere = computed(() => discoverAtmosphere(props.themeId))
+const props = withDefaults(defineProps<{ themeId: string; scrollTop?: number; recommendations: DiscoveryRecommendation[]; loading: boolean; error: string; loaded: boolean }>(), { scrollTop: 0 })
+const petals = computed(() => discoverAtmosphere(props.themeId, 'petals'))
+const leaves = computed(() => discoverAtmosphere(props.themeId, 'leaves'))
+const botanicalStyles = computed(() => {
+  const pose = discoverScrollPose(props.scrollTop)
+  const style = (p: typeof pose.petals) => ({ transform: `translate3d(${p.x.toFixed(3)}px, ${p.y.toFixed(3)}px, 0) rotate(${p.rotation.toFixed(3)}deg)` })
+  return { petals: style(pose.petals), leaves: style(pose.leaves) }
+})
 const art = computed(() => resolveDiscoverVisuals(props.themeId))
 const cardSrc = (index: number) => art.value.cards[index]?.src || ''
 const labels = { continue: '延续探索', perspective: '换个角度', reality: '走向现实' }
@@ -16,7 +23,14 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
 
 <template>
   <view class="workspace discover-content bloom-content">
-    <image class="discover-atmosphere" :src="atmosphere" mode="aspectFill" aria-hidden="true" />
+    <view class="discover-atmosphere" aria-hidden="true">
+      <view class="discover-botanical discover-petals" :style="botanicalStyles.petals">
+        <image class="discover-botanical-art" :src="petals" mode="aspectFill" />
+      </view>
+      <view class="discover-botanical discover-leaves" :style="botanicalStyles.leaves">
+        <image class="discover-botanical-art" :src="leaves" mode="aspectFill" />
+      </view>
+    </view>
     <view class="discover-foreground">
     <view class="discover-intro">
       <text class="discover-title">给今天，留一点好奇</text>
@@ -55,7 +69,13 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
 /* Kept local to Discover: the Plan page still owns its atmospheric hero. */
 .theme-space .discover-content { padding: 8px 22px 32px; }
 .discover-content {
-  .discover-atmosphere { position: fixed; z-index: 0; top: 0; bottom: 0; left: 0; right: 0; margin: auto; width: 100%; max-width: 440px; height: 100vh; pointer-events: none; }
+  .discover-atmosphere { position: fixed; z-index: 0; top: 0; bottom: 0; left: 0; right: 0; margin: auto; width: 100%; max-width: 440px; height: 100vh; overflow: hidden; pointer-events: none; }
+  .discover-botanical { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; transition: transform 140ms cubic-bezier(.16, 1, .3, 1); will-change: transform; }
+  .discover-petals { transform-origin: 100% 0; }
+  .discover-leaves { transform-origin: 0 68%; }
+  .discover-botanical-art { display: block; width: 100%; height: 100%; transform: scale(.76); animation: discover-petal-breathe 16s ease-in-out infinite; will-change: transform, opacity; }
+  .discover-petals .discover-botanical-art { transform-origin: 100% 0; }
+  .discover-leaves .discover-botanical-art { transform-origin: 0 68%; animation-name: discover-leaf-breathe; animation-duration: 20s; animation-delay: -5s; }
   .discover-foreground { position: relative; z-index: 1; }
   .discover-intro { padding: 10px 0 24px; }
   .discover-title { display:block; font-family:var(--font-heading); color:var(--ink); font-size:var(--type-title); font-weight:500; line-height:1.5; }
@@ -83,6 +103,19 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
   .discovery-status { color: var(--muted); font-size: 14px; line-height: 1.7; }
   .bloom-history { margin-top: 12px; padding: 14px 0; }
   .bloom-history > text { font-size: 14px; }
+}
+/* Scroll moves the outer layer; the smaller artwork breathes independently. */
+@keyframes discover-petal-breathe {
+  0%, 100% { transform: scale(.76); opacity: .96; }
+  50% { transform: scale(.762); opacity: 1; }
+}
+@keyframes discover-leaf-breathe {
+  0%, 100% { transform: scale(.76); opacity: 1; }
+  50% { transform: scale(.762); opacity: .96; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .discover-content .discover-botanical { transform: none !important; transition: none; will-change: auto; }
+  .discover-content .discover-botanical-art { animation: none; transform: scale(.76); opacity: 1; will-change: auto; }
 }
 @media (max-width: 360px) {
   .theme-space .discover-content { padding-left: 16px; padding-right: 16px; }

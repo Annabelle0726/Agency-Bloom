@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide } from 'vue'
+import { computed, provide, ref, watch } from 'vue'
 import { onPageScroll } from '@dcloudio/uni-app'
 import SvgIcon from '../../components/SvgIcon.vue'
 import { ICON_PALETTE_KEY } from '../../icon-system'
@@ -167,7 +167,12 @@ const {
 } = useIndexPage()
 // Keep scroll registration in the page entry: the Mini Program compiler uses
 // this import to enable page-scroll lifecycle dispatch.
-onPageScroll(handleChatScroll)
+const discoverScrollTop = ref(0)
+watch(tab, () => { discoverScrollTop.value = 0 }, { flush: 'sync' })
+onPageScroll(event => {
+  if (screen.value === 'space' && tab.value === 'discover') discoverScrollTop.value = event.scrollTop
+  handleChatScroll(event)
+})
 
 provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
 provide(SPEECH_KEY, speech)
@@ -255,7 +260,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                       @send="sendChat" @cancel="cancelChat" @focus="messageSelectionOpen = false" @layout="composerHeight = $event">
           <template #notice><SpeechConsentNotice /></template>
         </ChatComposer>
-        <DiscoverView v-else-if="tab === 'discover'" :theme-id="activeTheme.id" :recommendations="discovery.recommendations.value"
+        <DiscoverView v-else-if="tab === 'discover'" :scroll-top="discoverScrollTop" :theme-id="activeTheme.id" :recommendations="discovery.recommendations.value"
                       :loading="discovery.loading.value" :error="discovery.error.value" :loaded="discovery.loaded.value"
                       @explore="explorePrompt" @dismiss="discovery.dismiss" @rotate="discovery.rotate" @retry="discovery.load">
           <template #moment>
