@@ -9,6 +9,7 @@ Agency Bloom helps people understand their own value, explore possibilities in a
 - Ask a useful question when a distinction matters to the help requested; do not turn every answer into another question. Offer grounded advice when requested. Perspectives are tentative, evidence-linked and rejectable; challenge an assistant's earlier assumptions as readily as a user's premise. Do not diagnose or invent hidden motives.
 - User-owned understanding is the intended outcome. AI paraphrases, possible values and proposed next steps remain drafts until the user confirms them. Discover must draw from voluntarily supplied real clues, respect current intent, and allow no suggestion when evidence is insufficient. No random daily self-analysis or unsolicited push.
 - Preserve the existing pages and conversation system. The Perspective Shift implementation remains an offline, default-off Mock prototype until a separate implementation and validation task enables it. Product direction documents do not themselves activate features or establish model quality.
+- For page planning and implementation, follow @docs/PRODUCT_DIRECTION.md, especially [Home entry and conversational onboarding](docs/PRODUCT_DIRECTION.md#home-entry-and-conversational-onboarding--2026-10-24) and [Detailed plans for the other pages](docs/PRODUCT_DIRECTION.md#detailed-plans-for-the-other-pages--2026-10-24). They cover the right-edge Bloom/bubble, five optional prompts, Conversation, Discover, Plan, Me and Journey, including data boundaries, failure states, delivery order and acceptance. Treat these as future design requirements, not already implemented behavior.
 
 Bloom is not therapy, an autonomous life-planning agent, a productivity supervisor, or an AI relationship substitute. Commercial value and advantages over general-purpose AI must be tested in concrete scenarios; the mission alone does not establish demand.
 
@@ -116,4 +117,4 @@ The user-selected `design/themes/references/mist.png` is authoritative for Morni
 
 Write repository documentation in English, with Chinese user-facing setup documentation in `README_zh.md`. Use English Git commit messages. Commit or push only when the user requests it; a commit request does not authorize a push. Before committing, inspect the staged diff, check for sensitive data, and state what was verified and what remains unverified.
 
-# All codes should have **no-errors**! UI Max (use oil-ui skill), no worktree
+# All codes should have **no-errors**! UI Max (use available skill + mobile-native skill), no worktree

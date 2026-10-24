@@ -7,3 +7,5 @@ Use `AGENT.md` as the shared repository guide. Keep project-specific additions t
 @Agency-Bloom.md
 
 @docs/DESIGN.md
+
+@docs/PRODUCT_DIRECTION.md

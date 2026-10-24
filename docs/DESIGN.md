@@ -140,6 +140,17 @@ Chat uses faint local SVG water contours, distinct from Discover's botanical for
 
 Startup restores a small session-scoped paint hint synchronously while account data is loading. The hint contains a non-authenticating session tag, palette ID, automatic-mode flag, and temporary override expiry; it never contains another copy of the credential. Automatic hints resolve against the current local time slot, and logout clears them. H5 injects an early head script from the same palette definitions and selection functions, then keeps the document canvas aligned with the active theme. Mini Program views use the same synchronous selection and update the native navigation and page backgrounds. Onboarding and registration continue to use Morning Mist. Evidence and isolated regression captures are in `output/ui-ux-polish-20261024/`; native compiler checks do not imply simulator acceptance.
 
+## 2026-10-24 Conversation drawer interaction and spacing
+
+| Before | After | Why |
+| --- | --- | --- |
+| History refresh set the page-wide busy flag and disabled the neighboring chat title | Drawer opens immediately; loading and errors stay within the drawer | Navigation should not repaint an unrelated control |
+| Root scrolling remained available behind the drawer; enhanced scrolling could expose its default overscroll surface | Page metadata locks root scrolling; native bounce/pull refresh are disabled and scroll layers use the paper color | Prevent background scroll chaining and a white overscroll surface |
+| New-conversation action scrolled away and used a looping gem glow | Fixed drawer action with a local SVG plus, quiet CTA fill, and a 120ms press response | A frequent action should stay reachable without ambient motion |
+| Header and tab spacing stacked; each card added 10px above its 44px actions and 14px below | Header spacing reduced 18px; a 32px visible tab sits in a 44px target; card actions have no extra outer margin or bottom padding | Recover reading space while retaining touch targets |
+
+With the same 390px fixture, the first card moves 38px upward and a pinned card becomes 24px shorter. The new action, search, rows, and action labels retain their semantic type tokens. Pin status uses a small theme-colored SVG and label, rather than a bright surface. Disabled row actions remain transparent instead of inheriting a platform gray slab. H5 makes drawer controls keyboard reachable, traps Tab within the open drawer, supports Enter/Space and Escape, and returns focus when it closes; native controls retain platform behavior. H5 coarse-pointer search uses 16px to avoid focus zoom. Native overscroll and keyboard feel still need hardware acceptance.
+
 ## 2026-10-24 Discover botanical motion
 
 Discover's botanical decoration follows native page scrolling along two cubic Bezier paths. This user-selected direction supersedes the automatic sway prototype. The page retains natural scrolling, without gesture interception, scroll locking or extra decorative scroll space. Text and cards follow their normal document flow.
