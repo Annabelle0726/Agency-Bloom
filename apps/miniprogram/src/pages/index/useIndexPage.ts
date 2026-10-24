@@ -577,7 +577,7 @@ export function useIndexPage() {
     const first = conversations.value.find(c => c.issue_id === current.value?.id)
     if (first) await activateConversation(first, false)
     screen.value = 'space'
-    tab.value = 'now'
+    tab.value = 'chat'
     if (user.value) {
       try {
         uni.removeStorageSync(draftKeyFor(user.value.id))
@@ -590,7 +590,7 @@ export function useIndexPage() {
 
   async function saveQuestions(draftForm: Onboarding) {
     if (!user.value || screen.value !== 'onboard') return
-    Object.assign(form, draftForm)
+    Object.assign(form, draftForm, { support_style: canonicalSupportStyle(draftForm.support_style || user.value.support_style) })
     await guarded(saveInitial, 'auth')
   }
 
@@ -643,7 +643,8 @@ export function useIndexPage() {
   }
 
   async function selectTab(nextTab: typeof tab.value) {
-    if (nextTab === 'chat' && !current.value && !isDrafting.value) { beginOnboarding(); return }
+    if (nextTab === 'chat' && screen.value === 'onboard') pauseOnboarding()
+    if (nextTab === 'chat' && !current.value && !isDrafting.value) { startNewChat(); return }
     if (tab.value === nextTab) return
     error.value = '';
     if (nextTab !== 'chat') modePickerOpen.value = false
@@ -1054,8 +1055,9 @@ export function useIndexPage() {
     })
   }
 
-  async function logOut() {
-    const approved = await confirm('退出登录', '退出后本机的草稿和开场进度会保留，登录后可以继续')
+  async function logOut(restartDemo = false) {
+    if (restartDemo && !config.value.dev_auth) return
+    const approved = restartDemo || await confirm('退出登录', '退出后本机的草稿和开场进度会保留，登录后可以继续')
     if (!approved) return
     await guarded(async () => {
       if (config.value.dev_auth && user.value && demoCredential.value?.userId !== user.value.id) {
@@ -1066,6 +1068,7 @@ export function useIndexPage() {
       }
       await request('POST', '/auth/logout');
       clearSession()
+      if (restartDemo) screen.value = 'auth'
     })
   }
 

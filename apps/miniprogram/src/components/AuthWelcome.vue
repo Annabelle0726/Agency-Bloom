@@ -3,15 +3,16 @@ import { ref } from 'vue'
 import type { ThemeDefinition } from '../themes'
 import ActionButton from './ActionButton.vue'
 import SvgIcon from './SvgIcon.vue'
-defineProps<{ theme: ThemeDefinition; busy: boolean; error: string; devAuth: boolean; ready: boolean; offline: boolean; connecting: boolean; wechatAuth?: boolean; hasDemo: boolean }>()
-const emit = defineEmits<{ login: [mode: 'wechat' | 'demo-new' | 'demo-resume']; replay: []; privacy: []; retry: [] }>()
+export interface AuthWelcomeProps { theme: ThemeDefinition; busy: boolean; error: string; devAuth: boolean; ready: boolean; offline: boolean; connecting: boolean; wechatAuth?: boolean; hasDemo: boolean }
+defineProps<AuthWelcomeProps>()
+const emit = defineEmits<{ login: [mode: 'wechat' | 'demo-new' | 'demo-resume']; replay: []; privacy: []; retry: []; backgroundReady: [] }>()
 const accepted = ref(false)
 function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value) emit('login', mode) }
 </script>
 
 <template>
   <view class="auth-welcome">
-    <image class="auth-background" :src="theme.image" mode="aspectFill" aria-hidden="true" />
+    <image class="auth-background" :src="theme.image" mode="aspectFill" aria-hidden="true" @load="emit('backgroundReady')" @error="emit('backgroundReady')" />
     <view class="auth-shade" />
     <scroll-view class="auth-scroll" scroll-y :show-scrollbar="false">
       <view class="auth-content">
@@ -38,6 +39,8 @@ function login(mode: 'wechat' | 'demo-new' | 'demo-resume') { if (accepted.value
           <view class="auth-action"><ActionButton kind="auth-wechat" :disabled="!accepted || wechatAuth === false || connecting" :loading="busy" @click="login('wechat')">微信登录 / 注册</ActionButton></view>
           <!-- #endif -->
           <view v-if="devAuth" class="auth-action"><ActionButton kind="auth-demo" :disabled="!accepted || connecting" :loading="busy" @click="login(hasDemo ? 'demo-resume' : 'demo-new')">{{ hasDemo ? '继续本机演示' : '创建演示账号' }}</ActionButton></view>
+          <button v-if="devAuth && hasDemo" class="auth-register-again" :disabled="!accepted || connecting || busy"
+            hover-class="auth-control-pressed" :hover-start-time="0" @click="login('demo-new')">重新注册，开始新一轮测试</button>
         </view>
         </view>
         </view>
@@ -70,6 +73,8 @@ button::after { border:0; }
 .auth-quote-copy { display:block; font-family:var(--font-heading); font-size:var(--type-card); font-weight:400; line-height:1.95; color:var(--ink); }
 .auth-actions { position:relative; z-index:0; }
 .auth-action { margin-top:10px; }
+.auth-register-again { display:block; width:100%; min-height:44px; margin:8px 0 0; padding:12px 8px; background:transparent; color:var(--ink); font-family:var(--font-body); font-size:var(--type-button); line-height:1.6; }
+.auth-register-again[disabled] { color:var(--muted); opacity:.55; }
 .auth-consent { display:flex; align-items:center; gap:0; min-height:44px; font-family:var(--font-body); font-size:var(--type-subtitle); line-height:1.7; color:var(--muted); }
 .auth-consent-copy { display:flex; align-items:center; flex-wrap:wrap; column-gap:4px; flex:1; min-width:0; }
 .auth-check { flex:0 0 44px; width:44px; height:44px; padding:13px; margin:0; display:flex; align-items:center; justify-content:center; background:transparent; }

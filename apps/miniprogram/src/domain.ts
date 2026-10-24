@@ -1,9 +1,11 @@
 import type { ThemeId } from './themes'
 
+export interface FollowUpAnswer { selections: string[]; note: string; refinements?: Record<string, string[]> }
 export interface Onboarding {
   title: string; concerns: string[]; stage: string; background: string; constraints: string[]
   life_contexts?: string[]; support_style?: string
   exploration_intent?: string; actual_question?: string; focus_response?: string
+  follow_ups?: Record<string, FollowUpAnswer>
 }
 export interface Card {
   title: string; options: string[]; constraints: string[]; confirmed: string[];
@@ -17,6 +19,7 @@ export interface Issue {
   card: Card; version: number; created_at: string; updated_at: string; ended_at: string | null;
   feedback: { id: string; kind: string; text: string; created_at: string }[]
   exploration_intent?: string; actual_question?: string; focus_response?: string
+  follow_ups?: Record<string, FollowUpAnswer>
 }
 export interface User { id: string; theme: ThemeId; save_chat: boolean; ai_consent: boolean; support_style: string; use_memory?: boolean }
 export interface ReasoningPoint {
@@ -48,7 +51,7 @@ export interface Memory {
 export interface InitialSnapshot {
   id: string; version: number; direction: string; source: string; captured_at: string;
   background: string; stage: string; life_contexts: string[]; concerns: string[]; constraints: string[];
-  answers: { intent?: string; question?: string; response?: string }
+  answers: { intent?: string; question?: string; response?: string; follow_ups?: Record<string, FollowUpAnswer> }
 }
 export interface PhaseChange {
   source_id: string; source_kind: 'memory' | 'snapshot'; source_version: number; previous: string; evidence: string

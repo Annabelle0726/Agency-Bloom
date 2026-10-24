@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import SvgIcon from './SvgIcon.vue'
-withDefaults(defineProps<{ kind?: 'primary' | 'secondary' | 'ghost' | 'wechat' | 'quiet' | 'opening' | 'auth-wechat' | 'auth-demo'; loading?: boolean; disabled?: boolean; locked?: boolean; arrow?: boolean }>(), { kind: 'primary', arrow: true })
+withDefaults(defineProps<{ kind?: 'primary' | 'secondary' | 'ghost' | 'wechat' | 'quiet' | 'opening' | 'auth-wechat' | 'auth-demo'; loading?: boolean; disabled?: boolean; locked?: boolean; arrow?: boolean; stablePress?: boolean }>(), { kind: 'primary', arrow: true })
 defineEmits<{ click: [] }>()
 </script>
 <template>
-  <button class="action-button" :class="[`action-${kind}`, { 'is-loading': loading, 'has-arrow': arrow, 'is-locked': locked && !disabled }]" :disabled="disabled || loading || locked" :loading="loading" hover-class="action-pressed" :hover-start-time="0" :hover-stay-time="70" @click="!disabled && !loading && !locked && $emit('click')">
+  <button class="action-button" :class="[`action-${kind}`, { 'is-loading': loading, 'has-arrow': arrow, 'is-locked': locked && !disabled, 'stable-press': stablePress }]" :disabled="disabled || loading || locked" :loading="loading" hover-class="action-pressed" :hover-start-time="0" :hover-stay-time="70" @click="!disabled && !loading && !locked && $emit('click')">
     <text class="action-label"><slot /></text><view v-if="arrow && !loading" class="action-arrow"><SvgIcon :name="kind === 'auth-wechat' || kind === 'auth-demo' ? 'chevron' : 'arrow'" :light="(kind === 'primary' || kind === 'wechat' || kind === 'quiet' || kind === 'auth-wechat') && (!disabled || locked)" :tone="disabled && !locked ? 'muted' : 'ink'" :color="kind === 'opening' ? '#514331' : undefined" :size="kind === 'auth-wechat' || kind === 'auth-demo' ? 18 : 22" /></view>
   </button>
 </template>
@@ -110,6 +110,11 @@ defineEmits<{ click: [] }>()
   box-shadow:0 1px 3px rgba(41,55,75,.09);
 }
 .action-auth-wechat:focus-visible, .action-auth-demo:focus-visible { outline:2px solid #526e7c; outline-offset:3px; }
+/* Scrollable onboarding keeps press feedback on the painted control only. */
+.action-button.stable-press { transition:background-color 130ms var(--ease-out),border-color 130ms var(--ease-out); }
+.action-button.stable-press.action-pressed, .action-button.stable-press:active:not([disabled]),
+.stable-press .action-arrow, .stable-press.action-pressed .action-arrow { transform:none; }
+.action-button.stable-press.is-locked[disabled] { opacity:1; }
 @media (prefers-reduced-motion: reduce) {
   .action-button, .action-opening .action-arrow, .action-auth-wechat .action-arrow, .action-auth-demo .action-arrow { transition:none; }
 }

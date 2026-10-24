@@ -19,6 +19,7 @@ const props = defineProps<{
   nextThemeBoundary: string
   usage: { used_cny: number; limit_cny: number; daily_calls: number; daily_limit: number; mode: string }
   aiMode: string
+  devAuth?: boolean
 }>()
 const atmosphere = computed(() => settingsAtmosphere(props.activeTheme.id))
 const emit = defineEmits<{
@@ -32,6 +33,7 @@ const emit = defineEmits<{
   privacy: []
   speech: []
   logout: []
+  restartDemo: []
   deleteAccount: []
   chooseAvatar: [event: { detail: { avatarUrl?: string } }]
   avatarError: []
@@ -138,6 +140,12 @@ const emit = defineEmits<{
       <text class="muted small">
         {{ aiMode === 'demo' ? '当前为本地演示，不产生模型费用' : '服务额度用完后，卡片和反馈仍可使用' }}
       </text>
+    </view>
+    <view v-if="devAuth" class="settings-group">
+      <button class="setting-row" :disabled="busy" @click="emit('restartDemo')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
+        <view><text class="setting-title">重新注册（本机演示）</text><text class="setting-description">返回注册页，用新演示账号重新体验五步引导</text></view>
+        <SvgIcon name="arrow-diagonal" :size="17" />
+      </button>
     </view>
     <button class="secondary logout-button" :disabled="busy" @click="emit('logout')" hover-class="gem-logout-pressed"
             :hover-start-time="0" :hover-stay-time="70">退出登录

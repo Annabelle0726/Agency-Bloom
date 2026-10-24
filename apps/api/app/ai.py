@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from .adaptive import ground_change, relevant
 from .chat_stream import reply_prefix
+from .onboarding import answer_texts
 from .pricing import model_rates, price_usage
 from .psychology import casual, explicit_crisis, select_strategy
 from .response_reasoning import evidence_catalog, ground_reasoning
@@ -146,6 +147,7 @@ def messages_for(
         context['recent_feedback'] = [f for f in feedback[:5] if relevant(f.get('text', ''), body.message)]
     system = (
         SYSTEM_PROMPT
+        + "\n初始问卷 follow_ups 是用户主动选择的路径：主题 → selections 具体卡点 → refinements[卡点] 更具体的情况，note 是用户补充的原话。回应相关问题时，结合最具体的已答线索、现实条件和当前帮助偏好；不要只按最上层标签给通用建议，也不要重新询问已答信息。选项不是诊断或人格标签，未填项保持未知；当前消息优先，用户想停下来或只想被听见时停止拆分追问。"
         + "\n接续用户的问题：优先回应具体细节、解释有依据的联系或取舍，不重复已经回答的问题，不用泛泛安慰替代讨论。已审阅总结仍可能过时，当前用户纠正优先。长期记忆仅供参考，不推断人格；关联探索仅是明确引用，不能混淆各探索结论。"
         + "\n上下文优先级：当前消息的明确需求 > 必要最近会话 > current_phase 当前有效阶段目标与约束 > confirmed_memories 相关长期记忆 > initial_snapshot 初始快照。旧问卷只是采集当时背景，不能覆盖新确认信息。memories_to_verify 只可用于温和核实，不能当作当前事实；记录年龄不等于失效。一次疲惫或情绪表达不是长期变化，不诊断人格、依恋或疾病。"
         + "\n仅在确实相关时自然使用背景，不必每轮说‘你之前提过’。重要矛盾本轮先尊重当前表达，必要时只问一次；拒绝、跳过或已核实后不重复追问。不能自行更新记忆、目标或变化记录。psychology_strategy 是本轮可选的经审查策略；没有策略时正常聊天，不强加技巧。所有更新须用户核实后主动保存。"
@@ -215,8 +217,7 @@ def ground_insight(result, messages):
         sources = [
             *card.get("confirmed", []),
             *card.get("constraints", []),
-            exploration.get("question", ""),
-            exploration.get("response", ""),
+            *answer_texts(exploration),
         ]
         sources += [f.get("text", "") for f in context.get("recent_feedback", [])]
         sources += [m["content"] for m in messages[2:] if m["role"] == "user"]

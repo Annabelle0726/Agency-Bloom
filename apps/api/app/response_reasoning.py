@@ -1,6 +1,7 @@
 """Grounded, extractive response explanations, never private model reasoning."""
 import re
 
+from .onboarding import answer_texts
 from .schemas import AIOutput
 
 INTERNAL = re.compile(
@@ -23,7 +24,7 @@ def evidence_catalog(context, recent, current):
     texts += [f.get("text", "") for f in context.get("recent_feedback", [])]
     snapshot = context.get("initial_snapshot") or {}
     answers = snapshot.get("answers") or context.get("exploration") or {}
-    texts += [answers.get("question", ""), answers.get("response", ""), snapshot.get("background", "")]
+    texts += [*answer_texts(answers), snapshot.get("background", "")]
     unique = list(dict.fromkeys(t for t in texts if isinstance(t, str) and t.strip()))
     return [{"id": f"s{i + 1}", "text": text[:2000]} for i, text in enumerate(unique[:24])]
 

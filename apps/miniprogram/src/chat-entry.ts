@@ -1,10 +1,13 @@
 import type { SupportMode } from './onboarding'
+import type { FollowUpAnswer } from './domain'
 
 export interface ChatEntryContext {
   actual_question?: string
   focus_response?: string
   background?: string
   card?: { options?: string[] }
+  exploration_intent?: string
+  follow_ups?: Record<string, FollowUpAnswer>
 }
 
 export interface ChatEntry {
@@ -14,6 +17,19 @@ export interface ChatEntry {
 }
 
 export function chatEntryFor(mode: SupportMode, context: ChatEntryContext = {}): ChatEntry {
+  const entry = baseEntryFor(mode, context)
+  const answers = Object.entries(context.follow_ups || {}).sort(([a], [b]) => Number(b === context.exploration_intent) - Number(a === context.exploration_intent))
+  const paths = answers.flatMap(([, answer]) => answer.selections.map(parent => {
+    const children = answer.refinements?.[parent] || []
+    return children.length ? parent + '：' + children.join('、') : parent
+  })).slice(0, 2)
+  if (!paths.length) return entry
+  const request = { listen: '先听我说说', discover: '一起理清', compare: '一起看看有哪些取舍', experiment: '看看有没有合适的小尝试' }[mode]
+  return { ...entry, introduction: '你留下的线索里有「' + paths[0] + '」。可以从这里说起，也可以换个话题',
+    starters: [...paths.map(path => '从刚才的线索里，' + request + '「' + path + '」'), ...entry.starters].slice(0, 3) }
+}
+
+function baseEntryFor(mode: SupportMode, context: ChatEntryContext): ChatEntry {
   const hasClue = Boolean(
     context.actual_question?.trim() || context.focus_response?.trim() || context.background?.trim()
   )
@@ -28,7 +44,7 @@ export function chatEntryFor(mode: SupportMode, context: ChatEntryContext = {}):
           : '你不用把想法整理好，也不必立刻做决定。我会先听你说。',
         starters: [
           hasClue ? '我想先聊聊刚才留下的那件事' : '最近有件事一直放在心上',
-          '我想说说最近的工作和感受',
+          '我想说说最近发生的事和感受',
           '我现在也不知道怎么表达',
         ],
       }

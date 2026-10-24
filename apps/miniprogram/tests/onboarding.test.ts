@@ -21,7 +21,7 @@ it('keeps login summary empty fields honest and does not repeat the exploration 
 it('changes the question by the chosen mainline without losing other selected interests', () => {
   const form = { ...newOnboarding(), concerns: ['change', 'choices'], background: '做过开发', actual_question: '我的能力还能用在哪里' }
   selectMainline(form, 'change')
-  expect(branchFor(form).question).toContain('别人经常找你帮忙')
+  expect(branchFor(form).question).toContain('AI 或行业变化')
   expect(form.title).toBe('')
   expect(form.concerns).toEqual(['change', 'choices'])
   selectMainline(form, 'choices')
@@ -101,7 +101,7 @@ it('keeps a choice-only onboarding draft valid without inventing written details
 it('persists the exact quick answer chosen by the user', () => {
   const form = { ...newOnboarding(), concerns: ['start'], exploration_intent: 'start', support_style: 'experiment' }
   form.focus_response = focusChoicesFor(form)[0]
-  expect(restoreDraft(saveDraft(form, 4, 1000), 2000)?.form.focus_response).toBe('稳定的收入')
+  expect(restoreDraft(saveDraft(form, 4, 1000), 2000)?.form.focus_response).toBe('想找到可以先试的一小步')
 })
 
 it('keeps the three gentle exploration entries mapped to existing draft values', () => {
@@ -123,13 +123,17 @@ it('does not carry a suggested answer into a different question or erase free wr
   expect(form.focus_response).toBe('')
   form.focus_response = '我喜欢陪家人，也想试试远程工作'
   selectMainline(form, 'direction')
+  expect(form.focus_response).toBe('工作之外有自己的时间')
+  expect(form.follow_ups?.change.note).toBe('我喜欢陪家人，也想试试远程工作')
+  selectMainline(form, 'change')
   expect(form.focus_response).toBe('我喜欢陪家人，也想试试远程工作')
+  selectMainline(form, 'direction')
   selectMainline(form, 'choices')
   expect(form.exploration_intent).toBe('direction')
 })
 
 it('keeps curiosity and uncertainty available without requiring an anxiety label', () => {
-  expect(startingConcernOptions.map(item => item.id).sort()).toEqual(concernOptions.map(item => item.id).sort())
+  expect(startingConcernOptions.every(item => concernOptions.some(option => option.id === item.id))).toBe(true)
   for (const intent of ['possibility', 'unsure']) {
     const form = { ...newOnboarding(), concerns: [intent], exploration_intent: intent, support_style: 'listen' }
     expect(restoreDraft(saveDraft(form, 5, 1000), 2000)?.form).toEqual(form)

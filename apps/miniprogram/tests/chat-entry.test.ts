@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { chatEntryFor, draftChangeFor } from '../src/chat-entry'
 
 describe('chat entry: response preferences have distinct starters', () => {
+  it('visibly continues a non-career branch and keeps the full path in the editable starter', () => {
+    const guide = chatEntryFor('listen', { exploration_intent: 'relationships', follow_ups: {
+      relationships: { selections: ['自己的想法和家人的期待不同'], note: '', refinements: { '自己的想法和家人的期待不同': ['知道自己想要什么，但难以表达'] } },
+    } })
+    expect(guide.introduction).toContain('家人的期待不同')
+    expect(guide.starters[0]).toContain('知道自己想要什么，但难以表达')
+    expect(guide.starters[0]).toContain('先听我说说')
+    expect(guide.starters[0]).toContain('刚才的线索')
+  })
   it('offers listening prompts when the user wants to talk', () => {
     const guide = chatEntryFor('listen')
     expect(guide.heading).toContain('说')

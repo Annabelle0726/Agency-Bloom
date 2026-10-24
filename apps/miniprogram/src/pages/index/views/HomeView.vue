@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SvgIcon from '../../../components/SvgIcon.vue'
+import StartActions from '../../../components/StartActions.vue'
 import { homeQuote } from '../../../use-home-quote'
 import type { Card, Issue } from '../../../domain'
 
@@ -16,6 +17,7 @@ const emit = defineEmits<{
   plan: []
   feedback: []
   chat: []
+  onboarding: []
 }>()
 </script>
 
@@ -52,6 +54,11 @@ const emit = defineEmits<{
         <view class="focus-row-copy"><text>把挂心的事，慢慢说清楚</text><text>接着上一次，也可以换个话题</text></view><text class="focus-tag focus-tag-chat">对话</text>
       </button>
     </view>
+    <view v-if="!current" class="paper-card home-empty-start">
+      <text class="card-title">不必先有答案，也可以开始聊</text>
+      <text class="body-copy">从你此刻想说的一句话开始</text>
+      <StartActions @chat="emit('chat')" @onboarding="emit('onboarding')" />
+    </view>
     <view class="home-quote">
       <view class="quote-body">
         <text class="quote-eyebrow">留一句给自己</text>
@@ -65,3 +72,8 @@ const emit = defineEmits<{
     </view>
   </view>
 </template>
+
+<style scoped>
+.home-empty-start { margin:0 0 20px; }
+.home-empty-start .body-copy { margin:8px 0 18px; }
+</style>

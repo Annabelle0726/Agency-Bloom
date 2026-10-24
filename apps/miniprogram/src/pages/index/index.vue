@@ -4,8 +4,7 @@ import { onPageScroll } from '@dcloudio/uni-app'
 import SvgIcon from '../../components/SvgIcon.vue'
 import { ICON_PALETTE_KEY } from '../../icon-system'
 import OnboardingFlow from '../../components/OnboardingFlow.vue'
-import WelcomeOpening from '../../components/WelcomeOpening.vue'
-import AuthWelcome from '../../components/AuthWelcome.vue'
+import EntryWelcome from '../../components/EntryWelcome.vue'
 import ConversationDrawer from '../../components/ConversationDrawer.vue'
 import PhaseChangeReview from '../../components/PhaseChangeReview.vue'
 import {themes} from '../../themes'
@@ -205,19 +204,19 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
       <EntryStatus v-if="screen === 'restore'" :offline="offline" :error="error" :busy="busy"
                    :init-busy="operations.busy.init" :init-error="operations.errors.init"
                    @retry="initialize" @logout="clearSession" />
-      <WelcomeOpening v-else-if="screen === 'opening'" @start="finishOpening" />
-      <AuthWelcome v-else-if="screen === 'auth'" :theme="activeTheme" :busy="busy" :error="authError"
-        :dev-auth="config.dev_auth" :has-demo="!!demoCredential" :wechat-auth="config.wechat_auth" :offline="offline"
-        :connecting="operations.busy.init" :ready="ready" @login="authenticate"
+      <EntryWelcome v-else-if="screen === 'opening' || screen === 'auth'" :opening="screen === 'opening'"
+        :auth="{ theme: activeTheme, busy, error: authError, devAuth: config.dev_auth, hasDemo: !!demoCredential,
+          wechatAuth: config.wechat_auth, offline, connecting: operations.busy.init, ready }"
+        @start="finishOpening" @login="authenticate"
         @replay="screen = 'opening'" @privacy="modal = 'privacy'" @retry="initialize" />
       <OnboardingFlow v-else-if="screen === 'onboard' && user" :key="user.id" :user-id="user.id"
         :busy="busy" :error="authError" @save="saveQuestions" @skip="pauseOnboarding"
-        @privacy="modal = 'privacy'" @navigate="operations.clear('auth')" />
+        @privacy="modal = 'privacy'" @chat="selectTab('chat')" @navigate="operations.clear('auth')" />
 
       <template v-else-if="screen === 'space'">
         <HomeView v-if="tab === 'now'" :card="card" :current="current" :greeting="greeting"
                   :today-label="todayLabel" @open-editor="openEditor()" @plan="selectTab('plan')"
-                  @feedback="modal = 'feedback'" @chat="selectTab('chat')" />
+                  @feedback="modal = 'feedback'" @chat="selectTab('chat')" @onboarding="beginOnboarding" />
         <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id"
                   @open-editor="openEditor()" @feedback="modal = 'feedback'" @chat="selectTab('chat')"
                   @resume="resumeExploration" @end="endIssue" />
@@ -274,12 +273,12 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
           </template>
         </DiscoverView>
         <EmptyDashboard v-else-if="!current && tab !== 'settings' && tab !== 'now'" :tab="tab" :busy="busy"
-                        @onboarding="beginOnboarding" @history="showHistory" />
+                        @onboarding="beginOnboarding" @history="showHistory" @chat="selectTab('chat')" />
         <SettingsView v-else-if="tab === 'settings'" :user="user" :user-avatar="userAvatar"
                       @speech="speech.manage()"
                       :avatar-busy="avatarBusy" :active-theme="activeTheme" :busy="busy" :usage="usage"
                       :theme-auto="themeAuto" :theme-busy="themeAutoBusy" :next-theme-boundary="nextThemeBoundary"
-                      :ai-mode="config.ai_mode" @appearance="modal = 'appearance'" @toggle-theme-auto="toggleThemeAuto"
+                      :ai-mode="config.ai_mode" :dev-auth="config.dev_auth" @restart-demo="logOut(true)" @appearance="modal = 'appearance'" @toggle-theme-auto="toggleThemeAuto"
                       @toggle-save="toggleSaveChat"
                       @toggle-ai="toggleAIConsent" @support="modal = 'support'" @direction="drawer = 'direction'"
                       @memories="drawer = 'memories'" @privacy="modal = 'privacy'" @logout="logOut"

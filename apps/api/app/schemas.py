@@ -19,6 +19,7 @@ Lines = Annotated[list[Line], Field(max_length=12)]
 SupportStyle = Literal["listen", "discover", "compare", "experiment", "clarify", "act"]
 ExplorationIntent = Literal[
     "",
+    "job_search",
     "direction",
     "change",
     "choices",
@@ -78,13 +79,30 @@ class Card(StrictModel):
     next_step: Annotated[str, StringConstraints(max_length=600)] = ""
 
 
+class FollowUpAnswer(StrictModel):
+    selections: list[Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]] = Field(default=[], max_length=6)
+    note: Annotated[str, StringConstraints(max_length=800)] = ""
+    refinements: dict[
+        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)],
+        Annotated[list[Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]], Field(max_length=6)],
+    ] | None = Field(default=None, max_length=6)
+
+    @model_validator(mode="after")
+    def selected_parents(self):
+        if any(parent not in self.selections for parent in (self.refinements or {})):
+            raise ValueError("refinements must belong to selected follow-up answers")
+        return self
+
+
 class IssueInput(StrictModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] = ""
     exploration_intent: ExplorationIntent = ""
     actual_question: Annotated[str, StringConstraints(max_length=400)] = ""
     focus_response: Annotated[str, StringConstraints(max_length=800)] = ""
+    follow_ups: dict[ExplorationIntent | Literal["general"], FollowUpAnswer] = Field(default={}, max_length=11)
     concerns: list[
         Literal[
+            "job_search",
             "direction",
             "change",
             "relationships",
@@ -95,7 +113,7 @@ class IssueInput(StrictModel):
             "start",
             "possibility",
         ]
-    ] = Field(default=[], max_length=6)
+    ] = Field(default=[], max_length=8)
     life_contexts: list[LifeContext] = Field(default=[], max_length=11)
     support_style: SupportStyle = "discover"
     stage: Literal["studying", "searching", "working", "transition", "unsure"] = "unsure"
@@ -108,6 +126,9 @@ class IssueInput(StrictModel):
             raise ValueError("unsure must be selected on its own")
         if self.exploration_intent and self.exploration_intent not in self.concerns:
             raise ValueError("mainline must be a selected concern")
+        for key in self.follow_ups:
+            if key not in self.concerns and not (key == "general" and not self.concerns):
+                raise ValueError("follow-up answers must belong to a selected concern")
         if self.title in ["我也不知道，帮我一起理清", "我也不知道，帮我一起理清。"]:
             self.title = ""
         return self

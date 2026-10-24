@@ -1,5 +1,18 @@
 # 视觉与交互实现
 
+## Current optional onboarding contract — 2026-10-24
+
+The five questions are an optional exploration starting point after login, not
+registration requirements. [ONBOARDING.md](ONBOARDING.md) supersedes earlier
+onboarding flow descriptions below: specific multi-select concerns drive concrete
+multi-select follow-ups and a further question for each chosen blocker. Relationship
+and daily-life concerns have first-class paths alongside career concerns. Each topic preserves its own answers, basic life context
+and constraints remain optional, and the last page reviews only supplied content.
+Skipping or leaving every question unanswered still permits a direct conversation.
+Keep the existing Morning Mist visual system and the non-flashing transitions.
+Q1 places its distinct icon beside the label, then a separate description row.
+Continue follows the answers inside the scroll view; it is not pinned to the viewport.
+
 ## 圆角规范（硬性约束）
 
 所有卡片与容器类组件的 `border-radius` 必须控制在 **6px–10px**，不得使用更大的圆角。此后任何新增或修改的卡片、面板、输入框、按钮、弹层都不得把圆角做到 11px 以上；发现即视为回归，需改回此区间。
@@ -26,7 +39,7 @@
 
 `ActionButton` 共用主、次、轻量及微信按钮行为；`SelectionCard` 支持多选、单选与说明；`ProgressIndicator`、`LoadingState`、`EmptyState` 提供统一状态。`OnboardingFlow` 保留步骤与输入，固定规则位于 `onboarding.ts`。
 
-主按钮高 58px，选项至少 57px；按压反馈 130ms，引导内容过渡 180ms，支持 `prefers-reduced-motion`。引导页保留进度条与底部操作区，仅中间内容滚动和过渡，短暂的导航锁防止连点跳步；选中标记预留宽度，不挤动文字。底部导航有连续移动的选中底色，弹层使用 200ms 的短距离过渡。微信构建监听键盘高度并调整聊天输入区，读取状态栏高度、保留底部安全区域。实际原生表现仍需真机验收。API 行为参照 [uni-app 键盘文档](https://uniapp.dcloud.net.cn/api/key.html)。
+主按钮高 58px，选项至少 57px；引导选项采用 130ms 底色与边框按压反馈，支持 `prefers-reduced-motion`。五步引导不再移动整张长列表，避免滚动内容持续处于变换层；短暂的导航锁仍防止连点跳步。选中标记常驻并预留宽度，不挤动文字，也不在勾选时重新加载图标。底部操作区随答案在同一滚动容器中自然排列。底部导航有连续移动的选中底色，弹层使用 200ms 的短距离过渡。微信构建监听键盘高度并调整聊天输入区，读取状态栏高度、保留底部安全区域。实际原生表现仍需真机验收。API 行为参照 [uni-app 键盘文档](https://uniapp.dcloud.net.cn/api/key.html)。
 
 ## 已保存的本地资产
 

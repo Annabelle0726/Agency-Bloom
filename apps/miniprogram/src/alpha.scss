@@ -36,7 +36,9 @@
 .flow-nav button[disabled], .login-back[disabled] { opacity:1; }
 .app-shell .flow-back[disabled], .app-shell .login-back[disabled], .app-shell .flow-skip[disabled] { background:transparent; color:var(--ink); opacity:1; }
 .flow-scroll { flex:1; min-height:0; height:0; width:100%; }
-.flow-body { padding:31px 28px 24px; animation:flow-forward-0 var(--motion-page) var(--ease-out) both; }
+/* Release the transform after entry. Retaining the identity matrix keeps the
+   entire long list in a transformed layer while the native scroll-view scrolls. */
+.flow-body { padding:31px 28px 24px; animation:flow-forward-0 var(--motion-page) var(--ease-out) backwards; }
 /* Alternating names also restart animation in native WXML, where view keys do not remount DOM */
 .flow-body.flow-forward-1 { animation-name:flow-forward-1; }
 .flow-body.flow-backward-0 { animation-name:flow-backward-0; }
@@ -215,10 +217,10 @@
 .prompt-button:active, .chip:active, .icon-button:active, .support-setting:active, .secondary:active:not([disabled]), .primary:active:not([disabled]) { transform:scale(.983); }
 .pressed { transform:scale(.983); opacity:.85; }
 
-@keyframes flow-forward-0 { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:translateX(0); } }
-@keyframes flow-forward-1 { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:translateX(0); } }
-@keyframes flow-backward-0 { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
-@keyframes flow-backward-1 { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+@keyframes flow-forward-0 { from { transform:translateX(10px); } to { transform:translateX(0); } }
+@keyframes flow-forward-1 { from { transform:translateX(10px); } to { transform:translateX(0); } }
+@keyframes flow-backward-0 { from { transform:translateX(-10px); } to { transform:translateX(0); } }
+@keyframes flow-backward-1 { from { transform:translateX(-10px); } to { transform:translateX(0); } }
 @keyframes scene-enter { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
 @keyframes pane-enter { from { opacity:0; } to { opacity:1; } }
 @keyframes toast-enter { from { opacity:0; transform:translate(-50%,5px); } to { opacity:1; transform:translate(-50%,0); } }
