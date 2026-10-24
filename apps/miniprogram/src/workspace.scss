@@ -3,6 +3,12 @@
 .keyboard-open .workspace-backdrop { bottom:var(--keyboard-height); }
 .workspace-drawer { width:91vw; max-width:460px; height:100%; background:var(--paper); color:var(--ink); box-shadow:12px 0 40px rgba(0,0,0,.12); display:flex; flex-direction:column; padding-top:max(22px, calc(var(--capsule-bottom, 24px) + 10px)); box-sizing:border-box; animation:drawer-enter .18s ease-out; }
 .drawer-heading { display:flex; align-items:center; justify-content:space-between; padding:0 20px 14px; flex-shrink:0; }
+/* Keep the paper surface opaque; only its inner scroll layers are transparent. */
+.workspace-drawer { position:relative; overflow:hidden; }
+.drawer-atmosphere { position:absolute; z-index:0; pointer-events:none; }
+.drawer-atmosphere-canopy { top:-12px; right:-22px; width:180px; height:210px; }
+.drawer-atmosphere-stem { bottom:-20px; left:-27px; width:140px; height:260px; }
+.workspace-drawer > .drawer-heading, .workspace-drawer > .drawer-tabs, .workspace-drawer > .drawer-create, .workspace-drawer > .drawer-body { position:relative; z-index:1; }
 .drawer-heading .section-title { display:block; margin-top:5px; font-size:22px; }
 .drawer-tabs { display:flex; gap:6px; padding:10px 0; }
 .workspace-drawer > .drawer-tabs { padding:0 20px 12px; border-bottom:1px solid var(--line); }
@@ -11,8 +17,8 @@
 .drawer-body { flex:1; min-height:0; position:relative; overflow:hidden; }
 /* Some Developer Tools render a full-height internal bar despite show-scrollbar=false.
    Keep that native gutter outside the clipped body; preserve content width with padding. */
-.drawer-scroll { width:calc(100% + 12px); height:100%; box-sizing:border-box; scrollbar-width:none; }
-.drawer-scroll-content { padding:16px 32px calc(28px + env(safe-area-inset-bottom)) 20px; box-sizing:border-box; }
+.drawer-scroll { width:calc(100% + 12px); height:100%; box-sizing:border-box; scrollbar-width:none; background:transparent; }
+.drawer-scroll-content { min-height:100%; padding:16px 32px 0 20px; box-sizing:border-box; background:transparent; }
 .drawer-scroll::-webkit-scrollbar, .drawer-scroll ::-webkit-scrollbar, .scope-filters::-webkit-scrollbar { display:none; width:0; height:0; }
 .drawer-scroll-indicator { position:absolute; right:4px; top:8px; bottom:8px; width:3px; background:var(--scrollbar-track); border-radius:3px; pointer-events:none; }
 .drawer-scroll-indicator > view { position:absolute; width:100%; background:var(--scrollbar-thumb); border-radius:3px; }
@@ -53,10 +59,14 @@
   .new-conversation-pressed { animation:none; }
 }
 .drawer-form { padding:14px; background:var(--soft); border:1px solid var(--line); border-radius:8px; margin:10px 0 16px; }
-.drawer-search { margin:10px 0 4px; }
+.drawer-search { display:flex; align-items:center; height:44px; margin:0 0 4px; padding:0 10px; border:1px solid var(--line); border-radius:8px; background:var(--paper); box-sizing:border-box; }
+.drawer-search-input { display:block; width:100%; height:42px; min-height:42px; margin:0; padding:0; border:0; background:transparent; color:var(--ink); font-size:14px; line-height:42px; box-sizing:border-box; }
+.drawer-search-placeholder { color:var(--muted); line-height:42px; }
+/* A 44px touch target must center its text rather than leave spare space below it. */
+.preview-stage .workspace-drawer .conversation-sections button { display:flex; align-items:center; justify-content:center; padding:0 10px; }
 .scope-picker { display:flex; align-items:center; justify-content:space-between; padding:14px 0; font-size:13px; }
 .scope-filters { white-space:nowrap; width:100%; margin:8px 0 14px; }
-.scope-filters button { display:inline-block; max-width:190px; overflow:hidden; text-overflow:ellipsis; margin-right:5px; }
+.scope-filters button { display:inline-flex; align-items:center; justify-content:center; vertical-align:top; max-width:190px; overflow:hidden; text-overflow:ellipsis; padding:0 10px; margin-right:5px; }
 .conversation-item { border:1px solid var(--line); border-radius:8px; margin:10px 0; padding:14px; }
 .conversation-item.active { background:var(--soft); border-color:var(--muted); }
 .conversation-select { display:block; width:100%; background:none; text-align:left; padding:0; margin:0; line-height:1.5; }

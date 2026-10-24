@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, getCurrentInstance, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, getCurrentInstance, inject, isRef, onBeforeUnmount, reactive, ref, watch, type Ref } from 'vue'
 import type { Conversation, ConversationSummary, Issue, Memory, User, InitialSnapshot } from '../domain'
 import SvgIcon from './SvgIcon.vue'
 import { conversationGreeting } from '../conversation-greeting'
 import { stages, concerns } from '../domain'
 import { lifeContexts, concernOptions } from '../onboarding'
+import { ICON_PALETTE_KEY, fallbackIconPalette, type IconPalette } from '../icon-system'
+import { drawerAtmosphere } from '../drawer-atmosphere'
 // Only this drawer consumes the global theme/form styles; its styles do not leak out.
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
@@ -15,6 +17,8 @@ const props = defineProps<{
   generating: boolean; running: string[]; error?: string;
   request: <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) => Promise<T>
 }>()
+const providedPalette = inject<Ref<IconPalette> | IconPalette>(ICON_PALETTE_KEY, fallbackIconPalette)
+const atmosphere = computed(() => drawerAtmosphere(isRef(providedPalette) ? providedPalette.value : providedPalette))
 const emit = defineEmits<{
   close: []; select: [conversation: Conversation]; refresh: []; createIssue: []; selectIssue: [issue: Issue];
   newChat: []; generate: []; reviewed: [summary: ConversationSummary | null]; changed: [conversation: Conversation];
@@ -149,6 +153,8 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
 <template>
   <view class="workspace-backdrop" @click.self="!busy && emit('close')">
     <view class="workspace-drawer" role="dialog" :aria-label="heading" @click.stop>
+      <image class="drawer-atmosphere drawer-atmosphere-canopy" :src="atmosphere.canopy" mode="aspectFit" :draggable="false" aria-hidden="true" />
+      <image class="drawer-atmosphere drawer-atmosphere-stem" :src="atmosphere.stem" mode="aspectFit" :draggable="false" aria-hidden="true" />
       <view class="drawer-heading"><view><text class="eyebrow">YOUR SPACE</text><text class="section-title">{{ heading }}</text></view><button class="icon-button" :disabled="busy" aria-label="关闭会话面板" @click="emit('close')"><SvgIcon name="close" :size="20" /></button></view>
       <view class="drawer-tabs"><button :class="{ selected: view === 'list' }" @click="emit('viewChanged', 'list')">会话</button><button :class="{ selected: view === 'memories' }" @click="emit('viewChanged', 'memories')">长期记忆</button></view>
       <view class="drawer-body">
@@ -157,7 +163,7 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
         <view v-if="notice || error" class="notice">{{ notice || error }}</view>
         <template v-if="view === 'list'">
           <button class="primary new-conversation" :disabled="busy" hover-class="new-conversation-pressed" :hover-start-time="0" :hover-stay-time="70" @click="openNewConversation()">＋ 新会话</button>
-          <input v-model="search" class="text-input drawer-search" maxlength="60" placeholder="搜索会话" />
+          <view class="drawer-search"><input v-model="search" class="drawer-search-input" maxlength="60" placeholder="搜索会话" placeholder-class="drawer-search-placeholder" aria-label="搜索会话" /></view>
           <view class="drawer-tabs conversation-sections"><button :class="{ selected: !archive && !showExplorations }" @click="archive = false; showExplorations = false">进行中</button><button :class="{ selected: showExplorations }" @click="showExplorations = true">探索</button><button :class="{ selected: archive && !showExplorations }" @click="archive = true; showExplorations = false">已归档</button></view>
           <template v-if="!showExplorations">
             <scroll-view scroll-x enhanced :show-scrollbar="false" class="scope-filters"><button :class="{ selected: !filterIssue }" @click="filterIssue = ''">全部探索</button><button v-for="issue in issues" :key="issue.id" :class="{ selected: filterIssue === issue.id }" @click="filterIssue = issue.id">{{ issue.title || '未命名探索' }}</button></scroll-view>

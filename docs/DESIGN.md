@@ -166,3 +166,11 @@ Evidence is in `output/settings-vine-20261024/`, with the reference-guided revis
 Discover, Settings and Plan use a dedicated shell class that reserves 72px for the fixed navigation plus the existing bottom safe-area inset, replacing the previous 90px reservation. Discover and Plan retain 12px of internal bottom padding (previously 32px and 28px). Settings retains 28px (previously 24px), so its centered final caption clears the raised conversation button while the total reservation still shrinks by 14px. Discover and Plan lose 38px and 34px of redundant bottom space respectively. Other tabs keep their current spacing.
 
 Validation uses actual Vue components with synthetic content at 390 x 844 and 320 x 740. Existing uppercase brand labels remain unchanged. TypeScript and eight focused botanical tests pass. H5 captures are supporting evidence only; native simulator and hardware acceptance remain unverified.
+
+## 2026-10-24 Static drawer accents and control alignment
+
+The conversation drawer has two sparse climbing-vine SVG studies at its upper-right and lower-left edges. They are separate from the Settings composition, use the injected active icon palette, and remain stationary while the conversation list scrolls. Local Base64 images are non-interactive and hidden from accessibility. The drawer retains its opaque paper surface, while inner scroll layers are transparent. No new ambient or scroll animation is added.
+
+Drawer search now uses its own border wrapper and an unpadded, vertically centered input rather than the shared padded `text-input` class. Filter controls retain 44px touch targets, center their labels, and have zero vertical padding. Drawer scroll content has zero bottom padding, removing the previous 12px plus safe-area reservation. These rules do not alter page navigation spacing.
+
+Evidence and local self-review are in `output/drawer-atmosphere-20261024/`. Final H5 captures cover 390 x 844 and 320 x 740; TypeScript, focused drawer tests, native development compilation and bundled WeChat WXML/WXSS checks pass. Native simulator and hardware rendering of the final alignment corrections remain unverified.
