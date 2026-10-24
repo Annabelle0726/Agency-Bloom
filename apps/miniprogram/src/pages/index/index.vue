@@ -185,7 +185,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
         :class="['theme-' + activeTheme.id, { dark, 'theme-space': screen === 'space', 'theme-home': screen === 'space' && tab === 'now', 'theme-reflection': screen === 'space' && (tab === 'plan' || tab === 'discover'), 'keyboard-open': keyboardHeight > 0 }]"
         :style="{ ...activeThemeStyle, '--keyboard-height': `${keyboardHeight}px`, '--chat-dock-height': `${composerHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
     <view class="app-shell"
-          :class="{ 'with-tabs': screen === 'space', 'chat-page': tab === 'chat' && screen === 'space', 'onboarding-shell': screen !== 'space' }">
+          :class="{ 'with-tabs': screen === 'space', 'compact-tabs': screen === 'space' && ['discover', 'settings', 'plan'].includes(tab), 'chat-page': tab === 'chat' && screen === 'space', 'onboarding-shell': screen !== 'space' }">
       <view v-if="screen === 'space'" class="theme-atmosphere" :class="{ 'theme-atmosphere-faint': tab !== 'now' }" aria-hidden="true">
         <image :src="activeTheme.image" mode="aspectFill"/><view class="theme-atmosphere-wash"/>
       </view>

@@ -1,4 +1,10 @@
 /* Shared signed-in navigation, inspired by the mountain home concept. */
+/* Reserve the navigation once; keep a compact reading gap above it. */
+.theme-space .app-shell.with-tabs.compact-tabs { padding-bottom:calc(72px + env(safe-area-inset-bottom)); }
+.theme-space .compact-tabs > .discover-content,
+.theme-space .compact-tabs > .plan-content { padding-bottom:12px; }
+.theme-space .compact-tabs > .settings-content { padding-bottom:28px; }
+
 @keyframes gem-breathe {
   0% { box-shadow:0 5px 18px var(--theme-glow),0 2px 5px rgba(24,36,54,.28),inset 0 2px 3px var(--nav-gem-hi-soft,rgba(255,255,255,.55)),inset 0 -3px 6px rgba(13,22,40,.42); }
   100% { box-shadow:0 5px 18px var(--theme-glow),0 2px 5px rgba(24,36,54,.28),inset 0 2px 3px rgba(255,255,255,.6),inset 0 -3px 6px rgba(13,22,40,.42); }

@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
+import { settingsAtmosphere } from '../../../settings-atmosphere'
 import { canonicalSupportStyle, supportStyles } from '../../../onboarding'
 import type { ThemeDefinition } from '../../../themes'
 import type { User } from '../../../domain'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
-defineProps<{
+const props = defineProps<{
   user: User | null
   userAvatar: string
   avatarBusy: boolean
@@ -18,6 +20,7 @@ defineProps<{
   usage: { used_cny: number; limit_cny: number; daily_calls: number; daily_limit: number; mode: string }
   aiMode: string
 }>()
+const atmosphere = computed(() => settingsAtmosphere(props.activeTheme.id))
 const emit = defineEmits<{
   appearance: []
   toggleThemeAuto: []
@@ -37,6 +40,8 @@ const emit = defineEmits<{
 
 <template>
   <view class="settings-content">
+    <image class="settings-atmosphere" :src="atmosphere" mode="aspectFill" aria-hidden="true" />
+    <view class="settings-foreground">
     <text class="eyebrow">MAKE YOURSELF AT HOME</text>
     <text class="page-title">{{ '你的空间，由你做主' }}</text>
     <view class="settings-group avatar-settings">
@@ -141,5 +146,11 @@ const emit = defineEmits<{
             :hover-start-time="0" :hover-stay-time="70">删除账号与全部个人记录
     </button>
     <text class="version-label">{{ 'AGENCY BLOOM · 0.1.0\n给自己一点空间' }}</text>
+    </view>
   </view>
 </template>
+
+<style scoped lang="scss">
+.settings-atmosphere { position: fixed; z-index: 0; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; max-width: 440px; margin: auto; pointer-events: none; }
+.settings-foreground { position: relative; z-index: 1; }
+</style>
