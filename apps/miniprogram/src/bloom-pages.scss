@@ -90,5 +90,7 @@
 .theme-reflection .theme-atmosphere { display:none; }
 
 /* Keep scrolling text below the native status/capsule area. */
-.theme-reflection .app-shell::after { content:''; position:fixed; z-index:8; top:0; left:0; right:0; height:calc(var(--capsule-bottom, 0px) + 6px); background:var(--bg); pointer-events:none; }
+.reflection-status-cover { position:fixed; z-index:8; top:0; left:0; right:0; height:calc(var(--capsule-bottom, 0px) + 6px); background:var(--bg); pointer-events:none; }
+/* A real native view avoids the fixed pseudo-element's hard cut across moving art. */
+.reflection-status-cover.discover-status-cover { height:calc(var(--capsule-bottom, 0px) + 30px); background:linear-gradient(to bottom, var(--bg) 0%, var(--bg) calc(100% - 24px), transparent 100%); }
 .bloom-content .next-detail { display:block; font-family:var(--font-body); font-size:13px; line-height:1.75; color:var(--muted); white-space:pre-wrap; overflow-wrap:anywhere; margin:6px 0; }

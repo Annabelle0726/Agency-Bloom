@@ -188,6 +188,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
       <view v-if="screen === 'space'" class="theme-atmosphere" :class="{ 'theme-atmosphere-faint': tab !== 'now' }" aria-hidden="true">
         <image :src="activeTheme.image" mode="aspectFill"/><view class="theme-atmosphere-wash"/>
       </view>
+      <view v-if="screen === 'space' && (tab === 'plan' || tab === 'discover')" class="reflection-status-cover" :class="{ 'discover-status-cover': tab === 'discover' }" aria-hidden="true" />
       <AppTopbar v-if="screen === 'space' && tab !== 'chat'" :dark="dark" @history="showHistory"
                  @settings="selectTab('settings')" />
       <view v-if="error && !modal && screen === 'space' && !(tab === 'chat' && (current || isDrafting))" class="notice error-notice">

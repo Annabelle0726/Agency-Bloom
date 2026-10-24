@@ -69,11 +69,11 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
 /* Kept local to Discover: the Plan page still owns its atmospheric hero. */
 .theme-space .discover-content { padding: 8px 22px 32px; }
 .discover-content {
-  .discover-atmosphere { position: fixed; z-index: 0; top: calc(var(--capsule-bottom, 0px) + 6px); bottom: 0; left: 0; right: 0; margin: auto; width: 100%; max-width: 440px; overflow: hidden; pointer-events: none; }
+  .discover-atmosphere { position: fixed; z-index: 0; top: 0; bottom: 0; left: 0; right: 0; margin: auto; width: 100%; max-width: 440px; height: 100vh; background:var(--bg); overflow: hidden; pointer-events: none; }
   .discover-botanical { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; transition: transform 140ms cubic-bezier(.16, 1, .3, 1); will-change: transform; }
   .discover-petals { transform-origin: 100% 0; }
   .discover-leaves { transform-origin: 0 68%; }
-  .discover-botanical-art { display: block; width: 100%; height: 100%; transform: scale(.76); animation: discover-petal-breathe 16s ease-in-out infinite; will-change: transform, opacity; }
+  .discover-botanical-art { display: block; width: 100%; height: 100%; transform: scale(.76); animation: discover-petal-breathe 16s ease-in-out infinite; will-change: opacity; }
   .discover-petals .discover-botanical-art { transform-origin: 100% 0; }
   .discover-leaves .discover-botanical-art { transform-origin: 0 68%; animation-name: discover-leaf-breathe; animation-duration: 20s; animation-delay: -5s; }
   .discover-foreground { position: relative; z-index: 1; }
@@ -104,14 +104,14 @@ const emit = defineEmits<{ explore: [item: DiscoveryRecommendation]; dismiss: [i
   .bloom-history { margin-top: 12px; padding: 14px 0; }
   .bloom-history > text { font-size: 14px; }
 }
-/* Scroll moves the outer layer; the smaller artwork breathes independently. */
+/* Scroll moves the outer layer; opacity breathes without subpixel edge movement. */
 @keyframes discover-petal-breathe {
-  0%, 100% { transform: scale(.76); opacity: .96; }
-  50% { transform: scale(.762); opacity: 1; }
+  0%, 100% { opacity: .96; }
+  50% { opacity: 1; }
 }
 @keyframes discover-leaf-breathe {
-  0%, 100% { transform: scale(.76); opacity: 1; }
-  50% { transform: scale(.762); opacity: .96; }
+  0%, 100% { opacity: 1; }
+  50% { opacity: .96; }
 }
 @media (prefers-reduced-motion: reduce) {
   .discover-content .discover-botanical { transform: none !important; transition: none; will-change: auto; }
