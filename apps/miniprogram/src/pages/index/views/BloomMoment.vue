@@ -106,7 +106,7 @@ onUnmounted(() => clearTimeout(timer))
 
 <style scoped lang="scss">
 .bloom-moment { padding: 18px 20px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); box-shadow: 0 4px 18px #00000004; }
-.moment-edition { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.5; color: var(--muted); }
+.moment-edition { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 15px; font-size: 13px; line-height: 1.5; color: var(--muted); }
 .moment-edition-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .bloom-moment .moment-toggle { min-height: 44px; padding: 0; gap: 3px; font-size: 13px; color: var(--muted); }
 .moment-fold-icon { display: flex; transform: rotate(90deg); transition: transform 180ms ease; }
