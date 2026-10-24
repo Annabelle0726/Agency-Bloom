@@ -86,7 +86,7 @@ const {
   runningIds,
   messages,
   draft,
-  pendingText, streamText, replyPhase, followLatest, jumpLatest, askBloom, messageSelectionOpen, handleChatScroll,
+  pendingText, streamText, replyPhase, followLatest, jumpLatest, askBloom, messageSelectionOpen, handleChatScroll, composerHeight,
   sending,
   creatingConversation,
   suggestion,
@@ -178,7 +178,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
 <template>
   <view class="preview-stage"
         :class="['theme-' + activeTheme.id, { dark, 'theme-space': screen === 'space', 'theme-home': screen === 'space' && tab === 'now', 'theme-reflection': screen === 'space' && (tab === 'plan' || tab === 'discover'), 'keyboard-open': keyboardHeight > 0 }]"
-        :style="{ ...activeThemeStyle, '--keyboard-height': `${keyboardHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
+        :style="{ ...activeThemeStyle, '--keyboard-height': `${keyboardHeight}px`, '--chat-dock-height': `${composerHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
     <view class="app-shell"
           :class="{ 'with-tabs': screen === 'space', 'chat-page': tab === 'chat' && screen === 'space', 'onboarding-shell': screen !== 'space' }">
       <view v-if="screen === 'space'" class="theme-atmosphere" :class="{ 'theme-atmosphere-faint': tab !== 'now' }" aria-hidden="true">
@@ -242,7 +242,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                   @edit-message="editMessage"
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />
-        <view v-if="tab === 'chat'" id="chat-bottom" :style="{height:`${1 + (workspace.active.value.selectedQuote.value ? 96 : 0) + (composerError ? 128 : 0) + (speech.consentOpen.value && speech.activeKey.value ? 180 : 0)}px`}" />
+        <view v-if="tab === 'chat'" id="chat-bottom" :style="{ height: `${composerHeight + keyboardHeight}px` }" />
         <ChatComposer v-if="(current || isDrafting) && tab === 'chat' && !modal" :draft="draft" :sending="sending"
                       :creating="creatingConversation" :sending-started-at="workspace.active.value.sendingStartedAt.value" :generating-summary="generatingSummary"
                       :read-only-conversation="readOnlyConversation" :active-conversation="activeConversation"
@@ -252,7 +252,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                       :recovery-busy="busy || sending || offline" @recover="recoverReply"
                       @dismiss-error="workspace.active.value.error.value = ''; workspace.active.value.errorRequestId.value = ''; operations.clear('ai'); error = ''; speech.dismissError()"
                       :chat-footer-note="chatFooterNote" @draft-change="updateDraft" @toggle-web="toggleWebSearch"
-                      @send="sendChat" @cancel="cancelChat" @focus="messageSelectionOpen = false">
+                      @send="sendChat" @cancel="cancelChat" @focus="messageSelectionOpen = false" @layout="composerHeight = $event">
           <template #notice><SpeechConsentNotice /></template>
         </ChatComposer>
         <DiscoverView v-else-if="tab === 'discover'" :theme-id="activeTheme.id" :recommendations="discovery.recommendations.value"

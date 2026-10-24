@@ -717,7 +717,10 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                 sources['web_results'] = web_results
             if sources_web_error is not None:
                 sources['web_search'] = 'failed' if sources_web_error else 'included'
-        reserved = ai.reservation_micro(settings, prompt)
+        # Select once before reservation. Frozen evaluations and non-chat model
+        # uses keep their reviewed configuration; no classifier model request.
+        turn_settings = ai.settings_for_turn(settings, prompt) if evaluation_guard is None else settings
+        reserved = ai.reservation_micro(turn_settings, prompt)
         if evaluation_guard is not None:
             try:
                 reserved = evaluation_guard.reserve(
@@ -785,7 +788,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
 
         task = asyncio.create_task(
             ai.generate_with_deadline(settings, prompt, ai_transport, dispatch_guard=dispatch_check, progress=progress)
-            if evaluation_guard is not None else ai.generate_with_deadline(settings, prompt, ai_transport, progress=progress)
+            if evaluation_guard is not None else ai.generate_with_deadline(turn_settings, prompt, ai_transport, progress=progress)
         )
         try:
             while not task.done():

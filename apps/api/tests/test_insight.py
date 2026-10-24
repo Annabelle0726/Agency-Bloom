@@ -51,7 +51,7 @@ def test_modes_ground_optional_insight_in_user_clues_and_do_not_autosave(
         assert context["interaction_mode"] == {"clarify": "discover", "act": "experiment"}.get(
             mode, mode
         )
-        assert body["thinking"] == {"type": "enabled"} and body["stream"] is False
+        assert body["thinking"] == {"type": "disabled"} and body["stream"] is False
         assert "tools" not in body
         return httpx.Response(
             200,

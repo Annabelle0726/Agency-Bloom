@@ -120,7 +120,7 @@ text { overflow-wrap: anywhere; }
 .timeline-dot { width: 7px; height: 7px; margin-top: 7px; border: 1px solid var(--accent); border-radius: 50%; flex-shrink: 0; }
 .end-link { display: block; text-align: center; margin: 30px auto 5px; color: var(--muted); font-size: 10px; }
 .with-tabs { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
-.chat-page.with-tabs { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.chat-page.with-tabs { padding-bottom: 0; }
 .tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 10; display: flex; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 24px calc(12px + env(safe-area-inset-bottom)); }
 .tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
 .tabbar button.active { color: var(--accent); }
@@ -134,6 +134,7 @@ text { overflow-wrap: anywhere; }
 .prompt-button { border: 1px solid var(--line); border-radius: 9px; padding: 12px; font-size: 11px; display: flex; align-items: center; gap: 15px; }
 .prompt-button > text { color: var(--accent); }
 .message-row { margin: 25px 0; display: flex; flex-direction: row; align-items: flex-start; gap: 10px; }
+.message-row.last-message { margin-bottom: 0; }
 .chat-avatar { display: block; width: 34px; height: 34px; min-width: 34px; flex-shrink: 0; border-radius: 50%; }
 .welcome-avatar { display: block; width: 52px; height: 52px; }
 .message-content { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; flex: 1; }
@@ -220,19 +221,17 @@ text { overflow-wrap: anywhere; }
    centered and visually separate from the scrolling conversation above. */
 .composer-dock { position: fixed; bottom: 0; left: 0; right: 0; z-index: 11; padding: 0 16px calc(env(safe-area-inset-bottom) + 6px); background: var(--bg); }
 .composer-dock .chat-disclosure { margin: 6px 0 2px; }
-/* One compact waiting surface replaces the long native textarea while a request
-   is active. The original draft stays in session memory for stop/failure. */
-.reply-wait { display: flex; align-items: center; gap: 12px; max-width: 448px; margin: 0 auto; padding: 12px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); }
+/* A quiet status line keeps the same composer and stop-key position in every
+   request phase. The submitted text appears once, in its pending chat bubble. */
+.reply-wait { display: flex; align-items: center; gap: 8px; max-width: 448px; margin: 0 auto; padding: 7px 4px; box-sizing: border-box; color: var(--muted); }
 .reply-wait-copy { flex: 1; min-width: 0; }
-.reply-wait-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; line-height: 1.6; }
+.reply-wait-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; line-height: 1.6; }
 .reply-wait-time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .reply-wait-note { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .reply-wait-dots { display: flex; gap: 3px; align-items: center; }
 .reply-wait-dots view { width: 4px; height: 4px; border-radius: 50%; background: var(--bloom-waiting, #d8a33e); animation: breathe 1.5s ease-in-out infinite; }
 .reply-wait-dots view:nth-child(2) { animation-delay: .15s; }
 .reply-wait-dots view:nth-child(3) { animation-delay: .3s; }
-.reply-wait-stop { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 66px; min-height: 44px; margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); color: var(--ink); font-size: 13px; line-height: 1.4; }
-.reply-wait-stop::after { border: 0; }
 @media (prefers-reduced-motion: reduce) { .reply-wait-dots view { animation: none; } }
 .keyboard-open .composer-dock { bottom: var(--keyboard-height, 0px); padding-bottom: 6px; }
 /* Grounded reply explanations: quiet, optional and collapsed by default. */
@@ -319,7 +318,7 @@ text { overflow-wrap: anywhere; }
 .message-tools button { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; min-height: 32px; margin: 0; background: transparent; color: var(--muted); font-size: 11px; line-height: 1; border-radius: 6px; }
 .message-tools button::after { border: 0; }
 .message-tools button[disabled] { opacity: .45; }
-.jump-latest { position: fixed; right: 20px; bottom: calc(115px + env(safe-area-inset-bottom)); z-index: 12; display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 18px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 12px; line-height: 1.4; box-shadow: 0 3px 12px var(--soft); }
+.jump-latest { position: fixed; right: 20px; bottom: calc(var(--chat-dock-height, 112px) + var(--keyboard-height, 0px) + 12px); z-index: 12; display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 12px; line-height: 1.4; box-shadow: 0 3px 12px var(--soft); }
 .jump-latest::after { border: 0; }
 #chat-bottom { height: 1px; }
 

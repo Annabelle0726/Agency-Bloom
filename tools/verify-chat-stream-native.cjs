@@ -61,6 +61,12 @@ async function send(text) { await (await find('.chat-input')).input(text); await
   await until(async()=>(await(await find('#chat-bottom')).offset()).top<844,'return to latest');
   await api('/qa/stream-step','POST',{});
   await until(async()=>!await find('.streaming-reply') && (await all('.message-row.assistant')).length===1,'completed reply',20000);
+  await until(async()=>{
+    const rows=await all('.message-row.assistant'), tools=await find('.message-tools',rows[rows.length-1]);
+    const dock=await find('.composer-dock'), at=await tools.offset(), size=await tools.size(), top=(await dock.offset()).top;
+    const gap=top-at.top-size.height;
+    return gap>=0 && gap<=32;
+  },'last reply clears the dock without a large blank gap');
   const saved=(await api(`/api/conversations/${conv.id}/messages`)).items;
   assert.equal(saved.length,2); assert.ok(saved[1].content.includes('🌿'));
   assert.ok(!JSON.stringify(saved).includes('MOCK_PRIVATE_REASONING'));
@@ -91,7 +97,7 @@ async function send(text) { await (await find('.chat-input')).input(text); await
   await send('流式体验测试：停止测试');
   await until(async()=>!!await find('.stream-text'),'second live reply',20000);
   await tap('.reply-wait-stop');
-  await until(async()=>!!await find('.chat-input'),'cancel returns composer');
+  await until(async()=>!await find('.reply-wait') && !await find('.streaming-reply'),'cancel restores draft');
   assert.equal((await (await find('.chat-input')).value()),'流式体验测试：停止测试');
   assert.equal((await api(`/api/conversations/${conv.id}/messages`)).items.length,2);
   const result={incrementalReply:true,autoFollow:true,pauseWhenReading:true,jumpLatest:true,selectedExcerpt:true,selectedQuestionDraft:true,composerVisibleWhileSelecting:true,cancelPreservesDraft:true,noPartialPersistence:true,privateReasoningHidden:true,mockCalls:2,paidRequests:0,viewport:await mp.callWxMethod('getSystemInfoSync')};

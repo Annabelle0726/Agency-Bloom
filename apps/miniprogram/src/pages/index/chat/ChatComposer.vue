@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, getCurrentInstance, nextTick, onMounted, onUnmounted, onUpdated, ref, watch } from 'vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
 import type { Conversation } from '../../../domain'
 
@@ -30,13 +30,36 @@ const emit = defineEmits<{
   focus: []
   recover: []
   dismissError: []
+  layout: [height: number]
 }>()
 
-const placeholder = computed(() => props.webSearchOn
+const placeholder = computed(() => props.sending ? '回复中，可以随时停止'
+  : props.webSearchOn
   ? '联网搜索已开启，问问需要查证的事'
   : (props.isDrafting ? '发送后才会创建这段对话' : '想到什么，就从哪里说起……'))
 
 const localDraft = ref(props.draft)
+// Keep the native textarea mounted. The pending bubble shows the submitted
+// text once; the session retains the full draft for stop/failure recovery.
+const visibleDraft = computed(() => props.sending && !props.generatingSummary ? '' : localDraft.value)
+const instance = getCurrentInstance()
+let measuredHeight = 0, measureQueued = false, disposed = false
+function measureLayout() {
+  if (measureQueued || disposed) return
+  measureQueued = true
+  void nextTick(() => {
+    measureQueued = false
+    if (disposed) return
+    uni.createSelectorQuery().in(instance?.proxy).select('.composer-dock').boundingClientRect(rect => {
+      if (disposed || !rect || Array.isArray(rect) || !rect.height) return
+      const height = Math.ceil(rect.height)
+      if (height !== measuredHeight) { measuredHeight = height; emit('layout', height) }
+    }).exec()
+  })
+}
+onMounted(measureLayout)
+onUpdated(measureLayout)
+onUnmounted(() => { disposed = true })
 const now = ref(Date.now())
 let waitTimer: ReturnType<typeof setInterval> | undefined
 watch(() => props.sendingStartedAt, started => {
@@ -84,15 +107,11 @@ const multiline = computed(() => localDraft.value.length > WEB_LINE_BUDGET)
           <text>{{ generatingSummary ? '正在整理会话' : '等待 Bloom 回复' }}</text>
           <text class="reply-wait-time">{{ elapsed }} 秒</text>
         </view>
-        <text class="reply-wait-note">{{ elapsed >= 15 ? '这次稍久，可以继续等或停止' : '可以随时停止，原输入会保留' }}</text>
+        <text v-if="elapsed >= 15" class="reply-wait-note">这次稍久，可以继续等或停止</text>
       </view>
-      <button class="reply-wait-stop" aria-label="停止回复" @click="emit('cancel')"
-              hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
-        <SvgIcon name="stop" :size="16"/><text>停止</text>
-      </button>
     </view>
-    <view v-else class="composer" :class="{ stacked: multiline }">
-      <textarea v-model="localDraft" class="chat-input" :focus="!!selectedQuote" :disabled="creating || readOnlyConversation || (!activeConversation && !isDrafting)" :adjust-position="false" @input="onInput" @focus="emit('focus')"
+    <view class="composer" :class="{ stacked: !sending && multiline }">
+      <textarea :value="visibleDraft" class="chat-input" :focus="!!selectedQuote && !sending" :disabled="sending || creating || readOnlyConversation || (!activeConversation && !isDrafting)" :adjust-position="false" @input="onInput" @focus="emit('focus')" @linechange="measureLayout"
                                      :cursor-spacing="24" maxlength="2000" :auto-height="true"
                                      :placeholder="placeholder"/>
       <view class="composer-side">
@@ -103,7 +122,7 @@ const multiline = computed(() => localDraft.value.length > WEB_LINE_BUDGET)
                 hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
           <SvgIcon name="compass" :size="19"/>
         </button>
-        <button class="send-button" :disabled="creating || (!sending && (!draft.trim() || readOnlyConversation || (!activeConversation && !isDrafting)))"
+        <button class="send-button" :class="{ 'reply-wait-stop': sending }" :disabled="creating || (!sending && (!localDraft.trim() || readOnlyConversation || (!activeConversation && !isDrafting)))"
                 :aria-label="sending ? '停止回复' : '发送消息'" @click="!creating && (sending ? emit('cancel') : emit('send'))"
                 hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
           <SvgIcon :name="sending ? 'stop' : 'arrow-up'" light :size="19"/>

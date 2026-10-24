@@ -1,15 +1,15 @@
 // Reader intent, independent of component selectors and native page rendering.
 export function createChatFollow() {
-  let following = true, lastTop = 0
+  let following = true, highestTop = 0
   return {
     get following() { return following },
     pause() { following = false },
     scroll(top: number, nearBottom: boolean) {
       if (nearBottom) following = true
-      else if (top < lastTop - 12) following = false
-      lastTop = top
+      else if (top < highestTop - 12) following = false
+      highestTop = nearBottom ? top : Math.max(highestTop, top)
     },
-    resume() { following = true },
-    reset() { following = true; lastTop = 0 },
+    resume() { following = true; highestTop = 0 },
+    reset() { following = true; highestTop = 0 },
   }
 }

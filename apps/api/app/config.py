@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     deepseek_model: str = "deepseek-flash"
     # Provider thinking is private; only grounded response explanations reach UI.
     ai_thinking: bool = True
+    # Chat only: adaptive-v1 selects Flash/non-thinking or Pro/thinking before
+    # budget reservation. Fixed keeps the configured model/thinking behavior.
+    ai_routing: Literal['adaptive', 'fixed'] = 'adaptive'
     # Optional web grounding (Bocha). Grounding happens only for a turn where
     # the user explicitly enabled it; results are attributed, never facts.
     web_search_api_key: str = ""

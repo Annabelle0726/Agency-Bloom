@@ -11,10 +11,11 @@ from pydantic import ValidationError
 
 from .adaptive import ground_change, relevant
 from .chat_stream import reply_prefix
-from .pricing import price_usage
+from .pricing import model_rates, price_usage
 from .psychology import casual, explicit_crisis, select_strategy
 from .response_reasoning import evidence_catalog, ground_reasoning
 from .schemas import AIOutput
+from .turn_routing import needs_depth
 from .visual_selection import parse_visual_output
 
 SYSTEM_PROMPT = """你是 Bloom，帮助人理解具体处境、探索方向、比较选择与尝试改变；决定权属于用户。你提供非临床支持，不提供心理诊断或治疗，也不保证职业结果。
@@ -238,6 +239,23 @@ def ground_insight(result, messages):
     return result if valid else result.model_copy(update={"insight": None})
 
 
+def settings_for_turn(settings, messages):
+    if (settings.ai_mode != 'deepseek' or settings.ai_routing == 'fixed'
+            or '本次任务是整理会话' in messages[0]['content']):
+        return settings
+    thinking = settings.ai_thinking and needs_depth(messages[-1]['content'], messages[2:-1])
+    model = 'deepseek-v4-pro' if thinking else 'deepseek-flash'
+    input_rate, cached_rate, output_rate = model_rates(model)
+    # A private per-request copy, never mutate shared settings or reuse the
+    # configured model's rates after routing to a different model.
+    return settings.model_copy(update={
+        'deepseek_model': model, 'ai_thinking': thinking,
+        'input_price_per_million': input_rate,
+        'cached_input_price_per_million': cached_rate,
+        'output_price_per_million': output_rate,
+    })
+
+
 def reservation_micro(settings, messages):
     if settings.ai_mode == "demo":
         return 0
@@ -412,8 +430,10 @@ async def generate(settings, messages, transport=None, dispatch_guard=None, prog
             raise ProviderOutputError("usage_invalid")
         timings['total_ms'] = round((perf_counter() - started) * 1000)
         receipt['timing'] = timings
-        logging.getLogger('agency.ai').info('generation_timing stream=%s thinking_ms=%s first_reply_ms=%s total_ms=%s',
-            streaming, timings.get('thinking_ms'), timings.get('first_reply_ms'), timings['total_ms'])
+        logging.getLogger('agency.ai').info(
+            'generation_timing model=%s thinking=%s stream=%s thinking_ms=%s first_reply_ms=%s total_ms=%s',
+            settings.deepseek_model, settings.ai_thinking, streaming,
+            timings.get('thinking_ms'), timings.get('first_reply_ms'), timings['total_ms'])
         # Ignore provider reasoning_content entirely: never return, store or log it.
         receipt.update(
             {

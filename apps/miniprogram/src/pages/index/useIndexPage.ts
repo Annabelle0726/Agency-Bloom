@@ -281,6 +281,7 @@ export function useIndexPage() {
   const streamText = computed(() => workspace.active.value.streamText.value)
   const replyPhase = computed(() => workspace.active.value.replyPhase.value)
   const follow = createChatFollow(), followLatest = ref(true)
+  const composerHeight = ref(112)
   let scrollTimer: ReturnType<typeof setTimeout> | undefined
   let scrollRevision = 0
   function jumpLatest() {
@@ -312,6 +313,7 @@ export function useIndexPage() {
   })
   watch(streamText, followReply)
   watch(composerError, followReply)
+  watch([composerHeight, keyboardHeight], followReply)
   watch(() => [workspace.activeId.value, tab.value], () => {
     follow.reset(); followLatest.value = true
     if (tab.value === 'chat') followReply()
@@ -1152,7 +1154,7 @@ export function useIndexPage() {
     runningIds,
     messages,
     draft,
-    pendingText, streamText, replyPhase, followLatest, jumpLatest, askBloom, messageSelectionOpen, handleChatScroll,
+    pendingText, streamText, replyPhase, followLatest, jumpLatest, askBloom, messageSelectionOpen, handleChatScroll, composerHeight,
     sending,
     creatingConversation,
     suggestion,

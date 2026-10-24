@@ -45,7 +45,7 @@ watch(() => [props.message.id, props.message.content, props.message.payload?.rea
 </script>
 
 <template>
-  <view :id="'message-' + index" class="message-row" :class="message.role">
+  <view :id="'message-' + index" class="message-row" :class="[message.role, { 'last-message': isLast }]">
     <CompanionAvatar :follow-gaze="gazeActive" :foreground="foreground" v-if="message.role === 'assistant'" :size="38" :status="isLast ? (bloomStatus || 'online') : 'online'"
                      :state="speaking ? 'speaking' : (isLast ? 'idle' : 'rest')" />
     <image v-else class="chat-avatar"

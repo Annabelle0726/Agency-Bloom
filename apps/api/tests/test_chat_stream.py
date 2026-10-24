@@ -84,7 +84,8 @@ def test_normal_stream_prefix_does_not_fail_a_complete_reply(tmp_path, prefix):
 
 @pytest.mark.parametrize("retained", [True, False])
 @pytest.mark.parametrize("finish", ["stop", "length"])
-def test_stream_is_private_and_commits_only_a_complete_reply(tmp_path, retained, finish):
+@pytest.mark.parametrize('thinking', [True, False])
+def test_stream_is_private_and_commits_only_a_complete_reply(tmp_path, retained, finish, thinking):
     calls = []
 
     def provider(request):
@@ -98,13 +99,14 @@ def test_stream_is_private_and_commits_only_a_complete_reply(tmp_path, retained,
         client.put('/api/me', headers=auth, json={"save_chat": retained})
         request_id = str(uuid4())
         response = client.post(path, headers=auth | {"Accept": "text/event-stream"},
-                               json={"request_id": request_id, "message": "最近真的有点累"})
+                               json={"request_id": request_id, "message": "帮我比较两个职业方向" if thinking else "最近真的有点累"})
         assert response.headers['content-type'].startswith('text/event-stream')
         events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith('data: ')]
         assert 'PRIVATE_REASONING' not in response.text
         assert len(calls) == 1 and calls[0]['stream'] is True
         assert calls[0]['stream_options'] == {"include_usage": True}
-        assert any(e.get('phase') == 'thinking' for e in events)
+        assert calls[0]['model'] == ('deepseek-v4-pro' if thinking else 'deepseek-flash')
+        assert any(e.get('phase') == 'thinking' for e in events) is thinking
         assert any(e.get('type') == 'reply' and '听起来' in e['text'] for e in events)
         terminal = events[-1]
         assert terminal['type'] == ('done' if finish == 'stop' else 'error')

@@ -54,9 +54,11 @@ mismatched returned models and stale manual price overrides fail closed.
 The approved total running allocation remains CNY 500/month, including
 CNY 100/month for AI. The backend enforces the AI allocation; this is not a
 hosting-cost ledger. Existing spend and uncertain reservations are preserved.
-Local .env selects Pro with a 4096-token output cap. The safe demo example keeps
-Flash, with the same AI allocation and output cap. Select a model using
-`AGENCY_DEEPSEEK_MODEL`; do not carry Flash price overrides into Pro.
+Chat now defaults to the local adaptive policy described in
+[ADAPTIVE_CHAT.md](ADAPTIVE_CHAT.md). It selects a per-request model and matching
+rate card before reservation. `AGENCY_DEEPSEEK_MODEL` still selects the model for
+summaries and other explicit generation tasks, and all chat turns when
+`AGENCY_AI_ROUTING=fixed`. Do not carry Flash price overrides into Pro.
 Restart the API to ensure environment changes are loaded.
 
 ## Verification

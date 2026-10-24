@@ -298,9 +298,9 @@
   padding-top: var(--header-inset);
   padding-left: 18px;
   padding-right: 18px;
-  /* The fixed dock (footer note + composer) is a separate block; the
-     conversation scrolls above it with clearance so nothing is hidden. */
-  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  /* #chat-bottom reserves the measured dock exactly once. Only reading
+     spacing belongs here; safe-area and keyboard clearance live in the dock. */
+  padding-bottom: 16px;
 }
 @media(max-width:350px) {
   .chat-content { padding-left: 18px; padding-right: 18px; }

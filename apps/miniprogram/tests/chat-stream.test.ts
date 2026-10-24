@@ -72,3 +72,10 @@ it('follows new text until the reader scrolls up, then offers an explicit return
   follow.resume()
   expect(follow.following).toBe(true)
 })
+
+it('pauses following even when the reader scrolls upward in small steps', () => {
+  const follow = createChatFollow()
+  follow.scroll(400, false)
+  for (const top of [395, 390, 385, 380]) follow.scroll(top, false)
+  expect(follow.following).toBe(false)
+})

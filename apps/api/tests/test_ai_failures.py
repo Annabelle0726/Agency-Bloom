@@ -54,7 +54,7 @@ def test_second_turn_failure_does_not_block_following_turn(tmp_path, retained, f
             # turns must demonstrate that format instead of plain-text replies.
             prior_reply = json.loads(request['messages'][3]['content'])
             assert prior_reply == {'reply': history[1]['content'], 'suggestion': None}
-        assert captured[2]['thinking'] == {'type': 'enabled'}
+        assert captured[2]['thinking'] == {'type': 'disabled'}
         saved = client.get(legacy_path.removesuffix('/chat') + '/messages', headers=auth).json()
         assert len(saved) == (4 if retained else 0)
 

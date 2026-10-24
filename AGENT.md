@@ -77,6 +77,9 @@ WeChat simulator rendering is the primary UI acceptance target. H5 screenshots a
 
 Keep the experience quiet, readable, and responsive. Prefer immediate press feedback, restrained motion, and compact spacing. Respect the status bar, capsule, keyboard, fixed composer, and bottom safe area. Prevent duplicate submissions. Do not add decorative space that obscures useful content. New product copy should avoid unnecessary terminal full stops.
 
+- Chat reserves the fixed composer's measured height exactly once, including inline notices. Do not add another fixed bottom padding or duplicate its safe-area allowance in the transcript or shell. Verify the last reply's action row is visible above the composer with a compact reading gap, including after keyboard dismissal.
+- Adaptive chat routing is a local, versioned per-turn policy, never a classifier model request. Select the model and its matching rate card before budget reservation, and use that same selection for dispatch and settlement. Preserve fixed evaluation configurations and never automatically escalate or retry a paid generation.
+
 - Chat exceptions must appear in a compact, theme-aware notice immediately above the composer, including while the keyboard is open. Do not place the only actionable error at the top of a long transcript, or rely on an avatar status dot alone.
 - Keep the draft and composer available after a failure. Show the actual safe error category and an explicit recovery action when available; never retry a model request automatically.
 - Clear a chat exception when a successful reply or verified recovery resolves it. Starting another attempt, editing a draft, switching conversations, or waiting for a timer is not proof of recovery. Error content and its request reference must remain isolated by conversation; a late result must not clear another conversation's error.

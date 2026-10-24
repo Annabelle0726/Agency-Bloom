@@ -76,12 +76,13 @@ npm run dev:wechat
 ```ini
 AGENCY_AI_MODE=deepseek
 AGENCY_DEEPSEEK_MODEL=deepseek-flash
+AGENCY_AI_ROUTING=adaptive
 AGENCY_DEEPSEEK_BASE_URL=https://api.deepseek.com
 AGENCY_DEEPSEEK_API_KEY=YOUR_KEY
-AGENCY_MAX_OUTPUT_TOKENS=768
+AGENCY_MAX_OUTPUT_TOKENS=4096
 ```
 
-密钥只放这个后端文件，绝不放进前端 `VITE_` 变量。后端关闭思考与流式输出、强制 JSON 协议，调用失败不会回退成演示回复。2026-10-17 已验证过一次真实付费请求（680 输入 / 60 输出 tokens，约 ¥0.000920），证据与 `--live-once` 防护见 [DeepSeek 验证记录](docs/DEEPSEEK_VALIDATION.md)。
+密钥只放这个后端文件，绝不放进前端 `VITE_` 变量。对话默认按本轮请求在本地分流：普通交流使用 Flash 非思考模式，明确需要深入分析或比较的问题使用 Pro 思考模式；不额外调用模型判断难度。正文逐步显示，完整回复经过校验后才保存，失败不会自动重试。AI 月预算上限仍是 ¥100。分流规则、固定模式配置与验收限制见 [对话响应说明](docs/ADAPTIVE_CHAT.md)；旧的 [DeepSeek 验证记录](docs/DEEPSEEK_VALIDATION.md) 只代表当时的一次测试，不代表当前响应速度。
 
 ## 主题
 

@@ -77,12 +77,13 @@ The fresh-checkout default AI mode is `demo` (no paid calls). To enable real Dee
 ```ini
 AGENCY_AI_MODE=deepseek
 AGENCY_DEEPSEEK_MODEL=deepseek-flash
+AGENCY_AI_ROUTING=adaptive
 AGENCY_DEEPSEEK_BASE_URL=https://api.deepseek.com
 AGENCY_DEEPSEEK_API_KEY=YOUR_KEY
-AGENCY_MAX_OUTPUT_TOKENS=768
+AGENCY_MAX_OUTPUT_TOKENS=4096
 ```
 
-Keys live only in that file — never in frontend `VITE_` variables. The backend disables thinking and streaming, requires JSON output, and never falls back after provider errors. One paid request was verified on 2026-10-17 (680 input / 60 output tokens, ≈ CNY 0.000920); see [DeepSeek validation](docs/DEEPSEEK_VALIDATION.md) for evidence and the `--live-once` guard.
+Keys live only in that file — never in frontend `VITE_` variables. Chat defaults to local adaptive routing: Flash without thinking for ordinary requests, Pro with thinking for explicit analysis and comparisons. It streams visible reply text, validates the completed reply, and never automatically retries after provider errors. Routing introduces no classifier model call and preserves the CNY 100 monthly AI cap. See [adaptive chat](docs/ADAPTIVE_CHAT.md) for the policy, fixed-mode override and acceptance limits. The older [DeepSeek validation](docs/DEEPSEEK_VALIDATION.md) records a historical one-call check, not a current latency benchmark.
 
 ## Themes
 

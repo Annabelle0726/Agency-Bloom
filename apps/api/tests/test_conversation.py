@@ -42,13 +42,15 @@ def test_intent_examples_use_optional_proposals_and_never_autosave(
         sent = json.loads(request.content)
         captured.append(sent)
         assert sent["messages"][-1]["content"] == message
-        assert sent["stream"] is False and sent["thinking"] == {"type": "enabled"}
+        complex_request = message == "程序员和 AI 产品经理，我应该怎么选择？"
+        assert sent["stream"] is False
+        assert sent["thinking"] == {"type": "enabled" if complex_request else "disabled"}
         assert "tools" not in sent
         return httpx.Response(
             200,
             json={
                 "id": "mock-intent",
-                "model": "deepseek-flash",
+                "model": sent['model'],
                 "created": 1792216800,
                 "choices": [
                     {

@@ -160,8 +160,6 @@
 .tab-indicator > view { width:50px; height:27px; border-radius:10px; background:var(--soft); }
 .settings-content .page-title { font-family:var(--font-heading); font-weight:500; }
 .chat-content, .settings-content { position:relative; animation:pane-enter 160ms var(--ease-out); }
-/* The composer is pinned to the viewport bottom; content reserves its clearance. */
-.chat-content { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 .keyboard-open .modal-backdrop { bottom:var(--keyboard-height); }
 .keyboard-open .modal-sheet { max-height:calc(95vh - var(--keyboard-height)); }
 .keyboard-open .modal-scroll { max-height:calc(85vh - var(--keyboard-height) - 75px); }
