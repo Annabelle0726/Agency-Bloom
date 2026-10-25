@@ -35,7 +35,7 @@ export function mergeJourneyEvents(existing: JourneyEvent[], incoming: JourneyEv
 }
 export function reflectionFor(events: JourneyEvent[], issues: Issue[]) {
   // Quote the user's record; never turn the current card into an invented past.
-  const latest = events.find(item => item.kind !== 'start' && item.kind !== 'end')
+  const latest = events.find(item => item.kind !== 'start' && item.kind !== 'end' && item.kind !== 'snapshot')
   const start = latest && events.find(item => item.kind === 'start' && item.issue_id === latest.issue_id)
   const issue = latest && issues.find(item => item.id === latest.issue_id)
   if (!latest || !issue) return null

@@ -9,9 +9,16 @@ export function homeConversationFor(issue: Issue | null, conversations: Conversa
     || [...available].sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0] || null
 }
 
-export function homeEntryFor(issue: Issue | null, card: Card, conversation: Conversation | null, retainChat: boolean) {
+export interface HomeReply { conversationId:string; content:string }
+function replyExcerpt(content:string) {
+  return content.replace(/```[\s\S]*?```/g,'').replace(/^\s{0,3}#{1,6}[^\n]*$/gm,'')
+    .split(/\n\s*\n/).map(part=>part.replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1')
+    .replace(/\*\*([^*]+)\*\*/g,'$1').replace(/__([^_]+)__/g,'$1').replace(/`([^`]+)`/g,'$1')
+    .replace(/\s+/g,' ').trim()).find(Boolean)?.slice(0,240)||''
+}
+export function homeEntryFor(issue: Issue | null, card: Card, conversation: Conversation | null, retainChat: boolean, reply?:HomeReply|null) {
   if (!issue) return {
-    title: '留一点空间给自己', detail: '从工作、生活，或一个还没理清的念头聊起',
+    title: '留一点空间给自己', detail: '从工作、生活，或一个还没理清的念头聊起',detailLabel:'',
     kicker:'从这里开始',topic:'',kept:'',stamp:'',hasInitialContext:false,bubble:'你想先聊聊什么？',action:'开始聊聊',
   }
   const topics = issue.concerns.map(id => startingConcernOptions.find(item => item.id === id)?.title
@@ -26,24 +33,21 @@ export function homeEntryFor(issue: Issue | null, card: Card, conversation: Conv
   const response=focusId?issue.focus_response:''
   const topic=first([card.title,issue.actual_question,issue.title])
   const title=topic||first([response,focus?.note,...(focus?.selections||[])])||(issue.ended_at?'这段探索的记录':'从你想接着说的事开始')
-  const primary=focus?.selections.find(value=>value===title)||focus?.selections[0]
-  const refinements=primary?focus?.refinements?.[primary]||[]:[]
   // Reviewed summaries follow retention; onboarding clues stay explicitly dated.
   const relevant = conversation?.issue_id === issue.id && !conversation.archived_at ? conversation : null
   const overview = retainChat ? relevant?.summary?.overview?.trim() : ''
-  // One related source, not a flattened questionnaire. Full answers remain in
-  // the existing initial-snapshot viewer; no user record is rewritten here.
-  const supportingSelections=focus?.selections.includes(title)?[]:focus?.selections||[]
-  const detail=first([overview,...card.confirmed,response,focus?.note,...refinements,...supportingSelections]
-    .filter(value=>value?.trim()!==title))||'可以接着想，也可以换一个话题'
-  const fromSummary=!!overview&&detail===overview
-  const fromCard=card.confirmed.some(value=>value.trim()===detail)
+  // Show a reviewed suggestion or a scoped, already-loaded assistant excerpt.
+  // Questionnaire answers stay in details; missing dialogue is never invented.
+  const advice=retainChat?first(relevant?.summary?.next_steps||[]):''
+  const excerpt=retainChat&&relevant&&reply?.conversationId===relevant.id?replyExcerpt(reply.content):''
+  const detail=first([advice,excerpt,overview].filter(value=>value!==title))
+  const detailLabel=detail?(detail===advice?'对话中的建议':detail===excerpt?'对话摘录':'已回顾的对话'):''
   const hasInitialContext=issue.concerns.length>0||Object.entries(issue.follow_ups||{}).some(([key])=>selected.includes(key)||(key==='general'&&!selected.length))
-  const source=fromSummary?'已回顾的对话':fromCard?'已确认的卡片':topic?'探索记录':'起点记录'
-  const date = new Date(fromSummary?relevant!.updated_at:fromCard||topic?issue.updated_at:issue.created_at)
+  const source=topic?'探索记录':'起点记录'
+  const date = new Date(topic?issue.updated_at:issue.created_at)
   const dateLabel = Number.isNaN(date.getTime()) ? '' : `${date.getMonth() + 1}月${date.getDate()}日`
   return {
-    title,topic,detail,kept:'',hasInitialContext,kicker:issue.ended_at?'这段探索里':'此刻，我在意的',
+    title,topic,detail,detailLabel,kept:'',hasInitialContext,kicker:issue.ended_at?'这段探索里':'此刻，我在意的',
     stamp:`${source}${dateLabel?' · '+dateLabel:''}`,
     bubble: relevant || topic || response || topics.length || focus || card.confirmed.length
       ? '想接着聊，还是有新情况？' : '你想先聊聊什么？',

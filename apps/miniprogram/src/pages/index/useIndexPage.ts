@@ -233,7 +233,7 @@ export function useIndexPage() {
   const isDrafting = computed(() => isDraftKey(workspace.activeId.value))
   const creatingDrafts = ref<string[]>([])
   const draftCreationCancelled = new Set<string>()
-  const drawer = ref<'' | 'list' | 'summary' | 'memories' | 'direction' | 'details'>('')
+  const drawer = ref<'' | 'list' | 'summary' | 'memories' | 'direction' | 'details' | 'snapshots'>('')
   const phaseError = ref('')
   async function skipPhaseChange() {
     const session = workspace.active.value, candidate = session.phaseChange.value, conversation = activeConversation.value

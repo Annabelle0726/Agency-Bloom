@@ -10,11 +10,11 @@ it('makes the saved user question the headline instead of an editorial invitatio
   expect(entry.kicker).toBe('此刻，我在意的')
   expect(entry.stamp).not.toContain(' · 方向')
 })
-it('shows one specific selected starting point and one related clue without joining the questionnaire',()=>{
+it('shows the selected starting point but keeps questionnaire refinements in details',()=>{
   const source={...issue,concerns:['direction'],follow_ups:{direction:{selections:['技能派不上用场','不知道学什么'],note:'',refinements:{'技能派不上用场':['想重新看看做过的设计项目']}}}}
   const entry=homeEntryFor(source,card,null,false)
   expect(entry.title).toBe('技能派不上用场')
-  expect(entry.detail).toBe('想重新看看做过的设计项目')
+  expect(entry.detail).toBe('')
   expect(entry.detail).not.toContain('不知道学什么')
   expect(entry.hasInitialContext).toBe(true)
   expect(entry.stamp).toBe('起点记录 · 10月25日')
@@ -26,7 +26,7 @@ it('does not select an arbitrary problem from several areas or use deselected re
   expect(entry.detail).not.toContain('已取消')
   const focused=homeEntryFor({...source,exploration_intent:'direction'},card,null,false)
   expect(focused.title).toBe('方向线索')
-  expect(focused.detail).toBe('想比较已有方向')
+  expect(focused.detail).toBe('')
 })
 it('keeps ended content explicitly historical and does not modify saved user wording',()=>{
   const source={...issue,title:'先不急着转向',ended_at:'2026-10-25T09:00:00Z'}

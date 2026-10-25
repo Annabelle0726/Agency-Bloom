@@ -10,11 +10,11 @@ import { drawerAtmosphere } from '../drawer-atmosphere'
 // Only this drawer consumes the global theme/form styles; its styles do not leak out.
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
-type View = 'list' | 'summary' | 'memories' | 'direction' | 'details'
+type View = 'list' | 'summary' | 'memories' | 'direction' | 'details' | 'snapshots'
 const props = defineProps<{
   view: View; conversations: Conversation[]; active: Conversation | null; issues: Issue[];
   user: User | null; summary: ConversationSummary | null; summaryDraft: ConversationSummary | null;
-  generating: boolean; running: string[]; error?: string;
+  generating: boolean; running: string[]; error?: string; initialIssueId?: string;
   request: <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) => Promise<T>
 }>()
 const providedPalette = inject<Ref<IconPalette> | IconPalette>(ICON_PALETTE_KEY, fallbackIconPalette)
@@ -58,12 +58,15 @@ const memorySource = ref<string | null>(null)
 const memoryContent = ref(''), category = ref<Memory['category']>('fact'), memoryScope = ref(''), memoryFilter = ref('all')
 const horizon = ref<NonNullable<Memory['horizon']>>('long_term'), status = ref<NonNullable<Memory['status']>>('active'), keepHistory = ref(false)
 const snapshots = ref<InitialSnapshot[]>([])
+const snapshotsLoading=ref(false),snapshotError=ref('')
+let snapshotEpoch=0,disposed=false
+onBeforeUnmount(()=>{disposed=true;snapshotEpoch++})
 const statusLabels = { active: '有效', needs_review: '待核实', historical: '历史' } as const
 const categories = [{ id: 'fact', label: '事实' }, { id: 'preference', label: '偏好' }, { id: 'constraint', label: '约束' }] as const
 const shownMemories = computed(() => memories.value.filter(m => (props.view !== 'direction' || m.horizon === 'current_phase') && (memoryFilter.value === 'all' || m.category === memoryFilter.value)))
 const greetingIssue = computed(() => props.issues.find(i => i.id === (filterIssue.value || props.active?.issue_id)) || activeIssues.value[0])
 const greeting = computed(() => conversationGreeting(!!props.user?.use_memory, memories.value, greetingIssue.value))
-const heading = computed(() => ({ list: '会话与探索', summary: '整理当前会话', memories: '整理长期记忆', direction: '当前方向与初始资料', details: '会话设置' }[props.view]))
+const heading = computed(() => ({ list: '会话与探索', summary: '整理当前会话', memories: '整理长期记忆', direction: '当前方向', details: '会话设置', snapshots:'初始快照' }[props.view]))
 function issueName(id: string | null) { return props.issues.find(i => i.id === id)?.title || (id ? '未命名探索' : '所有探索') }
 async function run(action: () => Promise<void>) { if (busy.value) return; busy.value = true; notice.value = ''; try { await action() } catch (e) { notice.value = e instanceof Error ? e.message : '暂时没有完成，请重试' } finally { busy.value = false } }
 function confirm(title: string, content: string) { return new Promise<boolean>(resolve => uni.showModal({ title, content, confirmText: '确认', success: r => resolve(r.confirm), fail: () => resolve(false) })) }
@@ -76,11 +79,30 @@ watch(() => [props.view, props.user?.use_memory], () => {
 }, { immediate: true })
 function loadMemories() { return run(async () => {
   memories.value = await props.request('GET', '/memories'); selected.value = []
-  if (props.view === 'direction') snapshots.value = (await Promise.all(props.issues.map(i => props.request<InitialSnapshot | null>('GET', `/issues/${i.id}/snapshot`)))).filter((s): s is InitialSnapshot => !!s)
 }) }
+watch([()=>props.view,()=>props.user?.id,()=>props.initialIssueId,()=>props.issues.map(item=>item.id).join('|')],()=>{
+  snapshotEpoch++;snapshots.value=[];snapshotError.value='';snapshotsLoading.value=false
+  if(props.view==='snapshots')void loadSnapshots()
+},{immediate:true,flush:'sync'})
+async function loadSnapshots(){
+  const epoch=++snapshotEpoch,owner=props.user?.id
+  snapshots.value=[];snapshotError.value=''
+  if(!owner){snapshotsLoading.value=false;return}
+  snapshotsLoading.value=true
+  const ids=[...new Set([props.initialIssueId,...props.issues.map(item=>item.id)].filter((id):id is string=>!!id))]
+  const results=await Promise.allSettled(ids.map(async id=>props.request<InitialSnapshot|null>('GET',`/issues/${encodeURIComponent(id)}/snapshot`)))
+  if(disposed||epoch!==snapshotEpoch||owner!==props.user?.id)return
+  snapshots.value=results.flatMap(result=>result.status==='fulfilled'&&result.value?[result.value]:[])
+  const failed=results.find(result=>result.status==='rejected')
+  if(failed&&failed.status==='rejected')snapshotError.value=snapshots.value.length?'部分初始快照暂时未能读取，可以重试':failed.reason instanceof Error?failed.reason.message:'暂时无法读取初始快照，请重试'
+  snapshotsLoading.value=false
+}
 async function deleteSnapshot(item: InitialSnapshot) {
+  const owner=props.user?.id
+  if(!owner)return
   if (!await confirm('删除这份初始资料？', '这份注册回答和卡片中的原始背景副本将删除，独立保存的卡片内容、记忆和历史聊天仍保留，可分别管理')) return
-  await run(async () => { await props.request('DELETE', `/issues/${item.id.replace('snapshot:', '')}/snapshot?version=${item.version}`); snapshots.value = snapshots.value.filter(s => s.id !== item.id); emit('refresh'); emit('contextChanged') })
+  if(disposed||owner!==props.user?.id||!snapshots.value.some(s=>s.id===item.id&&s.version===item.version))return
+  await run(async () => { snapshotEpoch++;await props.request('DELETE', `/issues/${encodeURIComponent(item.id.replace('snapshot:', ''))}/snapshot?version=${item.version}`);if(disposed||owner!==props.user?.id)return;snapshots.value = snapshots.value.filter(s => s.id !== item.id); emit('refresh'); emit('contextChanged') })
 }
 function openNewConversation() {
   if (!activeIssues.value.length) { emit('createIssue'); return }
@@ -158,7 +180,7 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
       <image class="drawer-atmosphere drawer-atmosphere-canopy" :src="atmosphere.canopy" mode="aspectFit" :draggable="false" aria-hidden="true" />
       <image class="drawer-atmosphere drawer-atmosphere-stem" :src="atmosphere.stem" mode="aspectFit" :draggable="false" aria-hidden="true" />
       <view class="drawer-heading"><view><text class="eyebrow">YOUR SPACE</text><text class="section-title">{{ heading }}</text></view><button class="icon-button" :disabled="busy" aria-label="关闭会话面板" @click="emit('close')"><SvgIcon name="close" :size="20" /></button></view>
-      <view class="drawer-tabs"><button :class="{ selected: view === 'list' }" @click="emit('viewChanged', 'list')">会话</button><button :class="{ selected: view === 'memories' }" @click="emit('viewChanged', 'memories')">长期记忆</button></view>
+      <view class="drawer-tabs"><button class="drawer-main-tab" data-view="list" :aria-pressed="['list','summary','details'].includes(view)" @click="emit('viewChanged', 'list')"><text class="drawer-tab-label" :class="{ selected: ['list','summary','details'].includes(view) }">会话</text></button><button class="drawer-main-tab" data-view="memories" :aria-pressed="view === 'memories'||view==='direction'" @click="emit('viewChanged', 'memories')"><text class="drawer-tab-label" :class="{ selected: view === 'memories'||view==='direction' }">长期记忆</text></button><button class="drawer-main-tab" data-view="snapshots" :aria-pressed="view==='snapshots'" @click="emit('viewChanged','snapshots')"><text class="drawer-tab-label" :class="{selected:view==='snapshots'}">初始快照</text></button></view>
       <view class="drawer-body">
       <scroll-view scroll-y enhanced :show-scrollbar="false" class="drawer-scroll" @scroll="onScroll">
         <view class="drawer-scroll-content">
@@ -166,7 +188,7 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
         <template v-if="view === 'list'">
           <button class="primary new-conversation" :disabled="busy" hover-class="new-conversation-pressed" :hover-start-time="0" :hover-stay-time="70" @click="openNewConversation()">＋ 新会话</button>
           <view class="drawer-search"><input v-model="search" class="drawer-search-input" maxlength="60" placeholder="搜索会话" placeholder-class="drawer-search-placeholder" aria-label="搜索会话" /></view>
-          <view class="drawer-tabs conversation-sections"><button :class="{ selected: !archive && !showExplorations }" @click="archive = false; showExplorations = false">进行中</button><button :class="{ selected: showExplorations }" @click="showExplorations = true">探索</button><button :class="{ selected: archive && !showExplorations }" @click="archive = true; showExplorations = false">已归档</button></view>
+          <view class="drawer-tabs drawer-filter-tabs conversation-sections"><button :class="{ selected: !archive && !showExplorations }" @click="archive = false; showExplorations = false">进行中</button><button :class="{ selected: showExplorations }" @click="showExplorations = true">探索</button><button :class="{ selected: archive && !showExplorations }" @click="archive = true; showExplorations = false">已归档</button></view>
           <template v-if="!showExplorations">
             <scroll-view scroll-x enhanced :show-scrollbar="false" class="scope-filters"><button :class="{ selected: !filterIssue }" @click="filterIssue = ''">全部探索</button><button v-for="issue in issues" :key="issue.id" :class="{ selected: filterIssue === issue.id }" @click="filterIssue = issue.id">{{ issue.title || '未命名探索' }}</button></scroll-view>
             <view v-if="!visible.length" class="drawer-empty">
@@ -201,6 +223,22 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
           <button v-for="issue in issues.filter(i => i.id !== active!.issue_id)" :key="issue.id" class="link-choice" :aria-pressed="linked.includes(issue.id)" @click="toggleLink(issue.id)">{{ linked.includes(issue.id) ? '✓ ' : '＋ ' }}{{ issue.title || '未命名探索' }}</button>
           <button class="primary" :disabled="busy || generating || !detailTitle.trim()" @click="saveDetails">保存会话设置</button>
         </template>
+        <template v-else-if="view==='snapshots'">
+          <text class="snapshot-intro">这是当时留下的起点，不是对你的永久定义</text>
+          <text class="snapshot-readonly">初始快照仅供查看，不能修改</text>
+          <text v-if="snapshotsLoading" class="drawer-loading" role="status">正在读取初始快照…</text>
+          <view v-if="snapshotError" class="drawer-load-error snapshot-load-error" role="alert"><text>{{ snapshotError }}</text><button class="text-button snapshot-retry" :disabled="snapshotsLoading" @click="loadSnapshots">重试</button></view>
+          <text v-if="!snapshotsLoading&&!snapshotError&&!snapshots.length" class="muted drawer-empty snapshot-empty">还没有保存初始快照，可以直接从对话开始</text>
+          <view v-for="item in snapshots" :key="item.id" class="memory-item snapshot-item" :data-snapshot="item.id">
+            <view class="snapshot-card-meta"><view class="snapshot-origin"><SvgIcon name="leaf" :size="15" tone="accent"/><text>初始整理</text></view><text class="snapshot-date">{{ item.captured_at.slice(0,10).replace(/-/g,'.') }}</text></view>
+            <text class="snapshot-card-title" :selectable="true">{{ item.direction || '当时尚未确定方向' }}</text>
+            <text v-if="issueName(item.id.replace('snapshot:',''))!==item.direction" class="snapshot-scope">{{ issueName(item.id.replace('snapshot:','')) }}</text>
+            <view class="snapshot-answers">
+              <view v-for="(row,index) in snapshotRows(item)" :key="index" class="memory-snapshot-answer"><text class="snapshot-answer-label">{{ row.label }}</text><text class="snapshot-answer-value" :class="{'snapshot-unfilled':['未填写','未选择','未记录'].includes(row.value)}" :selectable="true">{{ row.value }}</text></view>
+            </view>
+            <view class="snapshot-card-footer"><button class="text-button delete-snapshot" :disabled="busy||snapshotsLoading" hover-class="snapshot-pressed" :hover-start-time="0" @click="deleteSnapshot(item)">删除这份快照</button></view>
+          </view>
+        </template>
         <template v-else-if="view === 'memories' || view === 'direction'">
           <button class="memory-use setting-row" :aria-pressed="!!user?.use_memory" :disabled="busy" @click="toggleUseMemory"><view><text class="setting-title">在回复中使用长期记忆</text><text class="setting-description">{{ user?.use_memory ? '仅使用启用且范围匹配的记忆' : '已关闭 · 保存的记忆仍可整理' }}</text></view><view class="toggle" :class="{ on: user?.use_memory }"><view /></view></button>
           <text class="muted small">最多40条；只保存你明确确认的内容。删除记忆不会删除历史聊天中的原文</text>
@@ -216,7 +254,7 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
             <text class="field-label">使用范围（选择所有探索会跨会话使用）</text><scroll-view scroll-x class="scope-filters"><button :class="{ selected: !memoryScope }" @click="memoryScope = ''">所有探索</button><button v-for="issue in issues" :key="issue.id" :class="{ selected: memoryScope === issue.id }" @click="memoryScope = issue.id">{{ issue.title || '未命名探索' }}</button></scroll-view>
             <button class="primary confirm-memory" :disabled="busy || !memoryContent.trim() || memoryContent.length > 400" @click="saveMemory">确认并保存记忆</button><button class="text-button" :disabled="busy" @click="memoryForm = false">取消编辑</button>
           </view>
-          <view class="drawer-tabs"><button :class="{ selected: memoryFilter === 'all' }" @click="memoryFilter = 'all'">全部</button><button v-for="kind in categories" :key="kind.id" :class="{ selected: memoryFilter === kind.id }" @click="memoryFilter = kind.id">{{ kind.label }}</button></view>
+          <view class="drawer-tabs drawer-filter-tabs memory-filters"><button :class="{ selected: memoryFilter === 'all' }" :aria-pressed="memoryFilter==='all'" @click="memoryFilter = 'all'">全部</button><button v-for="kind in categories" :key="kind.id" :class="{ selected: memoryFilter === kind.id }" :aria-pressed="memoryFilter===kind.id" @click="memoryFilter = kind.id">{{ kind.label }}</button></view>
           <text v-if="!shownMemories.length" class="muted drawer-empty">这里还没有记忆，由你决定留下什么</text>
           <view v-for="item in shownMemories" :key="item.id" class="memory-item" :class="{ disabled: !item.enabled }">
             <view class="memory-record-head"><button class="memory-merge-select" :aria-label="'选择用于合并：' + item.content" :aria-pressed="selected.includes(item.id)" :disabled="busy" @click="toggleSelection(item.id)"><text>{{ selected.includes(item.id) ? '☑' : '□' }}</text></button><button class="memory-select" :aria-label="'查看与修改：' + item.content" :disabled="busy" @click="editMemory(item)"><text>{{ item.content }}</text></button></view>
@@ -226,14 +264,6 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
             <MemorySource :item="item" :user-id="user?.id || ''" :retain-chat="!!user?.save_chat" :request="request" />
             <view class="memory-actions"><button @click="editMemory(item)">编辑</button><button :disabled="busy" @click="toggleMemory(item)">{{ item.enabled ? '停用' : '启用' }}</button><button :disabled="busy" @click="deleteMemory(item)">删除</button></view>
           </view>
-          <template v-if="view === 'direction'">
-            <text class="field-label">初始快照</text><text class="muted small">注册时留下的背景，不是永久定义，无需重做问卷</text>
-            <view v-for="item in snapshots" :key="item.id" class="memory-item">
-              <text class="body-copy">{{ item.direction || '当时尚未确定方向' }}</text><text class="muted small">来源：注册问卷 · {{ item.captured_at.slice(0, 10) }}</text>
-              <view v-for="(row, index) in snapshotRows(item)" :key="index" class="memory-snapshot-answer"><text class="muted small">{{ row.label }}</text><text class="body-copy">{{ row.value }}</text></view>
-              <button class="text-button delete-snapshot" :disabled="busy" @click="deleteSnapshot(item)">删除初始资料</button>
-            </view>
-          </template>
         </template>
         </view>
       </scroll-view>
@@ -247,4 +277,26 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
 .memory-record-head { display:flex; align-items:flex-start; gap:4px; }
 .memory-merge-select { flex:0 0 44px; width:44px; min-height:44px; color:var(--accent); background:transparent; font-size:17px; line-height:1.6; }
 .memory-record-head .memory-select { flex:1; min-width:0; }
+.drawer-main-tab::after,.drawer-heading .icon-button::after { border:0; }
+.snapshot-intro { display:block; margin:4px 0 18px; padding:0 2px; color:var(--muted); font-family:var(--font-body); font-size:13px; line-height:22px; }
+.snapshot-readonly { display:block; margin:-10px 0 18px; padding:0 2px; color:var(--muted); font-family:var(--font-body); font-size:12px; line-height:20px; }
+.snapshot-item { box-sizing:border-box; margin:0 0 16px; padding:18px 16px 10px; border:1px solid var(--quote-border); border-radius:8px; background:linear-gradient(155deg,var(--quote-fill-a),var(--quote-fill-b)); box-shadow:var(--quote-inset); }
+.snapshot-card-meta { display:flex; flex-wrap:nowrap; align-items:center; justify-content:space-between; gap:10px; color:var(--muted); font-family:var(--font-body); font-size:11px; line-height:18px; }
+.snapshot-origin { display:flex; align-items:center; gap:6px; color:var(--accent); }
+.snapshot-date { flex-shrink:0; white-space:nowrap; }
+.snapshot-card-title { display:block; margin-top:12px; color:var(--ink); font-family:var(--font-heading); font-size:20px; font-weight:400; line-height:30px; overflow-wrap:break-word; }
+.snapshot-scope { display:block; margin-top:6px; color:var(--muted); font-family:var(--font-body); font-size:12px; line-height:20px; overflow-wrap:break-word; }
+.snapshot-answers { margin-top:14px; border-top:1px solid var(--line); }
+.snapshot-item .memory-snapshot-answer { margin:0; padding:13px 0; border-bottom:1px solid var(--line); }
+.snapshot-item .memory-snapshot-answer:last-child { border-bottom:0; }
+.snapshot-answer-label { display:block; margin-bottom:5px; color:var(--muted); font-family:var(--font-body); font-size:12px; line-height:19px; }
+.snapshot-answer-value { display:block; color:var(--ink); font-family:var(--font-body); font-size:14px; font-weight:400; line-height:24px; white-space:pre-wrap; overflow-wrap:break-word; }
+.snapshot-answer-value.snapshot-unfilled { color:var(--muted); font-size:13px; }
+.snapshot-card-footer { display:flex; align-items:center; justify-content:flex-end; min-height:28px; margin-top:2px; border-top:1px solid var(--line); padding-top:8px; }
+.snapshot-card-footer .delete-snapshot { display:flex; align-items:center; justify-content:flex-end; min-height:44px; margin:-8px 0; padding:0 2px; color:var(--muted); background:transparent; font-family:var(--font-body); font-size:12px; line-height:20px; border-radius:6px; }
+.delete-snapshot::after,.snapshot-retry::after { border:0; }
+.snapshot-pressed { opacity:.65; }
+.snapshot-load-error,.snapshot-empty { display:block; box-sizing:border-box; padding:16px; border:1px solid var(--line); border-radius:8px; background:var(--soft); font-family:var(--font-body); font-size:13px; line-height:23px; color:var(--ink); }
+.snapshot-load-error .snapshot-retry { display:flex; align-items:center; min-height:44px; margin:4px 0 -6px; padding:0; color:var(--action-text); background:transparent; font-family:var(--font-body); font-size:13px; }
+@media (max-width:360px) { .snapshot-item { padding:16px 13px 10px; } .snapshot-card-title { font-size:19px; line-height:29px; } }
 </style>

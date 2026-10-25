@@ -3,7 +3,7 @@ import SvgIcon from '../../../components/SvgIcon.vue'
 import { computed } from 'vue'
 import HomeBloomCard from '../../../components/HomeBloomCard.vue'
 import { homeQuote } from '../../../use-home-quote'
-import { homeEntryFor } from '../../../home-entry'
+import { homeEntryFor, type HomeReply } from '../../../home-entry'
 import type { Card, Conversation, Issue } from '../../../domain'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
@@ -14,17 +14,19 @@ const props = withDefaults(defineProps<{
   greeting: string
   todayLabel: string
   conversation: Conversation | null
+  reply?: HomeReply | null
   retainChat: boolean
   openingChat: boolean
   foreground?: boolean
 }>(),{foreground:true})
-const entry = computed(() => homeEntryFor(props.current, props.card, props.conversation, props.retainChat))
+const entry = computed(() => homeEntryFor(props.current, props.card, props.conversation, props.retainChat, props.reply))
 const emit = defineEmits<{
   openEditor: []
   plan: []
   feedback: []
   chat: []
   onboarding: []
+  context: []
 }>()
 </script>
 
@@ -38,7 +40,7 @@ const emit = defineEmits<{
         <text class="hero-aside">{{ '远处有方向\n此刻也有生活' }}</text>
       </view>
     </view>
-    <HomeBloomCard :entry="entry" :has-concern="!!current" :busy="openingChat" :foreground="foreground !== false" @continue="emit('chat')" @details="emit('openEditor')" />
+    <HomeBloomCard :entry="entry" :has-concern="!!current" :busy="openingChat" :foreground="foreground !== false" @continue="emit('chat')" @details="emit('openEditor')" @context="emit('context')" />
     <view v-if="current" class="home-focus-card glass-card">
       <view class="focus-card-heading"><text>今日聚焦</text><text>{{ todayLabel }}</text></view>
       <button class="focus-row" data-home="plan" @click="emit('plan')" hover-class="pressed" :hover-start-time="0">

@@ -21,16 +21,28 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
   The question remains the strongest text and
   its original wording stays selectable and unchanged. Generic invitation
   headlines are superseded by the owner's question-first direction.
-- Only one related, authorized clue supplies the two-to-three-line description.
-  A sibling questionnaire selection is not used as evidence for a different
-  selected headline. Several unprioritized areas do not establish a primary
-  concern. Reviewed summaries still follow retention settings; no model call
-  or saved record rewrite is introduced.
-- Source/date and the right-aligned View and edit action share one quiet footer
-  with 11px text and 44px touch targets. When starting answers exist, tapping
-  the source/date opens their existing detail viewer. All answers remain there,
-  rather than being flattened into the card. The duplicate conversation link
-  and second metadata row were removed; Bloom remains the chat entry.
+- The two-line supporting text now comes from a reviewed conversation's next
+  step, a scoped already-loaded assistant excerpt, or its reviewed overview, in
+  that order. A small Bloom portrait precedes the quoted text; no visible
+  source heading is rendered. Source metadata remains internal, and the text
+  is not a newly confirmed fact or an automatic card edit.
+  Questionnaire selections, refinements and general facts are no longer used
+  to fill this space. Without available dialogue, this block is absent.
+- The page supplies only the latest completed assistant reply from the selected
+  conversation when that conversation matches Home's current exploration and
+  retention is on. Streaming, mismatched, archived or unrelated conversations
+  cannot supply the excerpt. No extra request, model call or transcript write
+  occurs. On a fresh load without loaded replies or a reviewed summary, the
+  card honestly has no excerpt until suitable content is available.
+- The footer has three positions: source/date at left, View and edit in the
+  center and Initial snapshot at right. The snapshot uses muted text rather
+  than an accented edit affordance; it remains a working read-only link.
+  Equal flexible side
+  columns keep the middle action centered. Both actions retain 44px touch
+  targets and 11px text. At widths up to 360px, the date remains visible while
+  its source prefix is hidden to avoid breaking the date across lines. Full
+  starting answers open through the existing snapshot viewer. Bloom remains
+  the conversation entry without a duplicate CTA.
 - Card corners stay 8px. Existing theme quotation-surface tokens provide the
   translucent fill, edge light and shadow. Titles use the existing heading font.
   Extra foliage and the all-conversations link were removed after owner review.
@@ -49,6 +61,22 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
 
 ## Validation
 
+- The dialogue-preview revision passed TypeScript and four focused suites / 26
+  tests. Advice/excerpt selection, retention and conversation boundaries,
+  missing content, formatting and independent starting-detail activation are
+  covered. Auxiliary renders use synthetic text and the real component in
+  output/home-bloom/dialogue-card-20261025/; they do not use private records or
+  claim WeChat simulator acceptance. The native build and bundled compiler
+  checks passed; existing Sass legacy API warnings remain.
+  Final Forest renders cover 375x667, 390x844 and 320x740. Additional renders
+  cover dark advice and absent-dialogue states. No console errors, horizontal
+  overflow or broken images were reported. The empty-state fixture also checks
+  the center action against the card midpoint, label/leaf row alignment and
+  both 44px touch targets. The compact date remains unbroken on narrow screens.
+  The final owner-requested treatment uses a 22x24px Bloom portrait and quoted
+  text with no visible source heading. Its 375x667 and 320x740 renders are in
+  output/home-bloom/dialogue-card-20261025/avatar-quote/. Preview wording is
+  synthetic fixture data only; production binds the selected runtime content.
 - The offset-corner follow-up passed TypeScript, the same 21 focused tests and
   the native bundled compilers (37 WXSS / 59 WXML). Compilation completed;
   its first post-build check saw no app.json, then a separate check passed

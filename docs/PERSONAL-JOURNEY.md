@@ -139,3 +139,25 @@ Final native acceptance: the six-theme run and two repeated asynchronous-flow ru
 The connected development service uses PostgreSQL, where SQLite startup upgrades do not run. The initial journey delivery omitted applying `20261022010000_personal_journey.sql` to this environment; consequently both timeline and candidate reads failed because `journey_records` was absent.
 
 Applied only that additive migration in a transaction with bounded lock/statement timeouts. Verified the expected columns and enabled RLS. Read-only checks of the actual journey list, candidate and detail handlers against the connected database then passed (13 accounts with saved explorations); no existing records were changed and no provider calls were made. The migration file remains idempotent for other deployments. Before starting a deployment with journey routes, verify that this migration is present in that deployment's database; an isolated SQLite test is not a deployment check.
+# Read-only initial snapshots — 2026-10-25
+
+The journey timeline also projects existing initial snapshots from the owned
+snapshot endpoints. These entries use captured_at, have stable snapshot IDs,
+and are marked read-only. They are independent of exploration-start milestones.
+No historical snapshot is reconstructed from a current card, and missing or
+deleted snapshots create no entry. Filtering applies to the selected issue;
+reads are limited to five concurrent requests. Failed snapshot reads show a
+retry notice while available timeline records remain readable. Snapshot entries
+are merged separately from server-paginated events, preserving the event cursor.
+
+Selecting an initial snapshot opens the existing detail page in snapshot mode,
+with full saved answers and an explicit cannot-edit notice. There are no edit
+or save controls. Initial snapshots never become retrospective growth evidence.
+No model call, migration, new journey record or change to snapshot ownership and
+deletion semantics is introduced.
+
+Validation: TypeScript, focused journey/Home/drawer tests and native bundled
+compilers passed. The isolated Mock journey API on port 8037 supplied disposable
+records for auxiliary H5 checks, including the real timeline-to-detail click.
+Captures and the QA bootstrap are in output/snapshot-journey-20261025/.
+These checks do not establish WeChat simulator or real-device acceptance.

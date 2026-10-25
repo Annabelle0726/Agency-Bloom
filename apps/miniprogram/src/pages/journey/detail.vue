@@ -4,19 +4,21 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import SvgIcon from '../../components/SvgIcon.vue'
 import { journeyDate, useJourneySession } from '../../journey'
 import type { CandidatePage, JourneyCandidate, JourneyEvent } from '../../journey'
-import type { Issue } from '../../domain'
+import type { InitialSnapshot, Issue } from '../../domain'
+import { snapshotRows } from '../../me-records'
 const { theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, refreshTheme, back } = useJourneySession()
 const recordRequestId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
   const n = Math.floor(Math.random() * 16); return (c === 'x' ? n : (n & 3) | 8).toString(16)
 })
 const mode = ref('event'), issueId = ref(''), eventId = ref('')
 const issue = ref<Issue | null>(null), event = ref<JourneyEvent | null>(null)
+const snapshot=ref<InitialSnapshot|null>(null)
 const candidates = ref<JourneyCandidate[]>([]), nextOffset = ref<number | null>(null)
 const selected = ref<JourneyCandidate | null>(null), editing = ref(false), sourceOpen = ref(false)
 const busy = ref(false), title = ref(''), text = ref(''), kindIndex = ref(0), loaded = ref(false)
 const kinds = ['thought', 'decision', 'change', 'action', 'pause'] as const
 const labels = ['一个想法', '一次选择', '想法变化', '一次行动', '选择暂停']
-const pageTitle = computed(() => mode.value === 'direction' ? '接下来，我愿意' : mode.value === 'pending' ? '待确认的时刻' : mode.value === 'new' ? '留下一刻' : event.value?.title || '一个重要的时刻')
+const pageTitle = computed(() => mode.value==='snapshot'?'初始快照':mode.value === 'direction' ? '接下来，我愿意' : mode.value === 'pending' ? '待确认的时刻' : mode.value === 'new' ? '留下一刻' : event.value?.title || '一个重要的时刻')
 const formVisible = computed(() => mode.value === 'new' || mode.value === 'direction' || !!selected.value || editing.value)
 const canSave = computed(() => !busy.value && !loading.value && (mode.value === 'direction' || (!!title.value.trim() && !!text.value.trim())))
 
@@ -30,7 +32,13 @@ async function load() {
   loading.value = true; error.value = ''
   try {
     await loadSession()
-    if (mode.value === 'pending') await pendingPage()
+    if(mode.value==='snapshot') {
+      snapshot.value=null
+      const saved=await request<InitialSnapshot|null>('GET','/issues/'+encodeURIComponent(issueId.value)+'/snapshot')
+      if(!saved||saved.id!=='snapshot:'+issueId.value)throw Error('这份初始快照已不可用，可能已被删除')
+      snapshot.value=saved
+    }
+    else if (mode.value === 'pending') await pendingPage()
     else if (mode.value === 'event') {
       event.value = await request<JourneyEvent>('GET', '/journey/events/' + encodeURIComponent(eventId.value))
       issueId.value = event.value.issue_id
@@ -105,7 +113,7 @@ async function moreCandidates() {
 onLoad(options => {
   setEntryTheme(options?.theme)
   const requested = options?.mode || 'event'
-  mode.value = ['new', 'direction', 'pending'].includes(requested) ? requested : 'event'
+  mode.value = ['new', 'direction', 'pending','snapshot'].includes(requested) ? requested : 'event'
   try {
     issueId.value = decodeURIComponent(options?.issue || '')
     eventId.value = decodeURIComponent(options?.id || '')
@@ -123,6 +131,12 @@ onShow(() => refreshTheme())
       <view v-if="error" class="journey-error"><text>{{ error }}</text><button v-if="!loaded" class="journey-link" :disabled="loading" @click="load">重新读取</button></view>
       <text v-if="loading && !loaded" class="journey-empty">正在读取记录</text>
       <template v-if="loaded">
+        <view v-if="mode==='snapshot'&&snapshot" class="journey-snapshot-record">
+          <text class="journey-caption">{{ journeyDate(snapshot.captured_at) }} · 初始整理</text>
+          <text class="journey-snapshot-title">{{ snapshot.direction || '当时尚未确定方向' }}</text>
+          <text class="journey-snapshot-note">初始快照仅供查看，不能修改</text>
+          <view v-for="(row,index) in snapshotRows(snapshot)" :key="index" class="journey-snapshot-answer"><text class="journey-caption">{{ row.label }}</text><text class="journey-copy" :selectable="true">{{ row.value }}</text></view>
+        </view>
         <template v-if="mode === 'pending' && !selected">
           <text class="journey-copy">这些是 AI 发现的线索，还不是已经发生的事实。你可以修改后留下，也可以略过。</text>
           <view v-for="value in candidates" :key="value.id" class="journey-candidate">

@@ -81,6 +81,10 @@ it('opens starting-record details independently of the conversation entry',()=>{
   const base=homeEntryFor(null,{title:'',options:[],constraints:[],confirmed:[],hypotheses:[],unknowns:[],next_step:''},null,false)
   const {area,context,resume}=mount(false,{...base,stamp:'起点记录 · 10月25日',hasInitialContext:true})
   area('context').props.onClick()
+  expect(area('context').text).toBe('初始快照')
+  expect(area('context').props['aria-label']).toContain('只读')
+  const footer=area('context').parent!
+  expect(footer.children.indexOf(area('details'))).toBeLessThan(footer.children.indexOf(area('context')))
   expect(context).toHaveBeenCalledOnce()
   expect(resume).not.toHaveBeenCalled()
 })

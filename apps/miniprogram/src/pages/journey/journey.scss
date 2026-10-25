@@ -79,3 +79,10 @@
 .journey-page.preview-stage { display:block; padding-top:0; --font-body:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif; }
 
 .theme-dark.journey-page .journey-caption,.theme-dark.journey-page .journey-copy,.theme-dark.journey-page .journey-event-excerpt,.theme-dark.journey-page .journey-event-date { color:var(--ink); opacity:.8; }
+.journey-page .journey-event-heading { display:flex; align-items:center; gap:8px; }
+.journey-page .journey-snapshot-badge { flex-shrink:0; color:var(--muted); font-size:11px; line-height:18px; }
+.journey-page .journey-snapshot-record { padding:18px 16px; border:1px solid var(--quote-border); border-radius:8px; background:linear-gradient(155deg,var(--quote-fill-a),var(--quote-fill-b)); box-shadow:var(--quote-inset); }
+.journey-page .journey-snapshot-title { display:block; margin-top:10px; color:var(--ink); font-family:var(--font-heading); font-size:20px; line-height:30px; }
+.journey-page .journey-snapshot-note { display:block; margin:8px 0 16px; color:var(--muted); font-size:12px; line-height:21px; }
+.journey-page .journey-snapshot-answer { padding:13px 0; border-top:1px solid var(--line); }
+.journey-page .journey-snapshot-answer .journey-copy { display:block; margin-top:5px; white-space:pre-wrap; overflow-wrap:break-word; }

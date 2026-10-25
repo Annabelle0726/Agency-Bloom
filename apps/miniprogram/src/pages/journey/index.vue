@@ -6,8 +6,11 @@ import { resolvePageArt } from '../../page-art'
 import { journeyDate, mergeJourneyEvents, reflectionFor, shortJourneyDate, useJourneySession } from '../../journey'
 import type { CandidatePage, JourneyEvent, JourneyPage } from '../../journey'
 import type { Issue } from '../../domain'
-const { theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, refreshTheme, back } = useJourneySession()
+import { loadJourneySnapshots } from '../../journey-snapshots'
+const { user, theme, style, error, loading, capsuleBottom, request, loadSession, setEntryTheme, refreshTheme, back } = useJourneySession()
 const issues = ref<Issue[]>([]), events = ref<JourneyEvent[]>([]), cursor = ref<string | null>(null)
+const snapshotEvents=ref<JourneyEvent[]>([]), snapshotError=ref('')
+const timeline=computed(()=>mergeJourneyEvents(events.value,snapshotEvents.value.filter(item=>!selectedIssue.value||item.issue_id===selectedIssue.value)))
 const entryFromMe = ref(false)
 const selectedIssue = ref(''), pendingCount = ref(0), pendingOffset = ref<number | null>(null)
 const loaded = ref(false), moreBusy = ref(false), navigating = ref(false)
@@ -21,7 +24,7 @@ const query = () => selectedIssue.value ? 'issue_id=' + encodeURIComponent(selec
 let refreshQueued = false
 async function load(reset = true) {
   if (loading.value || moreBusy.value) { if (reset) refreshQueued = true; return }
-  if (reset) loading.value = true
+  if (reset) { loading.value = true;snapshotEvents.value=[];snapshotError.value='' }
   else moreBusy.value = true
   error.value = ''
   try {
@@ -35,6 +38,12 @@ async function load(reset = true) {
       }
       issues.value = all
       if (selectedIssue.value && !all.some(item => item.id === selectedIssue.value)) selectedIssue.value = ''
+      snapshotEvents.value=[];snapshotError.value=''
+      const owner=user.value?.id
+      const saved=await loadJourneySnapshots(all.filter(item=>!selectedIssue.value||item.id===selectedIssue.value),request)
+      if(!owner||owner!==user.value?.id)return
+      snapshotEvents.value=saved.items
+      if(saved.failures)snapshotError.value='部分初始快照暂时未能读取，可以重试'
     }
     const page = await request<JourneyPage>('GET', '/journey/events?' + query() + (reset || !cursor.value ? '' : 'before=' + encodeURIComponent(cursor.value)))
     const target = reset ? events.value.length : 0
@@ -93,17 +102,18 @@ onShow(() => { refreshTheme(); void load() })
         <view class="journey-section-head"><text class="journey-section-title">重要的时刻</text><button v-if="issues.length" class="journey-link" @click="record" hover-class="journey-pressed" :hover-start-time="0"><SvgIcon name="plus" :size="15" />留下一刻</button></view>
         <view class="journey-filter">
           <picker :range="issueLabels" :value="selectedIndex" :disabled="loading || moreBusy" @change="filter"><view class="journey-filter-label"><text>{{ issueLabels[selectedIndex] }}</text><SvgIcon name="chevron" :size="14" tone="muted" /></view></picker>
-          <text class="journey-caption">已确认 · 按记录时间</text>
+          <text class="journey-caption">按记录时间 · 含初始快照</text>
         </view>
+        <view v-if="snapshotError" class="journey-error"><text>{{ snapshotError }}</text><button class="journey-link" :disabled="loading" @click="load()">重试读取快照</button></view>
         <view class="journey-timeline" :class="{ 'journey-updating': loading }">
-          <button v-for="item in events" :key="item.id" class="journey-event" :data-event-id="item.id" @click="open('/pages/journey/detail?id=' + encodeURIComponent(item.id))" hover-class="journey-pressed" :hover-start-time="0">
+          <button v-for="item in timeline" :key="item.id" class="journey-event" :data-event-id="item.id" @click="open(item.kind==='snapshot'?'/pages/journey/detail?mode=snapshot&issue='+encodeURIComponent(item.issue_id):'/pages/journey/detail?id=' + encodeURIComponent(item.id))" hover-class="journey-pressed" :hover-start-time="0">
             <text class="journey-event-date">{{ shortJourneyDate(item.created_at) }}<text class="journey-event-year">{{ journeyDate(item.created_at).split('年')[0] }}</text></text>
-            <view class="journey-track"><view class="journey-dot" :class="{ 'journey-dot-latest': item.id === events[0]?.id }" /></view>
-            <view class="journey-event-copy"><text class="journey-event-title">{{ item.title }}</text><text v-if="!selectedIssue && issues.length > 1" class="journey-caption journey-event-topic">{{ item.issue_title || '未命名的探索' }}</text><text class="journey-event-excerpt">{{ item.text }}</text></view>
+            <view class="journey-track"><view class="journey-dot" :class="{ 'journey-dot-latest': item.id === timeline[0]?.id }" /></view>
+            <view class="journey-event-copy"><view class="journey-event-heading"><text class="journey-event-title">{{ item.title }}</text><text v-if="item.kind==='snapshot'" class="journey-snapshot-badge">只读</text></view><text v-if="!selectedIssue && issues.length > 1" class="journey-caption journey-event-topic">{{ item.issue_title || '未命名的探索' }}</text><text class="journey-event-excerpt">{{ item.text }}</text></view>
             <SvgIcon name="chevron" :size="14" tone="muted" />
           </button>
         </view>
-        <text v-if="!events.length" class="journey-empty">这里还没有你选择留下的时刻\n有了想法、选择或一次尝试，再把它留在这里</text>
+        <text v-if="!timeline.length" class="journey-empty">这里还没有你选择留下的时刻\n有了想法、选择或一次尝试，再把它留在这里</text>
         <button v-if="cursor" class="journey-link journey-more" :disabled="loading || moreBusy" @click="load(false)">{{ moreBusy ? '正在读取' : '再往前看看' }}</button>
         <button v-if="pendingCount || pendingOffset !== null" class="journey-pending-entry" @click="open('/pages/journey/detail?mode=pending' + (selectedIssue ? '&issue=' + encodeURIComponent(selectedIssue) : ''))" hover-class="journey-pressed" :hover-start-time="0"><view><text>待确认的时刻</text><text class="journey-caption">看看 AI 发现的线索，由你决定是否留下</text></view><SvgIcon name="arrow" :size="18" tone="accent" /></button>
         <view class="journey-section-head"><text class="journey-section-title">接下来</text></view>

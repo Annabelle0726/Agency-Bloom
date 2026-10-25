@@ -166,6 +166,12 @@ const {
   canonicalSupportStyle,
 } = useIndexPage()
 const homeConversation = computed(() => homeConversationFor(current.value, conversations.value, activeConversation.value?.id))
+const homeReply = computed(() => {
+  const conversation=homeConversation.value
+  if(sending.value || !user.value?.save_chat || !conversation || activeConversation.value?.id!==conversation.id) return null
+  const reply=[...messages.value].reverse().find(message=>message.role==='assistant'&&message.content.trim())
+  return reply?{conversationId:conversation.id,content:reply.content}:null
+})
 const openingHomeChat = ref(false)
 async function continueHomeChat() {
   if (openingHomeChat.value) return
@@ -230,9 +236,9 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
 
       <template v-else-if="screen === 'space'">
         <HomeView v-if="tab === 'now'" :card="card" :current="current" :greeting="greeting" :foreground="spaceForeground"
-                  :today-label="todayLabel" :conversation="homeConversation" :retain-chat="!!user?.save_chat" :opening-chat="openingHomeChat"
+                  :today-label="todayLabel" :conversation="homeConversation" :reply="homeReply" :retain-chat="!!user?.save_chat" :opening-chat="openingHomeChat"
                   @open-editor="openEditor()" @plan="selectTab('plan')"
-                  @feedback="modal = 'feedback'" @chat="continueHomeChat" @onboarding="beginOnboarding" />
+                  @feedback="modal = 'feedback'" @chat="continueHomeChat" @onboarding="beginOnboarding" @context="drawer = 'snapshots'" />
         <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id"
                   @open-editor="openEditor()" @feedback="modal = 'feedback'" @chat="selectTab('chat')"
                   @resume="resumeExploration" @end="endIssue" />
@@ -335,7 +341,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
       <PhaseChangeReview v-if="workspace.active.value.phaseOpen.value && workspace.active.value.phaseChange.value" :key="workspace.activeId.value + workspace.active.value.phaseChange.value.source_id"
                          :change="workspace.active.value.phaseChange.value" :confirmed="workspace.active.value.phaseConfirmed.value" :busy="busy" :error="phaseError"
                          @confirm="workspace.active.value.confirmPhaseChange()" @skip="skipPhaseChange" @close="workspace.active.value.phaseOpen.value = false" @save="savePhaseChange" />
-      <ConversationDrawer v-if="drawer && user" :key="user.id" :view="drawer" :conversations="conversations" :active="activeConversation" :issues="archives" :user="user"
+      <ConversationDrawer v-if="drawer && user" :key="user.id" :view="drawer" :conversations="conversations" :active="activeConversation" :issues="archives" :user="user" :initial-issue-id="current?.id"
                           :summary="workspace.active.value.summary.value" :summary-draft="workspace.active.value.summaryDraft.value"
                           :generating="sending" :running="runningIds" :error="chatError || error" :request="request"
                           @close="drawer = ''" @view-changed="drawer = $event" @select="selectConversation" @refresh="guarded(refreshWorkspace)"

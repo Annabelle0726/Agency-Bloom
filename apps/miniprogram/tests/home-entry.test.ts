@@ -28,14 +28,15 @@ describe('Home continuation uses available, authorized context', () => {
     } } }, card, null, true)
     expect(entry.title).toBe('家人的期待')
     expect(entry.stamp).toContain('起点记录')
-    expect(entry.detail).toContain('想保留自己的选择')
+    expect(entry.detail).toBe('')
+    expect(entry.hasInitialContext).toBe(true)
     expect(entry.stamp).toContain('10月23日')
     expect(entry.kept).toBe('')
   })
   it('never uses a retained summary when retention is off, or the conversation belongs elsewhere', () => {
     const context = { ...issue, title:'我的实际问题', focus_response:'我选择的起点' }
-    expect(homeEntryFor(context, card, conversation('retained'), false).detail).toBe('我选择的起点')
-    expect(homeEntryFor(context, card, conversation('wrong', 'b'), true).detail).toBe('我选择的起点')
+    expect(homeEntryFor(context, card, conversation('retained'), false).detail).toBe('')
+    expect(homeEntryFor(context, card, conversation('wrong', 'b'), true).detail).toBe('')
     expect(homeEntryFor(context, card, conversation('reviewed'), true).detail).toBe('用户回顾并保留的理解')
   })
   it('offers an honest empty entry and keeps unconfirmed guesses out of the card', () => {
@@ -43,7 +44,7 @@ describe('Home continuation uses available, authorized context', () => {
     expect(homeEntryFor(null, speculative, null, true).bubble).toBe('你想先聊聊什么？')
     expect(homeEntryFor(issue, speculative, null, true).bubble).toBe('你想先聊聊什么？')
     expect(JSON.stringify(homeEntryFor(issue, speculative, null, true))).not.toContain('猜测你害怕改变')
-    expect(homeEntryFor({ ...issue, title:'想换个方向' }, { ...card, confirmed:['我想保留创作时间'] }, null, true).detail).toBe('我想保留创作时间')
+    expect(homeEntryFor({ ...issue, title:'想换个方向' }, { ...card, confirmed:['我想保留创作时间'] }, null, true).detail).toBe('')
   })
   it('uses one empty-state headline and avoids echoing a title as its description or saved line', () => {
     const empty = homeEntryFor(null, card, null, false)

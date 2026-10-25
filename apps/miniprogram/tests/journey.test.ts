@@ -12,6 +12,7 @@ describe('journey evidence and dates', () => {
     const issues = [{ id: 'a', title: '当前标题', card: { next_step: '尚未行动' } }] as Issue[]
     expect(reflectionFor([], issues)).toBeNull()
     expect(reflectionFor([event('start:a', '2026-10-01', 'start')], issues)).toBeNull()
+    expect(reflectionFor([event('snapshot:a', '2026-10-01', 'snapshot')], issues)).toBeNull()
   })
   it('quotes confirmed text and bounds the first-screen retrospective', () => {
     const text = '我真实留下的想法'.repeat(50)
