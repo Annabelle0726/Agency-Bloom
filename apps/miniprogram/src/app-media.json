@@ -1,0 +1,295 @@
+{
+  "schemaVersion": 1,
+  "publicBaseUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/",
+  "verifiedAt": "2026-10-25T09:35:31.292Z",
+  "objects": [
+    {
+      "localPath": "/static/art/night-water.jpg",
+      "key": "app-media/art/night-water.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/art/night-water.jpg",
+      "bytes": 13760,
+      "sha256": "521f8c15b1a9ebb0c81835c4e89b928522a9d55bdd7bccd7aadacd3f3504e535",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:12.775Z"
+    },
+    {
+      "localPath": "/static/bloom/dusk-landscape.jpg",
+      "key": "app-media/bloom/dusk-landscape.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom/dusk-landscape.jpg",
+      "bytes": 3552,
+      "sha256": "cde7e6a0111bc681f27a219031bb13a25a23e9d156e6b48f67db554e54e7113b",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:12.267Z"
+    },
+    {
+      "localPath": "/static/bloom/dusk-reflection.jpg",
+      "key": "app-media/bloom/dusk-reflection.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom/dusk-reflection.jpg",
+      "bytes": 5051,
+      "sha256": "6e7b70e3218097170683d1508a998d49b41dff9af2d9c7dc36d09c40b43cab08",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:12.781Z"
+    },
+    {
+      "localPath": "/static/bloom/lavender-landscape.jpg",
+      "key": "app-media/bloom/lavender-landscape.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom/lavender-landscape.jpg",
+      "bytes": 6566,
+      "sha256": "8a5b3021f4df43d6e567ed83e6564765a6925e9bf7413940320f0c1612d90f42",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:12.378Z"
+    },
+    {
+      "localPath": "/static/bloom/lavender-reflection.jpg",
+      "key": "app-media/bloom/lavender-reflection.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom/lavender-reflection.jpg",
+      "bytes": 5836,
+      "sha256": "1a9a8b38b54fdaa032cf2c43ec1ed3f8ba511e896bfba996b5ed9d5074028111",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:14.905Z"
+    },
+    {
+      "localPath": "/static/bloom/minimal-landscape.jpg",
+      "key": "app-media/bloom/minimal-landscape.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom/minimal-landscape.jpg",
+      "bytes": 3137,
+      "sha256": "098757c8cefd64d6e54095156da98e60b9cd964faca0f7f7f11d3f54ff76a925",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:14.582Z"
+    },
+    {
+      "localPath": "/static/bloom/minimal-reflection.jpg",
+      "key": "app-media/bloom/minimal-reflection.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom/minimal-reflection.jpg",
+      "bytes": 3834,
+      "sha256": "c18003045bd55095861721cf24b4c1059e01ef9c1365d5e912c739f437db1204",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:14.659Z"
+    },
+    {
+      "localPath": "/static/bloom/night-landscape.jpg",
+      "key": "app-media/bloom/night-landscape.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom/night-landscape.jpg",
+      "bytes": 6618,
+      "sha256": "a88cd55fd2a101524c1938db0efd1398e6fdb8c9efd730eb1fab0f99c948a7c0",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:15.069Z"
+    },
+    {
+      "localPath": "/static/bloom/night-reflection.jpg",
+      "key": "app-media/bloom/night-reflection.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom/night-reflection.jpg",
+      "bytes": 3931,
+      "sha256": "b40c0dd9475e4b703d7b90a57fe26c4356f58e054166fcb772a0a7217ec8bf6b",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:17.093Z"
+    },
+    {
+      "localPath": "/static/bloom-greeting.png",
+      "key": "app-media/bloom-greeting.png",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/bloom-greeting.png",
+      "bytes": 197063,
+      "sha256": "31cec61875ad2663b5589a2ecba280e9db7b0b1db71bc29c36811712ecb4dad9",
+      "mime": "image/png",
+      "verifiedAt": "2026-10-25T09:35:18.283Z"
+    },
+    {
+      "localPath": "/static/brand-app-icon.png",
+      "key": "app-media/brand-app-icon.png",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/brand-app-icon.png",
+      "bytes": 38835,
+      "sha256": "e7455f692af59e4b6f41b0d9bfbaf868870dda54eb772e79ad74b625d41fa29b",
+      "mime": "image/png",
+      "verifiedAt": "2026-10-25T09:35:17.317Z"
+    },
+    {
+      "localPath": "/static/companion-ember.png",
+      "key": "app-media/companion-ember.png",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/companion-ember.png",
+      "bytes": 31359,
+      "sha256": "5051c50644b35fafe39d33d720e5a4cefb4d1ba7891aab17617bfb5619e4521e",
+      "mime": "image/png",
+      "verifiedAt": "2026-10-25T09:35:17.468Z"
+    },
+    {
+      "localPath": "/static/morning-light.jpg",
+      "key": "app-media/morning-light.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/morning-light.jpg",
+      "bytes": 71141,
+      "sha256": "308623902a536cc8adc5c6e013ea2f1916469d3ca17ef1492f40fae16bd1bf4c",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:20.730Z"
+    },
+    {
+      "localPath": "/static/mountain-lake.jpg",
+      "key": "app-media/mountain-lake.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/mountain-lake.jpg",
+      "bytes": 100508,
+      "sha256": "b1082f9efeb1e5979909646f812423ca872f607f3ecdb6c0e89604dbd7f79a42",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:20.885Z"
+    },
+    {
+      "localPath": "/static/opening-dawn.jpg",
+      "key": "app-media/opening-dawn.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/opening-dawn.jpg",
+      "bytes": 77887,
+      "sha256": "e5e89cb91a065c1c3ec29b157993d8bff2ce60c7c7efce045deb9c1548679da3",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:20.890Z"
+    },
+    {
+      "localPath": "/static/opening-meadow.jpg",
+      "key": "app-media/opening-meadow.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/opening-meadow.jpg",
+      "bytes": 105321,
+      "sha256": "cfe8028859f17ffa716b0987f826fc8672eab641333bdc17799a84f6dcb87058",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:21.506Z"
+    },
+    {
+      "localPath": "/static/opening-mountain-person.jpg",
+      "key": "app-media/opening-mountain-person.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/opening-mountain-person.jpg",
+      "bytes": 119685,
+      "sha256": "754f4c67b2c5ebdef47cccbf57164cbca764811d4dd87793de7a8d1a46ffff4f",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:23.878Z"
+    },
+    {
+      "localPath": "/static/opening-path.jpg",
+      "key": "app-media/opening-path.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/opening-path.jpg",
+      "bytes": 121245,
+      "sha256": "47a39ccd19cb541837436a753821980b3c74f7485f4d4b98be96a64710e95996",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:24.560Z"
+    },
+    {
+      "localPath": "/static/opening-rest.jpg",
+      "key": "app-media/opening-rest.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/opening-rest.jpg",
+      "bytes": 82247,
+      "sha256": "76f0e00b1c371119230fe6f82243ff81ab1b4b0b834606d9ca8647aacf69da89",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:24.229Z"
+    },
+    {
+      "localPath": "/static/opening-water.jpg",
+      "key": "app-media/opening-water.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/opening-water.jpg",
+      "bytes": 65670,
+      "sha256": "54bf83d4b80220aac1f1b0bd65cb748df7a00c36ce785f039138cc61832a196e",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:23.875Z"
+    },
+    {
+      "localPath": "/static/themes/dawn-preview.jpg",
+      "key": "app-media/themes/dawn-preview.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/dawn-preview.jpg",
+      "bytes": 6335,
+      "sha256": "c104862d16c307631efd5d067172b9df469fbc7ad24eb40116b14f5ccb6f8a54",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:26.378Z"
+    },
+    {
+      "localPath": "/static/themes/dawn.jpg",
+      "key": "app-media/themes/dawn.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/dawn.jpg",
+      "bytes": 31860,
+      "sha256": "6d147e6eefbcd5b43c3418e7ce4eebe3471be8010721081262d90c7843ff361a",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:26.482Z"
+    },
+    {
+      "localPath": "/static/themes/forest-preview.jpg",
+      "key": "app-media/themes/forest-preview.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/forest-preview.jpg",
+      "bytes": 17276,
+      "sha256": "ce5dfb36cec70b4b4be742a4284b8c0c6d74ed34ade1574e64be4496301ae15c",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:26.493Z"
+    },
+    {
+      "localPath": "/static/themes/forest.jpg",
+      "key": "app-media/themes/forest.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/forest.jpg",
+      "bytes": 102762,
+      "sha256": "2d7df55d9f753a9c6ac9ca6fba344a297ac709dde897b6ac1ee7efc22870ec94",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:26.792Z"
+    },
+    {
+      "localPath": "/static/themes/lavender-preview.jpg",
+      "key": "app-media/themes/lavender-preview.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/lavender-preview.jpg",
+      "bytes": 20043,
+      "sha256": "3d14dd8b8c7edcd65763fa5c92cc138ef32cb5d0d27d794bec90922985e96560",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:28.425Z"
+    },
+    {
+      "localPath": "/static/themes/lavender.jpg",
+      "key": "app-media/themes/lavender.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/lavender.jpg",
+      "bytes": 65019,
+      "sha256": "5cb93f9adab523766ee411ec89ed86cb7ee4e87417c2183783a7f72a67960900",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:29.086Z"
+    },
+    {
+      "localPath": "/static/themes/minimal-preview.jpg",
+      "key": "app-media/themes/minimal-preview.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/minimal-preview.jpg",
+      "bytes": 2422,
+      "sha256": "ba66b45d78b06872173827c5a1b3b0c72bbdc44df2684ce6130ec7224d1b4256",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:28.495Z"
+    },
+    {
+      "localPath": "/static/themes/minimal.jpg",
+      "key": "app-media/themes/minimal.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/minimal.jpg",
+      "bytes": 12983,
+      "sha256": "c02d07d5ecd1583e4ab9f0672dc4fd4516a415b63685f5f05f8c2bc5e137f5ef",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:28.602Z"
+    },
+    {
+      "localPath": "/static/themes/mist-preview.jpg",
+      "key": "app-media/themes/mist-preview.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/mist-preview.jpg",
+      "bytes": 11502,
+      "sha256": "84da1cd544ea4dcd536d3c46a66871e70c4abe18f043d134834556468c6ee5d8",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:31.292Z"
+    },
+    {
+      "localPath": "/static/themes/mist.jpg",
+      "key": "app-media/themes/mist.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/mist.jpg",
+      "bytes": 44945,
+      "sha256": "edadd288be9123a73d1dcdf9498e559d66522c0b6030807a62fa1a87edf49259",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:30.952Z"
+    },
+    {
+      "localPath": "/static/themes/night-preview.jpg",
+      "key": "app-media/themes/night-preview.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/night-preview.jpg",
+      "bytes": 3164,
+      "sha256": "c9eb924dc645baf0c48329fdd14f41c42c14fd4dbc1686bd050398a953786685",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:30.764Z"
+    },
+    {
+      "localPath": "/static/themes/night.jpg",
+      "key": "app-media/themes/night.jpg",
+      "url": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/app-media/themes/night.jpg",
+      "bytes": 9139,
+      "sha256": "272bc3da80fb9750671fe47356dd5fc7c1db1e69f9ae8b7842ed7505d3e7ecdf",
+      "mime": "image/jpeg",
+      "verifiedAt": "2026-10-25T09:35:30.938Z"
+    }
+  ]
+}

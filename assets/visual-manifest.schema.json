@@ -4,21 +4,47 @@
   "title": "Agency Bloom visual manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "generatedAt", "themes", "visuals"],
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "themes",
+    "visuals"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "schemaVersion": { "const": 1 },
-    "generatedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-    "sourceNote": { "type": "string" },
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "sourceNote": {
+      "type": "string"
+    },
     "themes": {
       "type": "array",
       "prefixItems": [
-        { "const": "light" },
-        { "const": "dark" },
-        { "const": "dawn" },
-        { "const": "forest" },
-        { "const": "lavender" },
-        { "const": "minimal" }
+        {
+          "const": "light"
+        },
+        {
+          "const": "dark"
+        },
+        {
+          "const": "dawn"
+        },
+        {
+          "const": "forest"
+        },
+        {
+          "const": "lavender"
+        },
+        {
+          "const": "minimal"
+        }
       ],
       "minItems": 6,
       "maxItems": 6,
@@ -26,73 +52,195 @@
     },
     "visuals": {
       "type": "array",
-      "items": { "$ref": "#/$defs/visual" }
+      "items": {
+        "$ref": "#/$defs/visual"
+      }
     }
   },
   "$defs": {
     "theme": {
-      "enum": ["light", "dark", "dawn", "forest", "lavender", "minimal"]
+      "enum": [
+        "light",
+        "dark",
+        "dawn",
+        "forest",
+        "lavender",
+        "minimal"
+      ]
     },
     "visual": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "id", "category", "description", "tags", "mood", "intendedPage",
-        "visualRole", "themeCompatibility", "source", "originalPath",
-        "sourceSha256", "sourceBytes", "dimensions", "status", "deploy",
-        "sourceGroup", "runtimeVariants", "heroVariants"
+        "id",
+        "category",
+        "description",
+        "tags",
+        "mood",
+        "intendedPage",
+        "visualRole",
+        "themeCompatibility",
+        "source",
+        "originalPath",
+        "sourceSha256",
+        "sourceBytes",
+        "dimensions",
+        "status",
+        "deploy",
+        "sourceGroup",
+        "runtimeVariants",
+        "heroVariants"
       ],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-        "category": {
-          "enum": ["choices", "connection", "direction", "growth", "reflection", "rest", "transition"]
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
         },
-        "description": { "type": "string", "minLength": 1 },
-        "tags": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
-        "mood": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "category": {
+          "enum": [
+            "choices",
+            "connection",
+            "direction",
+            "growth",
+            "reflection",
+            "rest",
+            "transition"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "mood": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
         "intendedPage": {
           "type": "array",
-          "items": { "enum": ["discover", "explore", "plan", "shared", "reference-only"] },
+          "items": {
+            "enum": [
+              "discover",
+              "explore",
+              "plan",
+              "shared",
+              "reference-only"
+            ]
+          },
           "minItems": 1,
           "uniqueItems": true
         },
         "visualRole": {
           "type": "array",
-          "items": { "enum": ["hero", "page-background", "card-thumbnail", "section-illustration", "decorative", "reference-only"] },
+          "items": {
+            "enum": [
+              "hero",
+              "page-background",
+              "card-thumbnail",
+              "section-illustration",
+              "decorative",
+              "reference-only"
+            ]
+          },
           "minItems": 1,
           "uniqueItems": true
         },
         "themeCompatibility": {
           "type": "array",
-          "items": { "$ref": "#/$defs/theme" },
+          "items": {
+            "$ref": "#/$defs/theme"
+          },
           "uniqueItems": true
         },
-        "source": { "enum": ["chatgpt-generated", "user-supplied-design-reference"] },
-        "originalPath": { "type": "string", "pattern": "^assets/visual-library/(originals|references)/.+\\.(png|jpe?g|jfif)$" },
-        "sourceSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-        "sourceBytes": { "type": "integer", "minimum": 1 },
+        "source": {
+          "enum": [
+            "chatgpt-generated",
+            "user-supplied-design-reference"
+          ]
+        },
+        "originalPath": {
+          "type": "string",
+          "pattern": "^assets/visual-library/(originals|references)/.+\\.(png|jpe?g|jfif)$"
+        },
+        "sourceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sourceBytes": {
+          "type": "integer",
+          "minimum": 1
+        },
         "dimensions": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["width", "height", "aspectRatio"],
+          "required": [
+            "width",
+            "height",
+            "aspectRatio"
+          ],
           "properties": {
-            "width": { "type": "integer", "minimum": 1 },
-            "height": { "type": "integer", "minimum": 1 },
-            "aspectRatio": { "type": "number", "exclusiveMinimum": 0 }
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "aspectRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
           }
         },
-        "status": { "enum": ["deployed", "archived", "reference-only"] },
-        "deploy": { "type": "boolean" },
-        "sourceGroup": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": [
+            "deployed",
+            "archived",
+            "reference-only"
+          ]
+        },
+        "deploy": {
+          "type": "boolean"
+        },
+        "sourceGroup": {
+          "type": "string",
+          "minLength": 1
+        },
         "runtimeVariants": {
           "type": "object",
-          "propertyNames": { "$ref": "#/$defs/theme" },
-          "additionalProperties": { "type": "string", "pattern": "^/static/.+\\.jpg$" }
+          "propertyNames": {
+            "$ref": "#/$defs/theme"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^/static/.+\\.jpg$"
+          }
         },
         "heroVariants": {
           "type": "object",
-          "propertyNames": { "$ref": "#/$defs/theme" },
-          "additionalProperties": { "type": "string", "pattern": "^/static/.+\\.jpg$" }
+          "propertyNames": {
+            "$ref": "#/$defs/theme"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^/static/.+\\.jpg$"
+          }
+        },
+        "originalUrl": {
+          "type": "string",
+          "format": "uri"
         }
       }
     }

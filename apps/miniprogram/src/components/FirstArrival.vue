@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { resolveAppMedia } from '../app-media'
 import ActionButton from './ActionButton.vue'
 defineEmits<{ enter: [] }>()
 </script>
 
 <template>
   <view class="first-arrival">
-    <image class="arrival-background" src="/static/morning-light.jpg" mode="aspectFill" />
+    <image class="arrival-background" :src="resolveAppMedia('/static/morning-light.jpg')" mode="aspectFill" />
     <view class="arrival-header"><text>AGENCY BLOOM</text><button class="arrival-skip" hover-class="pressed" @click="$emit('enter')">直接进入</button></view>
     <scroll-view class="arrival-scroll" scroll-y :show-scrollbar="false">
       <view class="arrival-letter">

@@ -67,7 +67,8 @@
       },
       "heroVariants": {
         "dark": "/static/bloom/night-scene.jpg"
-      }
+      },
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_night_lake_reading_01.png"
     },
     {
       "id": "dusk_lake_reading_01",
@@ -122,7 +123,8 @@
       },
       "heroVariants": {
         "dawn": "/static/bloom/dusk-scene.jpg"
-      }
+      },
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_dusk_lake_reading_01.png"
     },
     {
       "id": "lavender_lake_reading_01",
@@ -177,7 +179,8 @@
       },
       "heroVariants": {
         "lavender": "/static/bloom/lavender-scene.jpg"
-      }
+      },
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/growth/growth_lavender_lake_reading_01.png"
     },
     {
       "id": "ivory_window_reading_01",
@@ -233,7 +236,8 @@
       },
       "heroVariants": {
         "minimal": "/static/bloom/minimal-scene.jpg"
-      }
+      },
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_ivory_window_reading_01.png"
     },
     {
       "id": "misty_lake_meadow_01",
@@ -284,7 +288,8 @@
       "runtimeVariants": {},
       "heroVariants": {
         "light": "/static/bloom/mist-lake.jpg"
-      }
+      },
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_misty_lake_meadow_01.png"
     },
     {
       "id": "forest_sunbeam_path_01",
@@ -340,7 +345,8 @@
       },
       "heroVariants": {
         "forest": "/static/bloom/forest-hero.jpg"
-      }
+      },
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/direction/direction_forest_sunbeam_path_01.png"
     },
     {
       "id": "sunlit_desk_01",
@@ -399,7 +405,8 @@
       },
       "heroVariants": {
         "forest": "/static/bloom/forest-reading.jpg"
-      }
+      },
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_sunlit_desk_01.png"
     },
     {
       "id": "lakeside_sunset_01",
@@ -453,7 +460,8 @@
         "light": "/static/bloom/lake-reflection.jpg",
         "forest": "/static/bloom/lake-reflection.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_lakeside_sunset_01.png"
     },
     {
       "id": "window_lake_desk_01",
@@ -505,7 +513,8 @@
       "runtimeVariants": {},
       "heroVariants": {
         "light": "/static/bloom/mist-reading.jpg"
-      }
+      },
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_window_lake_desk_01.png"
     },
     {
       "id": "misty_lake_canoe_01",
@@ -563,7 +572,8 @@
         "forest": "/static/visuals/choices/choices_misty_lake_canoe_01.jpg",
         "minimal": "/static/visuals/choices/choices_misty_lake_canoe_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/choices/choices_misty_lake_canoe_01.jfif"
     },
     {
       "id": "dawn_lake_wildflowers_01",
@@ -609,7 +619,8 @@
       "deploy": false,
       "sourceGroup": "lake-open",
       "runtimeVariants": {},
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_dawn_lake_wildflowers_01.jfif"
     },
     {
       "id": "window_seat_01",
@@ -669,7 +680,8 @@
         "lavender": "/static/visuals/reflection/reflection_window_seat_01.jpg",
         "forest": "/static/visuals/reflection/reflection_window_seat_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_window_seat_01.jfif"
     },
     {
       "id": "forest_path_green_01",
@@ -721,7 +733,8 @@
         "forest": "/static/visuals/direction/direction_forest_path_green_01.jpg",
         "light": "/static/visuals/direction/direction_forest_path_green_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/direction/direction_forest_path_green_01.jfif"
     },
     {
       "id": "book_tea_blanket_01",
@@ -768,7 +781,8 @@
       "deploy": false,
       "sourceGroup": "reading-desk",
       "runtimeVariants": {},
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_book_tea_blanket_01.jfif"
     },
     {
       "id": "autumn_forest_path_01",
@@ -820,7 +834,8 @@
         "forest": "/static/visuals/transition/transition_autumn_forest_path_01.jpg",
         "dawn": "/static/visuals/transition/transition_autumn_forest_path_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/transition/transition_autumn_forest_path_01.jfif"
     },
     {
       "id": "forest_path_violet_01",
@@ -872,7 +887,8 @@
         "forest": "/static/visuals/growth/growth_forest_path_violet_01.jpg",
         "lavender": "/static/visuals/growth/growth_forest_path_violet_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/growth/growth_forest_path_violet_01.jfif"
     },
     {
       "id": "mountain_lake_reflection_01",
@@ -918,7 +934,8 @@
       "deploy": false,
       "sourceGroup": "lake-open",
       "runtimeVariants": {},
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_mountain_lake_reflection_01.jfif"
     },
     {
       "id": "window_seat_pillows_01",
@@ -964,7 +981,8 @@
       "deploy": false,
       "sourceGroup": "window-seat",
       "runtimeVariants": {},
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_window_seat_pillows_01.jfif"
     },
     {
       "id": "forest_path_pink_01",
@@ -1018,7 +1036,8 @@
         "dawn": "/static/visuals/direction/direction_forest_path_pink_01.jpg",
         "light": "/static/visuals/direction/direction_forest_path_pink_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/direction/direction_forest_path_pink_01.jfif"
     },
     {
       "id": "moonlit_forest_01",
@@ -1068,7 +1087,8 @@
       "runtimeVariants": {
         "dark": "/static/visuals/rest/rest_moonlit_forest_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_moonlit_forest_01.jfif"
     },
     {
       "id": "sunlit_notebook_desk_01",
@@ -1114,7 +1134,8 @@
       "deploy": false,
       "sourceGroup": "reading-desk",
       "runtimeVariants": {},
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_sunlit_notebook_desk_01.jfif"
     },
     {
       "id": "sunlit_window_book_01",
@@ -1173,7 +1194,8 @@
         "forest": "/static/visuals/reflection/reflection_sunlit_window_book_01.jpg",
         "lavender": "/static/visuals/reflection/reflection_sunlit_window_book_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_sunlit_window_book_01.jfif"
     },
     {
       "id": "bluebell_forest_01",
@@ -1217,7 +1239,8 @@
         "forest": "/static/visuals/rest/rest_bluebell_forest_01.jpg",
         "lavender": "/static/visuals/rest/rest_bluebell_forest_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_bluebell_forest_01.jfif"
     },
     {
       "id": "golden_desk_book_01",
@@ -1274,7 +1297,8 @@
         "light": "/static/visuals/reflection/reflection_golden_desk_book_01.jpg",
         "minimal": "/static/visuals/reflection/reflection_golden_desk_book_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_golden_desk_book_01.jfif"
     },
     {
       "id": "moonlit_lake_01",
@@ -1323,7 +1347,8 @@
       "runtimeVariants": {
         "dark": "/static/visuals/rest/rest_moonlit_lake_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_moonlit_lake_01.jfif"
     },
     {
       "id": "sunlit_book_desk_01",
@@ -1386,7 +1411,8 @@
         "forest": "/static/visuals/reflection/reflection_sunlit_book_desk_01.jpg",
         "lavender": "/static/visuals/reflection/reflection_sunlit_book_desk_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_sunlit_book_desk_01.jfif"
     },
     {
       "id": "sunlit_meadow_path_01",
@@ -1443,7 +1469,8 @@
         "dawn": "/static/visuals/direction/direction_sunlit_meadow_path_01.jpg",
         "minimal": "/static/visuals/direction/direction_sunlit_meadow_path_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/direction/direction_sunlit_meadow_path_01.jfif"
     },
     {
       "id": "choices_garden_forked_steps_01",
@@ -1491,7 +1518,8 @@
         "dawn": "/static/visuals/choices/choices_garden_forked_steps_01.jpg",
         "forest": "/static/visuals/choices/choices_garden_forked_steps_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/choices/choices_garden_forked_steps_01.png"
     },
     {
       "id": "choices_window_notebook_01",
@@ -1539,7 +1567,8 @@
         "dawn": "/static/visuals/choices/choices_window_notebook_01.jpg",
         "minimal": "/static/visuals/choices/choices_window_notebook_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/choices/choices_window_notebook_01.png"
     },
     {
       "id": "choices_mountain_forked_path_01",
@@ -1586,7 +1615,8 @@
         "dawn": "/static/visuals/choices/choices_mountain_forked_path_01.jpg",
         "forest": "/static/visuals/choices/choices_mountain_forked_path_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/choices/choices_mountain_forked_path_01.png"
     },
     {
       "id": "connection_garden_conversation_01",
@@ -1634,7 +1664,8 @@
         "dawn": "/static/visuals/connection/connection_garden_conversation_01.jpg",
         "forest": "/static/visuals/connection/connection_garden_conversation_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/connection/connection_garden_conversation_01.png"
     },
     {
       "id": "connection_window_tea_conversation_01",
@@ -1682,7 +1713,8 @@
         "dawn": "/static/visuals/connection/connection_window_tea_conversation_01.jpg",
         "minimal": "/static/visuals/connection/connection_window_tea_conversation_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/connection/connection_window_tea_conversation_01.png"
     },
     {
       "id": "growth_pottery_wheel_01",
@@ -1730,7 +1762,8 @@
         "forest": "/static/visuals/growth/growth_pottery_wheel_01.jpg",
         "minimal": "/static/visuals/growth/growth_pottery_wheel_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/growth/growth_pottery_wheel_01.png"
     },
     {
       "id": "growth_sunlit_design_collage_01",
@@ -1778,7 +1811,8 @@
         "forest": "/static/visuals/growth/growth_sunlit_design_collage_01.jpg",
         "minimal": "/static/visuals/growth/growth_sunlit_design_collage_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/growth/growth_sunlit_design_collage_01.png"
     },
     {
       "id": "growth_sunlit_dance_practice_01",
@@ -1826,7 +1860,8 @@
         "dawn": "/static/visuals/growth/growth_sunlit_dance_practice_01.jpg",
         "minimal": "/static/visuals/growth/growth_sunlit_dance_practice_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/growth/growth_sunlit_dance_practice_01.png"
     },
     {
       "id": "growth_window_design_study_01",
@@ -1874,7 +1909,8 @@
         "forest": "/static/visuals/growth/growth_window_design_study_01.jpg",
         "minimal": "/static/visuals/growth/growth_window_design_study_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/growth/growth_window_design_study_01.png"
     },
     {
       "id": "growth_handcraft_stitching_01",
@@ -1922,7 +1958,8 @@
         "forest": "/static/visuals/growth/growth_handcraft_stitching_01.jpg",
         "minimal": "/static/visuals/growth/growth_handcraft_stitching_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/growth/growth_handcraft_stitching_01.png"
     },
     {
       "id": "growth_sunset_canoe_journey_01",
@@ -1968,7 +2005,8 @@
         "light": "/static/visuals/growth/growth_sunset_canoe_journey_01.jpg",
         "dawn": "/static/visuals/growth/growth_sunset_canoe_journey_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/growth/growth_sunset_canoe_journey_01.png"
     },
     {
       "id": "reflection_lakeside_sky_lantern_01",
@@ -2014,7 +2052,8 @@
         "dawn": "/static/visuals/reflection/reflection_lakeside_sky_lantern_01.jpg",
         "lavender": "/static/visuals/reflection/reflection_lakeside_sky_lantern_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_lakeside_sky_lantern_01.png"
     },
     {
       "id": "reflection_sunset_mountain_journal_01",
@@ -2062,7 +2101,8 @@
         "dawn": "/static/visuals/reflection/reflection_sunset_mountain_journal_01.jpg",
         "lavender": "/static/visuals/reflection/reflection_sunset_mountain_journal_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/reflection/reflection_sunset_mountain_journal_01.png"
     },
     {
       "id": "rest_mountain_paper_plane_01",
@@ -2110,7 +2150,8 @@
         "dawn": "/static/visuals/rest/rest_mountain_paper_plane_01.jpg",
         "lavender": "/static/visuals/rest/rest_mountain_paper_plane_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/rest/rest_mountain_paper_plane_01.png"
     },
     {
       "id": "transition_sunlit_new_home_01",
@@ -2155,7 +2196,8 @@
         "light": "/static/visuals/transition/transition_sunlit_new_home_01.jpg",
         "minimal": "/static/visuals/transition/transition_sunlit_new_home_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/transition/transition_sunlit_new_home_01.png"
     },
     {
       "id": "transition_storm_to_sunrise_01",
@@ -2199,7 +2241,8 @@
       "runtimeVariants": {
         "dawn": "/static/visuals/transition/transition_storm_to_sunrise_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/transition/transition_storm_to_sunrise_01.png"
     },
     {
       "id": "transition_sunrise_station_suitcase_01",
@@ -2245,7 +2288,8 @@
         "light": "/static/visuals/transition/transition_sunrise_station_suitcase_01.jpg",
         "dawn": "/static/visuals/transition/transition_sunrise_station_suitcase_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/transition/transition_sunrise_station_suitcase_01.png"
     },
     {
       "id": "transition_golden_station_departure_01",
@@ -2291,7 +2335,8 @@
         "light": "/static/visuals/transition/transition_golden_station_departure_01.jpg",
         "dawn": "/static/visuals/transition/transition_golden_station_departure_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/transition/transition_golden_station_departure_01.jfif"
     },
     {
       "id": "transition_open_door_journey_01",
@@ -2340,7 +2385,8 @@
         "forest": "/static/visuals/transition/transition_open_door_journey_01.jpg",
         "minimal": "/static/visuals/transition/transition_open_door_journey_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/transition/transition_open_door_journey_01.png"
     },
     {
       "id": "transition_quiet_platform_walk_01",
@@ -2386,7 +2432,8 @@
         "light": "/static/visuals/transition/transition_quiet_platform_walk_01.jpg",
         "dawn": "/static/visuals/transition/transition_quiet_platform_walk_01.jpg"
       },
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/transition/transition_quiet_platform_walk_01.png"
     },
     {
       "id": "connection_window_tea_conversation_duplicate_01",
@@ -2429,7 +2476,8 @@
       "deploy": false,
       "sourceGroup": "connection-window-tea-conversation",
       "runtimeVariants": {},
-      "heroVariants": {}
+      "heroVariants": {},
+      "originalUrl": "https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/visual-library/originals/connection/connection_window_tea_conversation_duplicate_01.png"
     }
   ]
 }

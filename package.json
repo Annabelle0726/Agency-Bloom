@@ -24,7 +24,7 @@
     "db:link": "supabase link --project-ref ycombbpglsmbvjlrjtgc",
     "lint:api": "uv run --directory apps/api ruff check app tests",
     "visuals:storage": "node tools/prepare-visual-storage.cjs",
-    "test:visuals": "node --test tools/ingest-visual-library.test.mjs tools/prepare-visual-storage.test.mjs tools/prune-visual-cloud-build.test.cjs"
+    "test:visuals": "node --test tools/ingest-visual-library.test.mjs tools/prepare-visual-storage.test.mjs tools/prune-visual-cloud-build.test.cjs tools/source-archive.test.cjs tools/check-mp-media.test.cjs"
   },
   "devDependencies": {
     "sharp": "^0.35.5"

@@ -300,6 +300,8 @@ function collectRuntimeOwners(visuals) {
 async function validateManifestState({ root, manifest, sharpModule = sharpDefault }) {
   const errors = []
   const ids = new Set(), originals = new Set(), owners = new Map()
+  const archiveFile = path.join(root, "assets/visual-library/source-archive.json")
+  const archived = fs.existsSync(archiveFile) ? JSON.parse(fs.readFileSync(archiveFile, "utf8")).objects : []
   const themes = new Set(THEMES)
   for (const visual of manifest.visuals || []) {
     const label = visual.id || '(missing id)'
@@ -329,7 +331,10 @@ async function validateManifestState({ root, manifest, sharpModule = sharpDefaul
     if (!visual.source || !['chatgpt-generated', 'user-supplied-design-reference'].includes(visual.source)) errors.push(`${label}: invalid source`)
     if (typeof visual.sourceGroup !== 'string' || !visual.sourceGroup) errors.push(`${label}: sourceGroup required`)
     const original = path.join(root, visual.originalPath || '')
-    if (!fs.existsSync(original)) errors.push(`${label}: missing original ${visual.originalPath}`)
+    if (!fs.existsSync(original)) {
+      const receipt = archived.find(o => o.localPath === visual.originalPath && o.verifiedAt)
+      if (!receipt || receipt.sha256 !== visual.sourceSha256 || receipt.bytes !== visual.sourceBytes || receipt.url !== visual.originalUrl) errors.push(`${label}: missing verified original ${visual.originalPath}`)
+    }
     else {
       const bytes = fs.readFileSync(original)
       if (sha256(bytes) !== visual.sourceSha256) errors.push(`${label}: original SHA-256 mismatch`)

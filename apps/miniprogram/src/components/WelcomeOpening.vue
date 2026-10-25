@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { resolveAppMedia } from '../app-media'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import ActionButton from './ActionButton.vue'
 import SvgIcon from './SvgIcon.vue'
@@ -95,7 +96,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
     <view class="story-backdrop" aria-hidden="true">
       <image v-for="(slide, index) in slides" :key="slide.scene"
         class="story-scene" :class="{ 'scene-active': current === index && loaded.includes(index) }"
-        :src="'/static/opening-' + slide.scene + '.jpg'" mode="aspectFill" @load="imageLoaded(index)" />
+        :src="resolveAppMedia('/static/opening-' + slide.scene + '.jpg')" mode="aspectFill" @load="imageLoaded(index)" />
       <view class="story-wash" />
     </view>
     <view class="story-header">

@@ -1,3 +1,4 @@
+import { resolveAppMedia } from './app-media'
 import storage from './visual-storage.json'
 
 export interface VisualStorageConfig {
@@ -24,5 +25,5 @@ export function resolveVisualStorageUrl(
 }
 
 export function resolveStoredVisualPath(localPath: string): string {
-  return resolveVisualStorageUrl(localPath) || localPath
+  return resolveVisualStorageUrl(localPath) || resolveAppMedia(localPath)
 }

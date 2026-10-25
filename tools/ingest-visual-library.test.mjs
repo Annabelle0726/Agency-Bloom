@@ -435,7 +435,9 @@ test('a failed final validation rolls back manifests and newly created files', a
 
 test('frozen theme references stay byte-identical', () => {
   for (const [name, expected] of Object.entries(frozen)) {
-    assert.equal(hashFile(path.join(repoRoot, 'design/themes/references', name)), expected)
+    const file = path.join(repoRoot, 'design/themes/references', name)
+    const archive = JSON.parse(readFileSync(path.join(repoRoot, 'assets/visual-library/source-archive.json'), 'utf8'))
+    assert.equal(existsSync(file) ? hashFile(file) : archive.objects.find(o => o.localPath === 'design/themes/references/' + name && o.verifiedAt)?.sha256, expected)
   }
 })
 

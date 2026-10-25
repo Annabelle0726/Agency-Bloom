@@ -37,6 +37,8 @@ export interface VisualEntry {
   visualRole: VisualRole[]
   themeCompatibility: ThemeId[]
   source: 'chatgpt-generated' | 'user-supplied-design-reference'
+  /** Historical path for provenance; full-resolution master is archived remotely. */
+  originalUrl?: string
   originalPath: string
   sourceSha256: string
   sourceBytes: number

@@ -13,7 +13,8 @@ export interface ThemeDefinition {
   dark: boolean; photoOpacity: number; palette: Palette
 }
 function defineTheme(id: ThemeId, name: string, english: string, detail: string, art: string, palette: Palette, photoOpacity = .24): ThemeDefinition {
-  return { id, name, english, detail, image: `/static/themes/${art}.jpg`, preview: `/static/themes/${art}-preview.jpg`, dark: id === 'dark', photoOpacity, palette }
+  const reference = 'https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/references/' + art + (art === 'mist' ? '.png' : '.jpg')
+  return { id, name, english, detail, image: reference, preview: reference, dark: id === 'dark', photoOpacity, palette }
 }
 export const themes: ThemeDefinition[] = [
   defineTheme('light', '晨雾', 'Morning Mist', '山间晨光 · 雾蓝与柔白', 'mist', {

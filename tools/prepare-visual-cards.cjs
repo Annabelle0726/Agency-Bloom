@@ -2,6 +2,7 @@
 const fs = require('node:fs/promises')
 const path = require('node:path')
 const sharp = require('sharp')
+const { resolveSourcePath } = require('./source-archive.cjs')
 
 const root = path.resolve(__dirname, '..')
 const recipePath = path.join(root, 'assets/visual-library/recipes/visual-cards.json')
@@ -13,7 +14,7 @@ const runtime = path.join(root, 'apps/miniprogram/src/static/visuals')
   const onlyId = process.argv[2] === '--id' ? process.argv[3] : null
   if (onlyId && !recipe.some(item => item.id === onlyId)) throw new Error('Unknown visual ID: ' + onlyId)
   for (const item of recipe.filter(item => !onlyId || item.id === onlyId)) {
-    const source = path.join(root, item.source)
+    const source = resolveSourcePath(item.source)
     const output = path.join(runtime, item.category, `${path.basename(item.source, path.extname(item.source))}.jpg`)
     await fs.access(source)
     await fs.mkdir(path.dirname(output), { recursive: true })

@@ -18,6 +18,7 @@ import {
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const manifestFile = path.join(root, 'assets/visual-manifest.json')
 const runtimeManifestFile = path.join(root, 'apps/miniprogram/src/visual-manifest.json')
+const sourceArchive = JSON.parse(readFileSync(path.join(root, 'assets/visual-library/source-archive.json'), 'utf8')).objects as {localPath:string;url:string;bytes:number;sha256:string;verifiedAt:string}[]
 const referenceDir = path.join(root, 'design/themes/references')
 const referenceHashes: Record<string, string> = {
   'dawn.jpg': '87a53e63c9aca67fb70bfc38f09166a33b8231fed0fcdb83152c6326e264914c',
@@ -42,10 +43,10 @@ function runtimeFile(src: string) {
 describe('visual library contract', () => {
   it('keeps one stable record for every original and mirrors the canonical manifest', () => {
     const sourceRoot = path.join(root, 'assets/visual-library/originals')
-    const files = readdirSync(sourceRoot, { recursive: true })
+    const files = (existsSync(sourceRoot) ? readdirSync(sourceRoot, { recursive: true }) : [])
       .map(String).filter(file => /\.(png|jpe?g|jfif)$/i.test(file))
       .map(file => 'assets/visual-library/originals/' + file.replaceAll('\\', '/')).sort()
-    expect(visuals.map(visual => visual.originalPath).sort()).toEqual(files)
+    expect(visuals.map(visual => visual.originalPath).sort()).toEqual([...new Set([...files, ...sourceArchive.filter(o => o.localPath.startsWith('assets/visual-library/originals/')).map(o => o.localPath)])].sort())
     expect(new Set(visuals.map(visual => visual.id)).size).toBe(visuals.length)
     expect(new Set(visuals.map(visual => visual.originalPath)).size).toBe(visuals.length)
     expect(readFileSync(runtimeManifestFile).equals(readFileSync(manifestFile))).toBe(true)
@@ -62,9 +63,11 @@ describe('visual library contract', () => {
   it('references only real originals and deployed runtime files with the recorded hashes', () => {
     for (const visual of visuals) {
       const source = path.join(root, visual.originalPath)
-      expect(existsSync(source), visual.originalPath).toBe(true)
-      expect(statSync(source).size, visual.id).toBe(visual.sourceBytes)
-      expect(sha256(source), visual.id).toBe(visual.sourceSha256)
+      const receipt = sourceArchive.find(o => o.localPath === visual.originalPath)
+      expect(receipt?.verifiedAt).toBeTruthy()
+      expect(receipt?.bytes).toBe(visual.sourceBytes)
+      expect(receipt?.sha256).toBe(visual.sourceSha256)
+      if (existsSync(source)) { expect(statSync(source).size).toBe(visual.sourceBytes); expect(sha256(source)).toBe(visual.sourceSha256) }
       for (const src of [...Object.values(visual.runtimeVariants), ...Object.values(visual.heroVariants)]) {
         expect(existsSync(runtimeFile(src)), src).toBe(true)
       }
@@ -81,8 +84,10 @@ describe('visual library contract', () => {
     )
     for (const [name, expected] of Object.entries(referenceHashes)) {
       const file = path.join(referenceDir, name)
-      expect(existsSync(file), name).toBe(true)
-      expect(sha256(file), name).toBe(expected)
+      const receipt = sourceArchive.find(o => o.localPath === 'design/themes/references/' + name)
+      expect(receipt?.sha256, name).toBe(expected)
+      expect(receipt?.verifiedAt).toBeTruthy()
+      if (existsSync(file)) expect(sha256(file), name).toBe(expected)
     }
   })
 })

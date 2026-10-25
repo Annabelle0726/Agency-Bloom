@@ -1,0 +1,5 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),{createHash}=require('node:crypto'),{fetchVerified}=require('./source-archive.cjs');
+const bytes=Buffer.from('original bytes'),item={url:'https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/references/dawn.jpg',localPath:'design/themes/references/dawn.jpg',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
+test('accepts only the original byte length and SHA-256',async()=>{assert.deepEqual(await fetchVerified(item,async()=>new Response(bytes)),bytes);await assert.rejects(fetchVerified(item,async()=>new Response('thumbnail')),/content mismatch/);});
+test('missing remote sources cannot count as archived originals',async()=>{await assert.rejects(fetchVerified(item,async()=>new Response('',{status:404})),/HTTP 404/);});
+test('foreign origins and brace-shaped keys are rejected before fetch',async()=>{for(const url of ['https://example.test/dawn.jpg',item.url.replace('dawn.jpg','{dawn.jpg}'),item.url.replace('dawn.jpg','%7Bdawn.jpg%7D')])await assert.rejects(fetchVerified({...item,url},()=>{throw Error('must not fetch')}),/Invalid archived source/);});

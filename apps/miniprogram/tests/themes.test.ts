@@ -1,6 +1,5 @@
 import { expect, it } from 'vitest'
-import { existsSync, statSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
 import { themes, navigationItems, resolveTheme, themeForSession, themeStyle, themeNavSvg, themeByTimeOfDay } from '../src/themes'
 
 it('offers six distinct reference images and keeps the original saved theme ids', () => {
@@ -10,9 +9,8 @@ it('offers six distinct reference images and keeps the original saved theme ids'
   expect(resolveTheme('dark').name).toBe('深夜')
   for (const theme of themes) {
     for (const asset of [theme.preview, theme.image]) {
-      const file = fileURLToPath(new URL('../src' + asset, import.meta.url))
-      expect(existsSync(file), asset).toBe(true)
-      expect(statSync(file).size).toBeLessThan(160_000)
+      const archive = JSON.parse(readFileSync(new URL('../../../assets/visual-library/source-archive.json', import.meta.url), 'utf8'))
+      expect(archive.objects.some((o: {url:string;verifiedAt:string}) => o.url === asset && !!o.verifiedAt)).toBe(true)
     }
   }
 })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { resolveAppMedia } from '../app-media'
 import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Onboarding } from '../domain'
 import { startingConcernOptions, focusChoiceViewsFor, explorationIntroFor, lifeContexts, constraintChoices, supportStyles, newOnboarding, updateConcerns, followUpFor, toggleFollowUp, setFollowUpNote, followUpRecords, hasOnboardingClues, submissionFor, reflectionFor, reflectionHeading, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle } from '../onboarding'
@@ -183,7 +184,7 @@ defineExpose({ clearDraft })
   <view class="onboarding-flow" :class="'question-scene-' + step">
     <view class="question-backdrop" aria-hidden="true">
       <view class="question-images">
-        <image v-for="(name, index) in scenes" :key="name" :src="'/static/opening-' + name + '.jpg'" mode="aspectFill"
+        <image v-for="(name, index) in scenes" :key="name" :src="resolveAppMedia('/static/opening-' + name + '.jpg')" mode="aspectFill"
           :class="{ 'scene-current': index === backgroundStep, 'scene-previous': index === previousBackgroundStep, 'scene-enter': index === backgroundStep && backgroundStep !== previousBackgroundStep }"
           @load="sceneLoaded(index)" />
       </view>

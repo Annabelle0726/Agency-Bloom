@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process'
+import mediaBudget from './check-mp-media.cjs'
 import { access, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -36,6 +37,7 @@ function compile(binary, args) {
 try {
   if (!['dev', 'build'].includes(mode)) throw Error('Use dev or build')
   if (!await exists(path.join(output, 'app.json'))) throw Error('Compile the ' + mode + ' output first')
+  console.log('Image/audio budget: ' + JSON.stringify(mediaBudget.assertMediaBudget(output)))
   const manifest = JSON.parse(await readFile(path.join(output, 'app.json'), 'utf8'))
   for (const page of manifest.pages || []) {
     for (const extension of ['.json', '.js', '.wxml']) {
@@ -47,7 +49,12 @@ try {
   const wxml = files.filter(file => file.endsWith('.wxml'))
   const assets = ['static/mountain-lake.jpg', 'static/morning-light.jpg']
   for (const asset of assets) {
-    if ((await stat(path.join(output, asset))).size === 0) throw Error('Empty image: ' + asset)
+    if (await exists(path.join(output, asset))) {
+      if ((await stat(path.join(output, asset))).size === 0) throw Error('Empty image: ' + asset)
+    } else {
+      const archive = JSON.parse(await readFile(path.join(root, 'apps/miniprogram/src/app-media.json'), 'utf8'))
+      if (!archive.objects.some(item => item.localPath === '/' + asset && item.verifiedAt)) throw Error('Missing local or cloud image: ' + asset)
+    }
   }
   for (const file of files.filter(file => file.endsWith('.json') && !file.endsWith('project.private.config.json'))) {
     const config = JSON.parse(await readFile(file, 'utf8'))

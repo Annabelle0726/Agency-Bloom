@@ -1,5 +1,12 @@
 // Only verified cloud-backed JPEG copies leave the build; source assets remain.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+// Direct fallback paths used when Discover has no eligible resolved visual.
+const localFallbacks = new Set([
+ '/static/visuals/reflection/reflection_sunlit_window_book_01.jpg',
+ '/static/visuals/growth/growth_forest_path_violet_01.jpg',
+ '/static/visuals/transition/transition_autumn_forest_path_01.jpg',
+ '/static/visuals/rest/rest_bluebell_forest_01.jpg',
+]);
 function prune(output,storage,plan){
  if(!storage.enabled||!storage.verifiedAt)return {removed:0,bytes:0};
  if(plan.state!=='verified'||plan.verifiedAt!==storage.verifiedAt||plan.publicBaseUrl!==storage.publicBaseUrl)throw Error('Cloud verification does not match the active build');
@@ -8,6 +15,7 @@ function prune(output,storage,plan){
   if(!/^\/static\/(?:visuals\/(?:choices|connection|direction|growth|reflection|rest|transition)|bloom)\/[a-z0-9_-]+\.jpg$/.test(local))throw Error('Unsafe cloud build path');
   const entry=plan.objects.find(item=>item.localPath===local&&item.key===key);
   if(!entry||entry.url!==storage.publicBaseUrl+key||!/^[a-f0-9]{64}$/.test(entry.sha256))throw Error('Missing verified object');
+  if(localFallbacks.has(local))continue;
   const target=path.join(output,local.slice(1));
   if(!fs.existsSync(target))continue; // Idempotent after a verified prune.
   const data=fs.readFileSync(target);

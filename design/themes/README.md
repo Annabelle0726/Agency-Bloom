@@ -1,3 +1,5 @@
+> Source storage updated 2026-10-25: the six reference originals now live in the Supabase references bucket, byte-identical to their frozen hashes. Local references/ masters were removed by explicit user request after remote verification. See assets/visual-library/source-archive.json. Run node tools/source-archive.cjs --cache for intentional maintenance.
+
 # Agency Bloom Theme References
 
 This folder contains the visual references for the six Agency Bloom themes. Reference artwork defines each theme's atmosphere; the Mini Program uses compressed derivatives and a matching interface palette.
@@ -6,12 +8,12 @@ This folder contains the visual references for the six Agency Bloom themes. Refe
 
 | Theme | Saved ID | Reference source | Visual direction |
 | --- | --- | --- | --- |
-| Morning Mist | `light` | [mist.png](references/mist.png) | A seated figure seen from behind, mist-covered ridges, a winding lake, and soft morning sunlight |
-| Quiet Night | `dark` | [night.jpg](references/night.jpg) | An ink-blue night sky, a crescent moon, and a quiet mountain lake |
-| Evening Smoke | `dawn` | [dawn.jpg](references/dawn.jpg) | A warm dusk sky, apricot-to-amber light, and still water catching the last glow |
-| Forest | `forest` | [forest.jpg](references/forest.jpg) | Moss, fern fronds, layered trees, and diffused woodland light |
-| Lavender | `lavender` | [lavender.jpg](references/lavender.jpg) | Real lavender flowers, dusty foliage, and soft grey-lilac light |
-| Minimal | `minimal` | [minimal.jpg](references/minimal.jpg) | An ivory plaster surface, a gentle architectural shadow, and open space |
+| Morning Mist | `light` | [mist.png](https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/references/mist.png) | A seated figure seen from behind, mist-covered ridges, a winding lake, and soft morning sunlight |
+| Quiet Night | `dark` | [night.jpg](https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/references/night.jpg) | An ink-blue night sky, a crescent moon, and a quiet mountain lake |
+| Evening Smoke | `dawn` | [dawn.jpg](https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/references/dawn.jpg) | A warm dusk sky, apricot-to-amber light, and still water catching the last glow |
+| Forest | `forest` | [forest.jpg](https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/references/forest.jpg) | Moss, fern fronds, layered trees, and diffused woodland light |
+| Lavender | `lavender` | [lavender.jpg](https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/references/lavender.jpg) | Real lavender flowers, dusty foliage, and soft grey-lilac light |
+| Minimal | `minimal` | [minimal.jpg](https://ycombbpglsmbvjlrjtgc.supabase.co/storage/v1/object/public/references/minimal.jpg) | An ivory plaster surface, a gentle architectural shadow, and open space |
 
 ## Morning Mist replacement
 

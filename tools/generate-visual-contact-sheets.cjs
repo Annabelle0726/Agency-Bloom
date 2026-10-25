@@ -3,6 +3,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const sharp = require('sharp')
+const { resolveSourcePath } = require('./source-archive.cjs')
 
 const root = path.resolve(__dirname, '..')
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'assets/visual-manifest.json'), 'utf8'))
@@ -37,7 +38,7 @@ function linesFor(value, max) {
 }
 
 function sourceFile(visual) {
-  return path.join(root, visual.originalPath)
+  return resolveSourcePath(visual.originalPath)
 }
 
 async function thumb(visual) {

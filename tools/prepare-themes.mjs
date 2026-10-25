@@ -1,8 +1,9 @@
+import { existsSync } from 'node:fs'
 // Rebuild compressed derivatives from approved references; never rewrite reference artwork.
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import sharp from 'sharp'
-const source = path.resolve('design/themes/references')
+const source = path.resolve(existsSync('design/themes/references') ? 'design/themes/references' : 'output/visual-source-cache/design/themes/references')
 const target = path.resolve('apps/miniprogram/src/static/themes')
 const recipes = {
   mist: { file:'mist.png', left:0, top:786, width:941, height:586 },

@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const sharp = require('sharp')
+function recordFor(localPath) { const file = path.resolve(__dirname, '../assets/visual-library/source-archive.json'); return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')).objects.find(o => o.localPath === localPath && o.verifiedAt) : undefined }
 
 const root = path.resolve(__dirname, '..')
 const manifestPath = path.join(root, 'assets/visual-manifest.json')
@@ -54,11 +55,11 @@ const statusCounts = { deployed: 0, archived: 0, 'reference-only': 0 }
 const themeReferenceDir = path.join(root, 'design/themes/references')
 for (const [name, expected] of Object.entries(themeReferenceHashes)) {
   const file = path.join(themeReferenceDir, name)
-  assert(fs.existsSync(file), `Missing frozen theme reference ${name}`)
+  assert(fs.existsSync(file) || recordFor("design/themes/references/" + name)?.sha256 === expected, `Missing verified frozen reference ${name}`)
   if (fs.existsSync(file)) assert(sha256(file) === expected, `Frozen theme reference changed: ${name}`)
 }
-const referenceFiles = fs.readdirSync(themeReferenceDir).filter(name => fs.statSync(path.join(themeReferenceDir, name)).isFile()).sort()
-assert(JSON.stringify(referenceFiles) === JSON.stringify(Object.keys(themeReferenceHashes).sort()), 'Frozen theme reference file list changed')
+const referenceFiles = (fs.existsSync(themeReferenceDir) ? fs.readdirSync(themeReferenceDir) : []).filter(name => fs.statSync(path.join(themeReferenceDir, name)).isFile()).sort()
+assert(referenceFiles.every(name => name in themeReferenceHashes), 'Unregistered theme reference')
 
 for (const visual of manifest.visuals) {
   const label = visual.id || '(missing id)'
@@ -90,7 +91,8 @@ for (const visual of manifest.visuals) {
     assert(visual.originalPath.startsWith('assets/visual-library/references/'), `${label}: reference outside references`)
   }
   const sourceFile = path.join(root, visual.originalPath)
-  assert(fs.existsSync(sourceFile), `${label}: missing original ${visual.originalPath}`)
+  const archivedSource = recordFor(visual.originalPath)
+  assert(fs.existsSync(sourceFile) || (archivedSource?.sha256 === visual.sourceSha256 && archivedSource?.bytes === visual.sourceBytes && archivedSource?.url === visual.originalUrl), `${label}: missing verified source ${visual.originalPath}`)
   if (fs.existsSync(sourceFile)) {
     assert(sha256(sourceFile) === visual.sourceSha256, `${label}: original SHA-256 mismatch`)
     assert(fs.statSync(sourceFile).size === visual.sourceBytes, `${label}: original byte size mismatch`)
@@ -121,9 +123,9 @@ for (const visual of manifest.visuals) {
 
 // Validate actual source coverage as the library grows.
 const sourceRoot = path.join(root, 'assets/visual-library/originals')
-const sourceFiles = walk(sourceRoot).filter(file => /\.(png|jpe?g|jfif)$/i.test(file))
+const sourceFiles = (fs.existsSync(sourceRoot) ? walk(sourceRoot) : []).filter(file => /\.(png|jpe?g|jfif)$/i.test(file))
 const registeredSources = manifest.visuals.filter(visual => visual.originalPath.startsWith('assets/visual-library/originals/'))
-assert(sourceFiles.length === registeredSources.length, 'Source inventory and manifest counts differ')
+assert(sourceFiles.length + registeredSources.filter(v => !fs.existsSync(path.join(root,v.originalPath)) && recordFor(v.originalPath)).length === registeredSources.length, 'Source inventory and manifest counts differ')
 for (const file of sourceFiles) assert(originalPaths.has(path.relative(root, file).replaceAll('\\', '/')), 'Unregistered original: ' + file)
 const deployedHashes = manifest.visuals.filter(visual => visual.deploy).map(visual => visual.sourceSha256)
 assert(new Set(deployedHashes).size === deployedHashes.length, 'Byte-identical images must not be deployed twice')
