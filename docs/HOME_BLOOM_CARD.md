@@ -18,20 +18,23 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
 - Card corners stay 8px. Existing theme quotation-surface tokens provide the
   translucent fill, edge light and shadow. Titles use the existing heading font.
   Extra foliage and the all-conversations link were removed after owner review.
-- Bloom breathes with a restrained 5.8-second local image scale, anchored near
-  its hands. The hit target and card do not move. Press feedback changes image
+- Bloom's pupils make small local glances on a nine-second cycle. The original
+  raster body, hands, hit target and card remain still. The eye overlay appears
+  only after the portrait loads. Press feedback changes portrait
   opacity; loading pauses motion, dims only the image and shows opening text.
   Transparent backgrounds are explicit for normal, pressed and disabled native
   button states. Reduced motion stops animation; the existing foreground flag
-  pauses it when the personal space is hidden. No JavaScript animation loop,
+  pauses it when the personal space is hidden. Reduced motion restores the
+  original static raster eyes. No JavaScript animation loop,
   video, new media service or motion dependency is introduced.
 
 ## Validation
 
 - TypeScript check passed
-- Two focused UI suites / nine tests passed, including dated selection-only
+- Four focused UI suites / sixteen tests passed, including dated selection-only
   clues, retention boundaries, user-authored titles, duplicate-copy removal,
-  Bloom-only navigation, no close control and disabled duplicate-entry guarding
+  Bloom-only navigation, no close control, disabled duplicate-entry guarding,
+  gaze lifecycle and image-ready fallback behavior
 - Native Mini Program build and bundled WXML/WXSS compiler checks passed
 - Auxiliary H5 captures at 390x844, 375x667 and 320x740 cover the selected
   life-rhythm case; additional captures cover Quiet Night with no exploration
@@ -42,6 +45,36 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
   compilation exceeded the first capture's element wait; that capture was
   discarded and all affected viewports were retaken after the component loaded
 - Local visual self-review only; no independent score or hardware claim
+
+## Follow-up: chat-entry image readiness
+
+Actual Home-to-Chat navigation in the isolated H5 application exposed a distinct
+loading defect in CompanionAvatar. Before the PNG painted its background, the
+gaze layer had already mounted its pale sockets. The initial local trace showed
+an unpainted image at 815ms and a painted image at 861ms. This reproduces the
+state, not the owner's exact one-second duration; cold loading can extend it.
+
+The fix warms the chat PNG while Home is visible and gates the gaze and glow on
+the avatar's own image-load event. An immediate CSS-drawn robot stays visible
+until load, or on error, without external assets. It does not show disconnected
+white sockets. The post-fix navigation trace had zero invalid frames across 65
+samples, including an image-not-ready frame. The regression test holds the
+image unready until an explicit load event and verifies that an error restores
+the fallback. A separate attempt to hold a blocked PNG in the browser did not
+finish because the page reload timed out; no prolonged cold-network rendering
+result is claimed. Its per-page network interception was removed afterwards.
+
+Footer layout now has a 28px contribution plus 4px top spacing. Negative vertical
+margins keep its native button's actual 44px hit height, removing excess visual
+space without shrinking the touch target. Bottom card padding is 10px, or 8px
+on narrow screens.
+
+Follow-up evidence: output/home-bloom/eye-motion-20261025/,
+output/home-bloom/navigation-before.json and navigation-after.json. The eye-motion
+report samples changing pupils with a stationary body and checks reduced motion.
+Details of the existing-art layering are in design/home-bloom/MOTION.md. This
+microinteraction follows Oil Motion's frontend routing rule; it does not require
+a generated video, sprite atlas, new credentials or another paid media service.
 
 Evidence: output/home-bloom/bloom-entry-20261025/. These screenshots are
 auxiliary H5 evidence, not WeChat simulator evidence. Native runtime acceptance

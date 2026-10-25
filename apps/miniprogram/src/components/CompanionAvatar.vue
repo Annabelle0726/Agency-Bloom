@@ -15,9 +15,10 @@ const props = withDefaults(defineProps<{
 }>(), { size: 38, state: 'idle', interactive: true, followGaze: false, foreground: true, online: undefined, status: undefined })
 
 const touched = ref(false)
+const imageReady = ref(false)
 let resetTimer: ReturnType<typeof setTimeout> | undefined
 const surface = ref<any>(null), gaze = ref({ x: 0, y: 0 }), reduced = ref(false), visible = ref(true)
-const gazeEnabled = computed(() => props.followGaze && props.foreground && !touched.value && !reduced.value && visible.value && (props.state === 'rest' || props.state === 'idle'))
+const gazeEnabled = computed(() => imageReady.value && props.followGaze && props.foreground && !touched.value && !reduced.value && visible.value && (props.state === 'rest' || props.state === 'idle'))
 const motion = computed(() => touched.value ? 'greeting' : gazeEnabled.value ? 'rest' : props.state)
 let feed: GazeFeed = () => () => {}
 // #ifdef MP-WEIXIN
@@ -76,13 +77,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <view ref="surface" class="companion-bot" :class="'bot-' + motion"
+  <view ref="surface" class="companion-bot" :class="['bot-' + motion,{'bot-ready':imageReady}]"
         :style="{ width: size + 'px', height: size + 'px' }"
         :role="interactive ? 'button' : 'img'"
         :aria-label="interactive ? 'Bloom 机器人头像，轻触互动' : 'Bloom 机器人头像'"
         @tap="greet" @touchstart="touchStart" @touchmove="touchMove" @touchend="releaseGaze" @touchcancel="releaseGaze">
-    <view class="bot-glow" />
-    <image class="bot-image" src="/static/companion-bot.png" mode="aspectFit" />
+    <view v-if="!imageReady" class="bot-fallback" aria-hidden="true"><view class="fallback-sprout"/><view class="fallback-head"/><view class="fallback-body"/></view>
+    <view v-if="imageReady" class="bot-glow" />
+    <image class="bot-image" src="/static/companion-bot.png" mode="aspectFit" @load="imageReady=true" @error="imageReady=false" />
     <view class="bot-spark" />
     <view v-if="gazeEnabled" class="gaze-layer" aria-hidden="true">
       <view class="gaze-socket gaze-left"><view class="gaze-pupil" :style="eyeStyle"><view class="gaze-glint" /></view></view>
@@ -117,8 +119,17 @@ onUnmounted(() => {
   border-radius: 50%;
   position: relative;
   z-index: 1;
+  opacity:0;
   animation: bot-float 4.2s ease-in-out infinite;
 }
+.bot-ready .bot-image { opacity:1; }
+/* Draw immediately; image decoding must not leave white sockets on an empty face. */
+.bot-fallback { position:absolute; inset:0; pointer-events:none; }
+.fallback-head { position:absolute; left:19%; top:31%; width:62%; height:48%; border:1px solid var(--accent,#58725f); border-radius:44%; background:var(--soft,#edf2eb); }
+.fallback-head::before,.fallback-head::after { content:''; position:absolute; top:37%; width:10%; height:23%; border-radius:50%; background:var(--accent,#58725f); }
+.fallback-head::before { left:22%; } .fallback-head::after { right:22%; }
+.fallback-sprout { position:absolute; left:47%; top:12%; width:17%; height:23%; border-radius:100% 0 100% 0; background:var(--accent,#58725f); transform:rotate(15deg); }
+.fallback-body { position:absolute; left:29%; top:79%; width:42%; height:12%; border:1px solid var(--accent,#58725f); border-radius:50% 50% 30% 30%; }
 .bot-glow {
   position: absolute;
   inset: 5%;
