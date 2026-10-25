@@ -137,6 +137,7 @@ class IssueInput(StrictModel):
 class CardUpdate(StrictModel):
     version: int = Field(ge=1)
     card: Card
+    suggestion_message_id: UUID | None = None
 
 
 class FeedbackInput(StrictModel):

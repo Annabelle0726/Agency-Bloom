@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from . import ai, visual_selection, web_search
+from .chat_drafts import register_draft_routes
 from .chat_stream import stream_response
 from .config import Settings
 from .conversations import before_message, cancel_pending, context_for, edit_anchor, register_routes
@@ -32,6 +33,7 @@ from .models import (
     AuthSession,
     Base,
     Budget,
+    ChatDraft,
     Consent,
     Conversation,
     Feedback,
@@ -349,6 +351,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             purge_moments(db, user.id)
             db.execute(delete(SpeechAudio).where(SpeechAudio.user_id == user.id))
         if values.get("save_chat") is False:
+            db.execute(delete(ChatDraft).where(ChatDraft.user_id == user.id))
             ids = select(Issue.id).where(Issue.user_id == user.id)
             db.execute(delete(Message).where(Message.issue_id.in_(ids)))
             db.execute(
@@ -477,6 +480,15 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     ):
         item = owned(db, user, issue_id)
         active(item)
+        proposal_message = None
+        if body.suggestion_message_id is not None:
+            proposal_message = db.scalar(select(Message).where(
+                Message.id == str(body.suggestion_message_id),
+                Message.issue_id == item.id,
+                Message.role == 'assistant',
+            ))
+            if proposal_message is None:
+                raise HTTPException(409, "草稿来源已变化，请重新打开卡片后再保存")
         changed = db.execute(
             update(Issue)
             .where(
@@ -496,6 +508,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         if changed.rowcount != 1:
             db.rollback()
             raise HTTPException(409, "卡片已在别处更新，请刷新后再保存；当前修改仍可保留")
+        if proposal_message is not None:
+            proposal_message.payload = {**(proposal_message.payload or {}), 'suggestion': None}
         db.commit()
         db.refresh(item)
         return issue_view(db, item)
@@ -989,6 +1003,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     register_discovery_routes(app, authenticated, db_dependency, owned, issue_view)
     register_journey_routes(app, authenticated, db_dependency, owned)
     register_routes(app, authenticated, db_dependency, owned, run_chat)
+    register_draft_routes(app, authenticated, db_dependency, owned)
     speech.register(app, authenticated)
     return app
 

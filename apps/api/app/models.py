@@ -78,6 +78,19 @@ class Conversation(Base):
     archived_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
 
+class ChatDraft(Base):
+    __tablename__ = "chat_drafts"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"), nullable=True, index=True)
+    issue_id: Mapped[str | None] = mapped_column(
+        ForeignKey("issues.id", ondelete="CASCADE"), nullable=True)
+    content: Mapped[str] = mapped_column(Text, default="")
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
 class ConversationLink(Base):
     __tablename__ = "conversation_links"
     conversation_id: Mapped[str] = mapped_column(

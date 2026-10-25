@@ -10,6 +10,14 @@ Mobile windows are independently retained conversations shown one at a time, wit
 
 Archiving hides a conversation from the active list and stops a pending response. Restoring it does not create a new exploration. Ending an exploration prevents further chat until it is explicitly resumed. The decision card remains separate from generated chat suggestions, summaries and memories.
 
+Reviewing a chat suggestion does not consume it. A successful card save includes the
+optional `suggestion_message_id` and clears that owned exploration reply's pending
+suggestion in the same transaction. Reloading the conversation cannot restore the
+saved proposal. Version conflicts preserve it; unrelated replies and later proposals
+remain available. With chat retention off, consumption stays in the originating
+session's memory. Saving the existing card without reviewing a proposal leaves the
+proposal available.
+
 Deletion is available in both active and archived lists, after an explicit scope confirmation. `DELETE /api/conversations/{id}?version=N` checks ownership and version, cancels pending requests, and deletes the conversation, messages and context links. Memory source references and usage-only billing references become null; confirmed memories, exploration cards and budget ledgers survive. The UI clears the deleted window/draft and selects another active conversation in that exploration when available. Otherwise it offers a new conversation and disables the composer.
 
 ## Context contract
@@ -58,9 +66,25 @@ The prompt requests grounded progress (specific details, explained connections, 
 
 ## Retention and memory
 
-Conversation metadata persists, including titles and exploration membership. On the first completed chat turn, the same chat response may include a very short conversation name; it is applied only while the title is still provisional (the API default, the legacy label, or the first-message excerpt). A title the user has chosen is never overwritten, and no separate title request or transcript is created. Full transcript retention remains off by default. Only successful completed chat turns and their structured suggestion/insight payloads are retained when enabled. Drafts are not written to device storage.
+Conversation metadata persists, including titles and exploration membership. On the first completed chat turn, the same chat response may include a very short conversation name; it is applied only while the title is still provisional (the API default, the legacy label, or the first-message excerpt). A title the user has chosen is never overwritten, and no separate title request or transcript is created. Chat retention is on by default (product decision 2026-10-19). Only successful completed chat turns and their structured suggestion/insight payloads are retained when enabled. Composer drafts use their own account table and are not written to device storage.
 
-Turning retention off deletes message rows and all conversation summaries and cancels pending work. The frontend clears these retained artifacts too. Enabling retention applies to future turns, not historical in-memory messages. Long-term memories and decision cards are independently user-confirmed records and remain until explicitly removed or the account is deleted.
+Turning retention off deletes message rows, account composer drafts and all conversation summaries and cancels pending work. Unsent input remains available in memory for the current session. Enabling retention applies to future turns, not historical in-memory messages. Long-term memories and decision cards are independently user-confirmed records and remain until explicitly removed or the account is deleted.
+
+Unsent composer text is saved to the account's `chat_drafts` table while retention
+is enabled. `GET /api/chat-drafts` restores owned text and versions;
+`PUT /api/chat-drafts/{key}` saves exact text (including whitespace), an optional
+owned exploration ID and the expected version. A key is a conversation UUID or
+`draft:<UUID>` for a composer that has never sent a message. Creating such a draft
+does not create a conversation or call the model. Drafts never enter model context,
+conversation summaries or device storage. Empty rows retain a version tombstone.
+Writes debounce for 500 ms, serialize per key, flush on hide/logout, and preserve
+local input after network failures or version conflicts. Successful sends clear
+the originating composer draft; failed sends preserve it. Account changes discard
+pending writers; deleting a conversation cascades its draft. The privacy update
+and draft writer share a user lock so an in-flight write cannot reverse a purge.
+
+Apply `20261025010000_chat_drafts.sql` before starting the updated hosted API.
+SQLite development startup creates the additive table without changing old rows.
 
 Memories have content, category (fact/preference/constraint), scope (global or exploration), enabled state, source conversation reference and optimistic version. There are at most forty memories per user. Memory use is a separate switch, off by default. Editing, disabling, deleting or merging a memory invalidates pending generations so a late response does not silently use superseded context. Merging is atomic, requires current versions, and replaces selected records only after the user reviews the new text and scope. It uses no additional model call.
 

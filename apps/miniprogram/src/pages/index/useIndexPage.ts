@@ -15,6 +15,7 @@ import {createNativeSpeech} from '../../native-speech'
 import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
+import {createDraftSync} from '../../chat-drafts'
 import {useBloomMoment, momentDraft} from '../../bloom-moment'
 import {useDiscovery} from '../../use-discovery'
 import {discoveryStateKey} from '../../discovery'
@@ -124,7 +125,7 @@ export function useIndexPage() {
   const error = computed({ get: () => operations.errors.data, set: value => { operations.errors.data = value } })
   const authError = computed(() => operations.errors.auth)
   const chatError = computed(() => workspace.active.value.error.value || operations.errors.ai)
-  const composerError = computed(() => offline.value ? '网络连接已断开，输入仍保留，恢复网络后可以继续' : chatError.value || speech.error.value || error.value)
+  const composerError = computed(() => offline.value ? '网络连接已断开，输入仍保留，恢复网络后可以继续' : chatError.value || speech.error.value || error.value || draftSync.error(workspace.activeId.value))
   const offline = computed(() => !!operations.errors.init)
   const toast = ref('')
   const form = reactive<Onboarding>(newOnboarding())
@@ -226,8 +227,50 @@ export function useIndexPage() {
     onCancelled: message => notify(message),
   })
   const conversations = ref<Conversation[]>([])
+  const draftSync = createDraftSync({
+    list: () => request('GET', '/chat-drafts'),
+    save: (key, body) => request('PUT', `/chat-drafts/${encodeURIComponent(key)}`, body),
+  })
+  let restoringDrafts = false
+  watch(() => `${user.value?.id || ''}:${!!user.value?.save_chat}:${token.value}`, () => {
+    draftSync.reset(user.value?.save_chat ? user.value.id : '')
+  }, { flush: 'sync' })
+  function syncComposerDrafts() {
+    if (restoringDrafts) return
+    for (const [key, session] of Object.entries(workspace.sessions)) {
+      const issueId = workspace.drafts[key]?.issueId ?? conversations.value.find(c => c.id === key)?.issue_id ?? null
+      draftSync.set(key, session.draft.value, issueId)
+    }
+  }
+  watch(() => Object.entries(workspace.sessions).map(([key, session]) => [key, session.draft.value]), syncComposerDrafts, { flush: 'sync' })
+  async function restoreComposerDrafts() {
+    const account = user.value?.id, credential = token.value
+    restoringDrafts = true
+    try {
+      const rows = await draftSync.load()
+      if (user.value?.id !== account || token.value !== credential) return
+      for (const row of rows) {
+        if (!row.content) continue
+        if (row.key.startsWith('draft:')) {
+          workspace.restoreDraft(row.key, row.issue_id, row.content)
+          if (!openedIds.value.includes(row.key)) openedIds.value.push(row.key)
+        }
+        else if (conversations.value.some(c => c.id === row.key)) {
+          const session = workspace.get(row.key)
+          if (!session.draft.value) session.draft.value = row.content
+        }
+      }
+    } finally { restoringDrafts = false }
+    syncComposerDrafts()
+  }
+  onHide(() => { syncComposerDrafts(); void draftSync.flush() })
+  onShow(() => {
+    if (user.value?.save_chat && !draftSync.ready() && !restoringDrafts) void restoreComposerDrafts()
+    else { syncComposerDrafts(); void draftSync.flush() }
+  })
+  onUnmounted(() => { void draftSync.flush(); draftSync.reset('') })
   const activeConversation = computed(() => conversations.value.find(c => c.id === workspace.activeId.value) || null)
-  // A local draft shell: not persisted until the first send creates the real conversation.
+  // A draft shell can retain unsent text without creating a conversation or AI turn.
   const DRAFT_PREFIX = 'draft:'
   const isDraftKey = (id: string) => id.startsWith(DRAFT_PREFIX)
   const isDrafting = computed(() => isDraftKey(workspace.activeId.value))
@@ -444,6 +487,10 @@ export function useIndexPage() {
     next_step: ''
   })
   const editorVersion = ref(1)
+  let editorContext: {
+    issueId: string; token: string; session: ReturnType<typeof workspace.get>;
+    suggestion: typeof suggestion.value; message?: ChatMessage;
+  } | null = null
 
   function notify(message: string) {
     toast.value = message
@@ -511,18 +558,24 @@ export function useIndexPage() {
     const next = await request<Issue | null>('GET', '/issues/current')
     current.value = next
     await refreshWorkspace()
+    await restoreComposerDrafts()
     if (current.value) {
       screen.value = 'space'
-      // A draft shell survives restarts in memory only; never restore it from storage.
+      // Restore account drafts before choosing the last visible composer.
       const savedId = user.value ? uni.getStorageSync(selectedConversationKey(user.value.id)) : ''
       const restoreId = isDraftKey(workspace.activeId.value) ? '' : workspace.activeId.value
       const selected = conversations.value.find(c => c.id === (restoreId || savedId)) || conversations.value.find(c => c.issue_id === current.value?.id && !c.archived_at)
       if (selected) await activateConversation(selected, false)
+      const shell = Object.keys(workspace.drafts).filter(key => workspace.get(key).draft.value &&
+        workspace.drafts[key].issueId === current.value?.id).slice(-1)[0]
+      if (shell && !workspace.active.value.draft.value) { workspace.select(shell); if (!openedIds.value.includes(shell)) openedIds.value.push(shell) }
     } else {
       // A returning account may have only ended explorations. It still lands at home.
       archives.value = await request<Issue[]>('GET', '/issues')
       const paused = !!user.value && !!uni.getStorageSync(pauseKeyFor(user.value.id))
       screen.value = signedInScreen(false, archives.value.length > 0, paused)
+      const shell = Object.keys(workspace.drafts).filter(key => workspace.get(key).draft.value).slice(-1)[0]
+      if (shell) { workspace.select(shell); screen.value = 'space' }
     }
   }
 
@@ -660,6 +713,11 @@ export function useIndexPage() {
 
   function openEditor(proposal = false) {
     if (!current.value) return
+    const session = workspace.active.value
+    const reviewed = proposal ? session.suggestion.value : null
+    const message = session.messages.value[session.messages.value.length - 1]
+    editorContext = { issueId: current.value.id, token: token.value, session, suggestion: reviewed,
+      message: reviewed && message?.role === 'assistant' && message.payload?.suggestion === reviewed ? message : undefined }
     const source = proposal && suggestion.value ? mergeSuggestion(current.value.card, suggestion.value) : current.value.card
     editor.title = source.title;
     editor.next_step = source.next_step
@@ -670,16 +728,23 @@ export function useIndexPage() {
   }
 
   async function saveEditor() {
-    if (!current.value) return
+    const context = editorContext
+    if (!current.value || !context) return
     await guarded(async () => {
       const updated = {title: editor.title.trim(), next_step: editor.next_step.trim()} as Card
       for (const field of editFields) updated[field.key] = editor[field.key].split('\n').map(v => v.trim()).filter(Boolean)
-      current.value = await request('PUT', `/issues/${current.value!.id}/card`, {
+      const saved = await request<Issue>('PUT', `/issues/${context.issueId}/card`, {
         version: editorVersion.value,
-        card: updated
+        card: updated,
+        ...(context.message?.id ? { suggestion_message_id: context.message.id } : {})
       })
-      modal.value = '';
-      suggestion.value = null;
+      if (token.value !== context.token) return
+      if (current.value?.id === context.issueId) current.value = saved
+      if (context.suggestion) {
+        if (context.message?.payload) context.message.payload.suggestion = null
+        if (context.session.suggestion.value === context.suggestion) context.session.suggestion.value = null
+      }
+      if (editorContext === context && workspace.active.value === context.session) modal.value = ''
       notify('已保存你确认的内容')
     })
   }
@@ -736,6 +801,7 @@ export function useIndexPage() {
         conversationId = result.conversation.id
         changedConversation(result.conversation)
         workspace.promote(key, conversationId)
+        void draftSync.transfer(key, conversationId, session.draft.value, result.issue.id)
         openedIds.value = openedIds.value.map(id => id === key ? conversationId! : id)
         if (workspace.activeId.value === conversationId) {
           current.value = result.issue
@@ -800,9 +866,10 @@ export function useIndexPage() {
   async function toggleSaveChat() {
     if (!user.value) return
     const save = !user.value.save_chat
-    if (!save && !await confirm('关闭聊天保存', '已保存的聊天和会话总结也会被清除；你确认的长期记忆、决策卡和反馈会保留，可分别管理')) return
+    if (!save && !await confirm('关闭聊天保存', '已保存的聊天、未发送草稿和会话总结也会被清除；你确认的长期记忆、决策卡和反馈会保留，可分别管理')) return
     await guarded(async () => {
       user.value = await request('PUT', '/me', {save_chat: save});
+      if (save) await restoreComposerDrafts()
       workspace.cancelAll()
       if (!save) for (const session of Object.values(workspace.sessions)) {
         session.messages.value = []; session.summary.value = null; session.summaryDraft.value = null;
@@ -978,6 +1045,7 @@ export function useIndexPage() {
     if (item.archived_at) workspace.get(item.id).cancel()
   }
   async function deletedConversation(id: string) {
+    draftSync.forget(id)
     const wasActive = workspace.activeId.value === id
     workspace.remove(id)
     openedIds.value = openedIds.value.filter(key => key !== id)
@@ -1066,6 +1134,7 @@ export function useIndexPage() {
           rememberDemo(user.value.id, result.resume_token)
         } catch { /* Existing WeChat accounts use their own sign-in path. */ }
       }
+      syncComposerDrafts(); await draftSync.flush()
       await request('POST', '/auth/logout');
       clearSession()
       if (restartDemo) screen.value = 'auth'
