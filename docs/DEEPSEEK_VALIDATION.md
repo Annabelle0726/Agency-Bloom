@@ -1,4 +1,36 @@
-# DeepSeek integration acceptance — 2026-10-17
+# DeepSeek integration validation
+
+
+## Current selection ownership — code audit 2026-10-25
+
+| Surface / event | Selection owner |
+| --- | --- |
+| A normal chat reply with eligible exploration context | Backend prepares 3–5 reviewed candidates; DeepSeek returns one stable visual_id or null in the existing chat generation |
+| Invalid, repeated or out-of-pool model suggestion | Backend chooses the first remaining legal candidate, or no image; no repair request |
+| Discover page artwork and Plan artwork | Deterministic client visual-library resolver; not model-selected |
+| Discover “换一换” | Local recommendation batching in use-discovery.ts; it does not ask DeepSeek to rotate images |
+| Theme changes / restored chat messages | Client resolves stored IDs and compatible variants locally; no new model call |
+
+Chat candidates require exploration context and a message of at least four characters. Candidate filtering uses deployment, role/page, theme, actual derivative availability, source families and visible IDs. The client sends up to 40 distinct visual IDs from the current retained/in-memory message history. This is bounded conversation deduplication, not a global guarantee that an image is never reused.
+
+The existing system prompt tells DeepSeek to choose a suitable candidate when the user explicitly asks for a picture/change; ordinary replies may select art only when helpful. Null or omission means no image. Summaries, explicit crisis language, fixed evaluation runs and disabled visual selection receive no candidate slot. A pool with fewer than three legal candidates stays text-only. A failed candidate lookup degrades to text.
+
+The server validates the ID before returning/persisting it. Each assistant message keeps its own visual_id; a subsequent reply does not replace all earlier images. The client maps the ID to an approved Supabase URL, hides incompatible or failed chat art, and does not generate a new bitmap. There is no periodic DeepSeek image-rotation timer, background image request or extra selection-model call.
+
+Configuration: AGENCY_VISUAL_SELECTION_ENABLED defaults true in Settings; actual environment overrides and the deployed process must be checked separately. This audit examines repository code, not proof that a particular running server loaded the latest code. No paid provider request was made for this audit.
+
+### Current limits
+
+The backend filters candidates by saved user.theme. The frontend's automatic time theme can differ from that saved value; a returned image may therefore be hidden by client compatibility checks. Automatic palette changes do not independently resubmit chat or synchronize the saved theme. Do not describe this as fully synchronized time-theme-aware DS rotation.
+
+The current uncommitted Discover implementation also contains three local cardSrc fallback paths. Those fallbacks are local frontend behavior, not DS choices; packaging/cloud compatibility needs separate UI acceptance. This documentation audit does not modify that concurrent work.
+
+Sources: apps/api/app/main.py, ai.py and visual_selection.py; apps/miniprogram/src/chat.ts, visual-library.ts, pages/index/chat/ChatVisual.vue, pages/index/views/DiscoverView.vue, PlanView.vue and use-discovery.ts.
+
+## Historical acceptance — 2026-10-17
+
+The following provider settings, prices and paid-call count describe that dated run, not the current environment or cumulative project usage. The later visual-selection check is recorded in [cloud acceptance](visual-library/CLOUD-ACCEPTANCE-2026-10-23.md).
+
 
 ## Provider and accounting
 

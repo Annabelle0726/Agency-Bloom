@@ -100,6 +100,12 @@ Inside the authenticated personal space, the theme follows the time of day by de
 
 The user-selected `design/themes/references/mist.png` is authoritative for Morning Mist. Preserve the original PNG. Its background and thumbnail must derive from that source; do not replace it with a new generation or the superseded misty-lake artwork. Follow `design/themes/README.md` for crop dimensions and the limitations of the older preparation script. Keep large reference files outside Mini Program static assets.
 
+## Visual selection and image updates
+
+Chat artwork is selected by DeepSeek only within a server-reviewed candidate pool, using the existing chat request and returning one stable visual_id or null. Validate eligibility and exclude visible IDs/source families before persistence; malformed or ineligible suggestions fall back locally without a second call. Do not call this newly generated artwork or a timed image carousel. Each reply retains its own ID; theme changes resolve/hide variants locally, without another model request.
+
+Discover/Plan imagery uses the deterministic client resolver. Discover recommendation rotation is local batching, not DS image selection. Preserve all originals and the six frozen reference images. Backend filtering currently uses saved user.theme, which can differ from the automatic frontend theme; do not claim those are fully synchronized. See [current code audit](docs/VISUAL-ASSET-SYSTEM.md#current-selection-ownership--code-audit-2026-10-25) for conditions, limits and cloud delivery.
+
 ## Privacy, credentials, and budget
 
 - Read Aloud is a separate, revocable consent and an explicit per-reply action. Only visible final assistant reply text may reach TTS; never send private reasoning, system instructions, context payloads or arbitrary client text. Unretained replies require a server-issued, expiring proof. Never auto-read or auto-retry uncertain synthesis.

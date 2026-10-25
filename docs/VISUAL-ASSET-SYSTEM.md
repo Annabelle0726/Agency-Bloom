@@ -1,8 +1,37 @@
 # Visual asset system
 
-Status: **Seven-category local ingestion complete; manual cloud upload pending.** Last updated 2026-10-23.
+Status: **Phase 2 ingestion and validated chat selection implemented; cloud configuration verified and enabled.** Code audit updated 2026-10-25.
 
-Current inventory: **48 originals, 42 deployed, 6 archived**. See [applied rename map and upload handoff](visual-library/LOCAL-INGESTION-2026-10-23.md). Existing visual IDs and all six frozen theme references are preserved. Runtime URLs are prepared but remain local until manual uploads pass HTTP/MIME/content-hash verification. Sections with Phase 1 counts below are historical baselines; the canonical manifest is the current source of truth. AI image selection remains unimplemented in main.
+Current inventory: **48 originals, 42 deployed, 6 archived**. See [applied rename map and upload handoff](visual-library/LOCAL-INGESTION-2026-10-23.md). Existing visual IDs and all six frozen theme references are preserved. All 48 uploaded JPEG derivatives passed HTTP/MIME/content-hash verification; the client cloud configuration is enabled. Sections with Phase 1 counts below are historical baselines; the canonical manifest is the current source of truth. Chat image selection is implemented in main; page artwork still uses the local resolver.
+
+
+## Current selection ownership — code audit 2026-10-25
+
+| Surface / event | Selection owner |
+| --- | --- |
+| A normal chat reply with eligible exploration context | Backend prepares 3–5 reviewed candidates; DeepSeek returns one stable visual_id or null in the existing chat generation |
+| Invalid, repeated or out-of-pool model suggestion | Backend chooses the first remaining legal candidate, or no image; no repair request |
+| Discover page artwork and Plan artwork | Deterministic client visual-library resolver; not model-selected |
+| Discover “换一换” | Local recommendation batching in use-discovery.ts; it does not ask DeepSeek to rotate images |
+| Theme changes / restored chat messages | Client resolves stored IDs and compatible variants locally; no new model call |
+
+Chat candidates require exploration context and a message of at least four characters. Candidate filtering uses deployment, role/page, theme, actual derivative availability, source families and visible IDs. The client sends up to 40 distinct visual IDs from the current retained/in-memory message history. This is bounded conversation deduplication, not a global guarantee that an image is never reused.
+
+The existing system prompt tells DeepSeek to choose a suitable candidate when the user explicitly asks for a picture/change; ordinary replies may select art only when helpful. Null or omission means no image. Summaries, explicit crisis language, fixed evaluation runs and disabled visual selection receive no candidate slot. A pool with fewer than three legal candidates stays text-only. A failed candidate lookup degrades to text.
+
+The server validates the ID before returning/persisting it. Each assistant message keeps its own visual_id; a subsequent reply does not replace all earlier images. The client maps the ID to an approved Supabase URL, hides incompatible or failed chat art, and does not generate a new bitmap. There is no periodic DeepSeek image-rotation timer, background image request or extra selection-model call.
+
+Configuration: AGENCY_VISUAL_SELECTION_ENABLED defaults true in Settings; actual environment overrides and the deployed process must be checked separately. This audit examines repository code, not proof that a particular running server loaded the latest code. No paid provider request was made for this audit.
+
+### Current limits
+
+The backend filters candidates by saved user.theme. The frontend's automatic time theme can differ from that saved value; a returned image may therefore be hidden by client compatibility checks. Automatic palette changes do not independently resubmit chat or synchronize the saved theme. Do not describe this as fully synchronized time-theme-aware DS rotation.
+
+The current uncommitted Discover implementation also contains three local cardSrc fallback paths. Those fallbacks are local frontend behavior, not DS choices; packaging/cloud compatibility needs separate UI acceptance. This documentation audit does not modify that concurrent work.
+
+Sources: apps/api/app/main.py, ai.py and visual_selection.py; apps/miniprogram/src/chat.ts, visual-library.ts, pages/index/chat/ChatVisual.vue, pages/index/views/DiscoverView.vue, PlanView.vue and use-discovery.ts.
+
+## Historical Phase 1 baseline
 
 Phase 1 replaces ad-hoc page imagery with a provenance-tracked source library, an explicit runtime manifest, and a deterministic resolver. It keeps the existing visual language: quiet nature photography, reading corners, soft paper surfaces, and restrained theme-derived color. Imagery supports the page; it does not replace the page's primary action or add explanatory text.
 
