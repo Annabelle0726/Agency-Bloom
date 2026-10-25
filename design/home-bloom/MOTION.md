@@ -1,5 +1,10 @@
 # Bloom eye motion
 
+Superseded by the owner-requested Remotion greeting. Current authoring and
+runtime delivery are documented in [remotion/README.md](remotion/README.md).
+The former pupil loop has been removed from Home. The following describes the
+earlier iteration for provenance only.
+
 The owner requested eye movement rather than whole-character breathing.
 Oil Motion's scope routes small CSS/JS/SVG microinteractions to ordinary frontend
 implementation; no generated video, atlas, external service or credential setup

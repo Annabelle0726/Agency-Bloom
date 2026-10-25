@@ -1,4 +1,4 @@
-import { createRenderer, h } from 'vue'
+import { createRenderer, h, nextTick } from 'vue'
 import { afterEach, expect, it, vi } from 'vitest'
 import HomeBloomCard from '../src/components/HomeBloomCard.vue'
 import { homeEntryFor } from '../src/home-entry'
@@ -45,4 +45,23 @@ it('disables Bloom during opening without dispatching duplicate entries and keep
   expect(resume).not.toHaveBeenCalled()
   area('details').props.onClick()
   expect(details).toHaveBeenCalledOnce()
+})
+it('finishes the greeting before revealing its invitation and ignores unrelated animation events',async()=>{
+  const {area}=mount()
+  expect(area('greeting-stage')).toBeDefined()
+  expect(area('greeting-stage').props['data-phase']).toBe('waiting')
+  const sprite=area('greeting-sprite')
+  sprite.props.onLoad();await nextTick()
+  expect(area('greeting-stage').props['data-phase']).toBe('playing')
+  area('greeting-animation').props.onAnimationend({detail:{animationName:'another-animation'}});await nextTick()
+  expect(area('greeting-stage').props['data-phase']).toBe('playing')
+  area('greeting-animation').props.onAnimationend({detail:{animationName:'bloom-greet-scoped'}});await nextTick()
+  expect(area('greeting-stage').props['data-phase']).toBe('complete')
+})
+it('keeps Bloom actionable and reveals static content if the greeting asset fails',async()=>{
+  const {area,resume}=mount()
+  expect(area('greeting-stage')).toBeDefined()
+  area('greeting-sprite').props.onError();await nextTick()
+  expect(area('greeting-stage').props['data-phase']).toBe('fallback')
+  area('bloom').props.onClick();expect(resume).toHaveBeenCalledOnce()
 })

@@ -8,7 +8,7 @@ import type { Card, Conversation, Issue } from '../../../domain'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   card: Card
   current: Issue | null
   greeting: string
@@ -17,7 +17,7 @@ const props = defineProps<{
   retainChat: boolean
   openingChat: boolean
   foreground?: boolean
-}>()
+}>(),{foreground:true})
 const entry = computed(() => homeEntryFor(props.current, props.card, props.conversation, props.retainChat))
 const emit = defineEmits<{
   openEditor: []

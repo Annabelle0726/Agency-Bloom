@@ -41,6 +41,11 @@ async function reload() {
 }
 async function bounds(element) { return {...await element.offset(), ...await element.size()} }
 async function capture(name) {
+  await until(async()=>{
+    const view=await home();if(!view)return false
+    const c=await card(),bubble=await c.$('.bloom-invitation')
+    return bubble && await bubble.style('visibility')==='visible' && Number(await bubble.style('opacity'))>=.99
+  },'Greeting finishes before the invitation capture')
   await fresh(); const c=await card(), device=await mp.systemInfo()
   const selectors=['.bloom-home-card','.bloom-card-copy','.bloom-card-title','.bloom-card-footer','.bloom-details','.bloom-invitation','.bloom-character-button']
   const measurements={}

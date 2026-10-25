@@ -18,23 +18,27 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
 - Card corners stay 8px. Existing theme quotation-surface tokens provide the
   translucent fill, edge light and shadow. Titles use the existing heading font.
   Extra foliage and the all-conversations link were removed after owner review.
-- Bloom's pupils make small local glances on a nine-second cycle. The original
-  raster body, hands, hit target and card remain still. The eye overlay appears
-  only after the portrait loads. Press feedback changes portrait
+- Bloom now plays a one-shot, 1.2-second Remotion greeting: a small head nod and
+  left-hand wave, settling back to the original pose. The invitation remains
+  hidden until the greeting view emits animationend, then fades in. The former
+  pupil loop was removed. Press feedback changes portrait
   opacity; loading pauses motion, dims only the image and shows opening text.
   Transparent backgrounds are explicit for normal, pressed and disabled native
   button states. Reduced motion stops animation; the existing foreground flag
-  pauses it when the personal space is hidden. Reduced motion restores the
-  original static raster eyes. No JavaScript animation loop,
-  video, new media service or motion dependency is introduced.
+  pauses it when the personal space is hidden. Reduced motion or an atlas error
+  shows the static portrait and invitation immediately. Remotion is an isolated
+  design-time project; only a transparent PNG atlas and generated timing/CSS
+  are delivered to uni-app. No per-frame JavaScript loop or runtime React
+  dependency is introduced.
 
 ## Validation
 
 - TypeScript check passed
-- Four focused UI suites / sixteen tests passed, including dated selection-only
+- Four focused UI suites / eighteen tests passed, including dated selection-only
   clues, retention boundaries, user-authored titles, duplicate-copy removal,
   Bloom-only navigation, no close control, disabled duplicate-entry guarding,
-  gaze lifecycle and image-ready fallback behavior
+  gaze lifecycle, image-ready fallback, ordered greeting completion, unrelated
+  animation events and greeting-asset failure
 - Native Mini Program build and bundled WXML/WXSS compiler checks passed
 - Auxiliary H5 captures at 390x844, 375x667 and 320x740 cover the selected
   life-rhythm case; additional captures cover Quiet Night with no exploration
@@ -75,6 +79,10 @@ report samples changing pupils with a stationary body and checks reduced motion.
 Details of the existing-art layering are in design/home-bloom/MOTION.md. This
 microinteraction follows Oil Motion's frontend routing rule; it does not require
 a generated video, sprite atlas, new credentials or another paid media service.
+That earlier eye-motion iteration is now superseded by the Remotion atlas in
+design/home-bloom/remotion/. The current atlas has 36 transparent frames at
+30fps (1200ms), returns to its exact starting pose and is approximately 193 KiB.
+Current reports and H5 captures are in output/home-bloom/remotion-greeting/.
 
 Evidence: output/home-bloom/bloom-entry-20261025/. These screenshots are
 auxiliary H5 evidence, not WeChat simulator evidence. Native runtime acceptance

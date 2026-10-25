@@ -1,0 +1,11 @@
+{
+  "source": "Remotion BloomHello",
+  "fps": 30,
+  "frames": 36,
+  "columns": 6,
+  "rows": 6,
+  "frameWidth": 152,
+  "frameHeight": 164,
+  "durationMs": 1200,
+  "asset": "/static/bloom-greeting.png"
+}
