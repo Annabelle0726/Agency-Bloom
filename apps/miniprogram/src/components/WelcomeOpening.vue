@@ -201,7 +201,8 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
 .scene-3 .story-body { margin-left:24px; }
 .scene-4 .story-body { font-size:13px; line-height:1.95; margin-top:16px; }
 .scene-4 .story-closing { padding-top:24px; font-size:17px; }
-.story-footer { padding-bottom:calc(20px + env(safe-area-inset-bottom)); }
+/* Lift the entire action/copy composition above the phone's bottom edge. */
+.story-footer { padding-bottom:calc(52px + env(safe-area-inset-bottom, 0px)); }
 @media(max-width:360px) {
   .story-title { font-size:26px; }
   .scene-2 .story-title { font-size:24px; }
@@ -212,6 +213,6 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
   .story-body { margin-top:14px; line-height:1.9; }
   .story-closing { padding-top:24px; }
   .scene-4 .story-body { font-size:12px; line-height:1.85; }
-  .story-footer { padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
+  .story-footer { padding-bottom:calc(36px + env(safe-area-inset-bottom, 0px)); }
 }
 </style>
