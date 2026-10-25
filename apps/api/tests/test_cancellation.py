@@ -11,7 +11,7 @@ from test_ai_boundary import BODY, ready
 from app.main import create_app
 
 
-@pytest.mark.parametrize("action", ["cancel", "revoke", "delete", "end"])
+@pytest.mark.parametrize("action", ["cancel", "revoke", "delete", "end", "plan"])
 def test_inflight_reply_is_discarded_when_permission_or_issue_changes(tmp_path, action):
     entered, release = threading.Event(), threading.Event()
 
@@ -44,6 +44,9 @@ def test_inflight_reply_is_discarded_when_permission_or_issue_changes(tmp_path, 
     with TestClient(app) as client, ThreadPoolExecutor() as pool:
         auth, path = ready(client)
         client.put("/api/me", headers=auth, json={"save_chat": True})
+        if action == 'plan':
+            state = client.post(path.replace('/chat', '/plan'), headers=auth, json={
+                'request_id': '7f964606-48cf-4308-8b6a-7b8f41837b9c', 'version': 1, 'next_step': '问朋友'}).json()
         pending = pool.submit(client.post, path, headers=auth, json=BODY)
         try:
             assert entered.wait(5), "Provider was not called"
@@ -61,6 +64,10 @@ def test_inflight_reply_is_discarded_when_permission_or_issue_changes(tmp_path, 
                 )
             elif action == "delete":
                 assert client.delete("/api/me", headers=auth).status_code == 204
+            elif action == 'plan':
+                assert client.post(path.replace('/chat', '/plan'), headers=auth, json={
+                    'request_id': '2e951c23-6167-4428-84d3-3e57e1205d8e', 'version': state['version'],
+                    'status': 'completed', 'remember_plan': True}).status_code == 200
             else:
                 assert client.post(path.replace("/chat", "/end"), headers=auth).status_code == 200
         finally:

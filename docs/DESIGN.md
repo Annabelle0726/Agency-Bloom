@@ -39,6 +39,15 @@ Continue follows the answers inside the scroll view; it is not pinned to the vie
 
 `ActionButton` 共用主、次、轻量及微信按钮行为；`SelectionCard` 支持多选、单选与说明；`ProgressIndicator`、`LoadingState`、`EmptyState` 提供统一状态。`OnboardingFlow` 保留步骤与输入，固定规则位于 `onboarding.ts`。
 
+Opening-story exception (2026-10-25): the owner's iPhone screenshot showed that
+the local FangSong stack fell back to sans-serif. Titles and closing passages
+now use the opening-only `Bloom Opening Serif` WOFF subset embedded in the
+component stylesheet; no font is fetched at runtime. Body and controls use
+platform sans-serif fonts. The closing passage is a full-width view with
+separate block text lines and a small glyph inset, avoiding native text flex
+shrink and clipping. Source, license, regeneration and glyph coverage are in
+[design/fonts/opening-serif/README.md](../design/fonts/opening-serif/README.md).
+
 主按钮高 58px，选项至少 57px；引导选项采用 130ms 底色与边框按压反馈，支持 `prefers-reduced-motion`。五步引导不再移动整张长列表，避免滚动内容持续处于变换层；短暂的导航锁仍防止连点跳步。选中标记常驻并预留宽度，不挤动文字，也不在勾选时重新加载图标。底部操作区随答案在同一滚动容器中自然排列。底部导航有连续移动的选中底色，弹层使用 200ms 的短距离过渡。微信构建监听键盘高度并调整聊天输入区，读取状态栏高度、保留底部安全区域。实际原生表现仍需真机验收。API 行为参照 [uni-app 键盘文档](https://uniapp.dcloud.net.cn/api/key.html)。
 
 ## 已保存的本地资产
@@ -186,13 +195,47 @@ Drawer search now uses its own border wrapper and an unpadded, vertically center
 
 Evidence and local self-review are in `output/drawer-atmosphere-20261024/`. Final H5 captures cover 390 x 844 and 320 x 740; TypeScript, focused drawer tests, native development compilation and bundled WeChat WXML/WXSS checks pass. Native simulator and hardware rendering of the final alignment corrections remain unverified.
 
+## 2026-10-24 Static book studies in Plan
+
+Plan replaces its illustrated hero with a static, theme-aware local SVG: an open book with a ribbon marker at the upper-right and offset notebook pages at the lower-left. The same component appears in the no-exploration Plan empty state. It uses the injected accent/muted palette and a cached Base64 image with aspectFit, keeping complete outlines inside the canvas. The image has no foliage, motion, scroll subscription or network request. A fixed 100vh background is excluded from pointer and accessibility targeting; foreground content stays above it without reserving extra space.
+
+Existing page copy and actions remain unchanged. Local self-review and synthetic browser checks cover 390 x 844, 320 x 740, light/dark states, six palettes, unchanged bounds during scrolling, and editor/chat actions. Evidence is in `output/plan-books-20261024/`. TypeScript passes; native simulator and hardware appearance remain unverified.
+
 ## 2026-10-24 Me grouped disclosures
 
 The Me page groups records, permissions and preferences into three initially
 collapsed, single-open accordions. Item typography follows the original settings
 body font and normal weight; only the original page title uses the heading font.
 Quiet Night disabled initial-answer entries have explicit transparent surfaces,
-preventing the native disabled button fill. Usage is condensed, while logout and
-account deletion remain directly reachable outside the disclosures. The existing
+preventing the native disabled button fill. Usage is condensed and logout remains
+outside the disclosures. Account deletion sits inside Data and authorization as
+a theme-aware danger row, retaining its existing confirmation flow. The existing
 logout button markup and dedicated appearance are unchanged. See [ME_PAGE.md](ME_PAGE.md)
 for data boundaries, correction paths, validation and remaining native limitations.
+
+## Entry typography and composition refinement — 2026-10-25
+
+The last opening slide keeps at most five body lines, retaining its title,
+closing wish, pagination and primary action. Its closing passage remains inside
+the scroll area above the footer rather than being hidden to fit the screen.
+
+Auth uses the locally embedded regular Bloom Opening Serif for its heading;
+body, quote, consent and controls use the platform sans-serif stack. The font
+subset includes the login heading and stays offline. The quote plane is flat,
+with an 8px radius, fine light border and a restrained shadow. Consent and login
+sit below the quote with a responsive 32–60px gap (24px on short screens), not
+pinned to the bottom. The slate-teal primary action is 54px tall and uses a plain
+chevron without a surrounding circle. Login, consent and error behavior are
+unchanged.
+
+The auth photograph remains at 90% opacity. Its warm translucent wash ends at
+38% opacity rather than an opaque page color, retaining muted landscape color
+at the bottom. No reference artwork, theme ID or image URL was replaced.
+A 220ms opacity/6px entrance is staggered by 40ms; press feedback remains 0.98
+scale. Reduced-motion preferences suppress the entrance and button transitions.
+
+Validation: typecheck and five focused media/font tests passed. H5 layout checks
+covered 390x844, 375x812 and 320x640, including embedded heading font rendering
+and reachable controls. This does not establish Mini Program rendering or image
+loading speed. The isolated tourist simulator launch failed; original-device
+visual and motion acceptance remains outstanding. QA files: output/entry-polish-20261025/.

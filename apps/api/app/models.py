@@ -77,6 +77,9 @@ class Conversation(Base):
     updated_at: Mapped[str] = mapped_column(String(40), default=now)
     archived_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
+    # Presentation metadata only: pinning never changes AI context or recency.
+    pinned_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
 
 class ChatDraft(Base):
     __tablename__ = "chat_drafts"

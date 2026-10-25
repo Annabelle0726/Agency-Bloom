@@ -13,7 +13,7 @@ import type { ReplyPhase } from '../../chat-stream'
 import ChatProposalCard from './chat/ChatProposalCard.vue'
 import ChatInsightCard from './chat/ChatInsightCard.vue'
 import type { ChatEntry } from '../../chat-entry'
-import type { ChatMessage, Conversation, Insight, PhaseChange, Suggestion } from '../../domain'
+import type { ChatMessage, Conversation, Insight, PhaseChange, Suggestion, PlanDraft } from '../../domain'
 import type { SupportMode } from '../../onboarding'
 import type { ConversationMenuAction } from '../../conversation-action'
 import type { ResolvedVisual } from '../../visual-library'
@@ -51,6 +51,8 @@ const props = defineProps<{
   followLatest: boolean
   selectionOpen: boolean
   suggestion: Suggestion | null
+  planDraft?: PlanDraft | null
+  canSummarizePlan?: boolean
   insight: Insight | null
   insightReaction: string
   currentEnded: boolean
@@ -79,6 +81,8 @@ const emit = defineEmits<{
   loadOlder: []
   openPhase: []
   reviewSuggestion: []
+  reviewPlan: []
+  summarizePlan: []
   reactInsight: [action: 'interested' | 'dismissed' | 'experiment']
   editMessage: [index: number]
   askBloom: [text: string]
@@ -162,7 +166,16 @@ const emit = defineEmits<{
     <button v-if="!followLatest && !selectionOpen" class="jump-latest" @click="emit('jumpLatest')" hover-class="pressed">
       <SvgIcon name="chevron" :size="13" /><text>回到最新</text>
     </button>
-    <ChatProposalCard v-if="suggestion" :suggestion="suggestion" @review="emit('reviewSuggestion')" />
+    <view v-if="!sending && !currentEnded && !readOnlyConversation && (planDraft || canSummarizePlan)" class="chat-plan-entry">
+      <view v-if="planDraft" class="proposal-card">
+        <text class="eyebrow">待你修改与确认</text><text class="body-copy">{{ planDraft.title }}</text>
+        <text v-if="planDraft.text" class="body-copy">{{ planDraft.text }}</text>
+        <text v-if="planDraft.next_step" class="body-copy">可选的下一步：{{ planDraft.next_step }}</text>
+        <button class="text-button" @click="emit('reviewPlan')">自己改一改，确认加入 Plan</button>
+      </view>
+      <button v-else class="text-button" @click="emit('summarizePlan')" hover-class="pressed" :hover-start-time="0">请 Bloom 帮我整理成记录</button>
+    </view>
+    <ChatProposalCard v-if="suggestion && !planDraft" :suggestion="suggestion" @review="emit('reviewSuggestion')" />
     <ChatInsightCard
       v-if="insight"
       :insight="insight"

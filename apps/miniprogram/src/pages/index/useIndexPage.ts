@@ -1,5 +1,5 @@
 import { createChatFollow } from '../../chat-follow'
-import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
+import {computed, nextTick, onMounted, onUnmounted, reactive, ref, toRaw, watch} from 'vue'
 import {onHide, onReady, onShow} from '@dcloudio/uni-app'
 import {makePreview, mergeSuggestion, experimentProposal} from '../../domain'
 import {newOnboarding, canonicalSupportStyle} from '../../onboarding'
@@ -19,13 +19,15 @@ import {createDraftSync} from '../../chat-drafts'
 import {useBloomMoment, momentDraft} from '../../bloom-moment'
 import {useDiscovery} from '../../use-discovery'
 import {discoveryStateKey} from '../../discovery'
-import type {DiscoveryRecommendation} from '../../discovery'
+import { discoveryDraft, discoveryQuotedEvidence, discoveryDestination, type DiscoveryAngle } from '../../discover-angles'
 import type {ConversationAction, ConversationMenuAction} from '../../conversation-action'
 import {createAvatarStore} from '../../avatar'
 import {createThemePreference, formatThemeBoundary, personalSpaceTheme} from '../../theme-preference'
 import {createThemeClock} from '../../theme-clock'
 import {createThemePaintCache} from '../../theme-paint'
-import {newChatStarters, experimentFields, editFields, todayLabel, greeting} from './data'
+import {newChatStarters, editFields, todayLabel, greeting} from './data'
+import { usePlan } from '../../use-plan'
+import { homeConversationFor } from '../../home-entry'
 
 
 export function useIndexPage() {
@@ -277,6 +279,11 @@ export function useIndexPage() {
   const creatingDrafts = ref<string[]>([])
   const draftCreationCancelled = new Set<string>()
   const drawer = ref<'' | 'list' | 'summary' | 'memories' | 'direction' | 'details' | 'snapshots'>('')
+  const historyLoading = ref(false), historyError = ref('')
+  // #ifdef H5
+  watch(drawer, value => document.documentElement.classList.toggle('conversation-drawer-open', !!value), { flush: 'sync' })
+  onUnmounted(() => document.documentElement.classList.remove('conversation-drawer-open'))
+  // #endif
   const phaseError = ref('')
   async function skipPhaseChange() {
     const session = workspace.active.value, candidate = session.phaseChange.value, conversation = activeConversation.value
@@ -396,7 +403,7 @@ export function useIndexPage() {
   const experimentEditor = reactive<Experiment>({ action: '', tests: '', effort: '', stop_rule: '' })
   let experimentBase: Card | null = null
   let experimentVersion = 0
-  const canSaveExperiment = computed(() => experimentFields.every(f => experimentEditor[f.key].trim()) &&
+  const canSaveExperiment = computed(() => !!experimentEditor.action.trim() &&
     !!experimentBase && experimentProposal(experimentBase, experimentEditor).next_step.length <= 600)
   const selectedMode = computed(() => canonicalSupportStyle(activeConversation.value?.support_style || user.value?.support_style))
   const welcomeContext = computed(() => current.value?.focus_response || current.value?.actual_question || current.value?.background || '')
@@ -487,6 +494,8 @@ export function useIndexPage() {
     next_step: ''
   })
   const editorVersion = ref(1)
+  const planStepOnly = ref(false)
+  let planStepBase: Card | null = null
   let editorContext: {
     issueId: string; token: string; session: ReturnType<typeof workspace.get>;
     suggestion: typeof suggestion.value; message?: ChatMessage;
@@ -501,6 +510,7 @@ export function useIndexPage() {
 
   function clearSession() {
     themePaint.clear()
+    historyLoading.value = false; historyError.value = ''
     speech.reset()
     conversationAction.value = null
     for (const key of creatingDrafts.value) draftCreationCancelled.add(key)
@@ -521,7 +531,36 @@ export function useIndexPage() {
     uni.removeStorageSync('agency.session')
   }
 
-  const discovery = useDiscovery(user, request, notify)
+  const discovery = useDiscovery(user, request, notify, current)
+  const discoveryDrafts = new Map<string, DiscoveryAngle>()
+  const validatingDiscovery = new Set<string>()
+  watch(() => user.value?.id, () => discoveryDrafts.clear(), { flush: 'sync' })
+  function withdrawDiscoveryDraft(key: string, source: DiscoveryAngle) {
+    const session = workspace.sessions[key]
+    if (session) {
+      session.draft.value = session.draft.value === discoveryDraft(source) ? '' : session.draft.value.split(discoveryQuotedEvidence(source)).join('〔原线索已不可用〕')
+      session.error.value = '原建议的依据已经变化，已撤下原线索。请检查输入后重新发送'
+    }
+    discoveryDrafts.delete(key)
+    if (workspace.drafts[key]) delete workspace.drafts[key].recommendation
+  }
+  async function invalidateDiscoverySources() {
+    const account = user.value?.id
+    for (const [key, source] of discoveryDrafts) {
+      try {
+        const valid = await discovery.verify(source)
+        if (user.value?.id !== account) return
+        if (!valid) withdrawDiscoveryDraft(key, source)
+      } catch { if (user.value?.id === account) withdrawDiscoveryDraft(key, source) }
+    }
+    await discovery.load()
+  }
+  async function openDiscoveryChat() {
+    const issue = discovery.focus.value
+    const target = discoveryDestination(conversations.value, issue?.id || null, activeConversation.value?.id)
+    if (target) { await guarded(() => activateConversation(target)); return }
+    current.value = issue; startNewChat()
+  }
   const spaceForeground = ref(true)
   const bloomMoment = useBloomMoment(user, request, requestId)
   watch(() => [user.value?.id, tab.value, screen.value], () => {
@@ -615,6 +654,7 @@ export function useIndexPage() {
         await refreshWorkspace()
         if (current.value) current.value = await request<Issue>('GET', `/issues/${current.value.id}`)
         if (tab.value === 'discover') await discovery.load()
+        if (tab.value === 'plan') await plan.load()
       })
     }
   })
@@ -703,7 +743,7 @@ export function useIndexPage() {
     if (nextTab !== 'chat') modePickerOpen.value = false
     tab.value = nextTab
     await nextTick()
-    uni.pageScrollTo({scrollTop: 0, duration: 0})
+    uni.pageScrollTo({scrollTop: nextTab === 'discover' ? discovery.scrollTop.value : 0, duration: 0})
     if (nextTab === 'discover') void discovery.load()
     if (nextTab === 'settings') await guarded(async () => {
       usage.value = await request('GET', '/usage')
@@ -713,6 +753,8 @@ export function useIndexPage() {
 
   function openEditor(proposal = false) {
     if (!current.value) return
+    planStepOnly.value = false
+    planStepBase = null
     const session = workspace.active.value
     const reviewed = proposal ? session.suggestion.value : null
     const message = session.messages.value[session.messages.value.length - 1]
@@ -735,13 +777,13 @@ export function useIndexPage() {
       for (const field of editFields) updated[field.key] = editor[field.key].split('\n').map(v => v.trim()).filter(Boolean)
       const saved = await request<Issue>('PUT', `/issues/${context.issueId}/card`, {
         version: editorVersion.value,
-        card: updated,
+        card: planStepOnly.value && planStepBase ? { ...planStepBase, next_step: updated.next_step } : updated,
         ...(context.message?.id ? { suggestion_message_id: context.message.id } : {})
       })
       if (token.value !== context.token) return
       if (current.value?.id === context.issueId) current.value = saved
       if (context.suggestion) {
-        if (context.message?.payload) context.message.payload.suggestion = null
+        if (context.message?.payload) { context.message.payload.suggestion = null; context.message.payload.plan_saved = true }
         if (context.session.suggestion.value === context.suggestion) context.session.suggestion.value = null
       }
       if (editorContext === context && workspace.active.value === context.session) modal.value = ''
@@ -750,12 +792,91 @@ export function useIndexPage() {
   }
 
   async function reloadVersion() {
-    if (!current.value) return
+    if (!current.value || !editorContext) return
+    const context = editorContext
     await guarded(async () => {
-      current.value = await request('GET', `/issues/${current.value!.id}`);
-      editorVersion.value = current.value!.version;
+      const latest = await request<Issue>('GET', `/issues/${context.issueId}`)
+      if (token.value !== context.token || editorContext !== context) return
+      if (current.value?.id === latest.id) current.value = latest
+      editorVersion.value = latest.version
+      if (planStepOnly.value) planStepBase = JSON.parse(JSON.stringify(latest.card))
       notify('已读取最新版本，你的编辑内容仍保留，请核对后再保存')
     })
+  }
+
+  function openPlanStep() {
+    if (!current.value || current.value.ended_at || busy.value) return
+    openEditor()
+    planStepOnly.value = true
+    planStepBase = JSON.parse(JSON.stringify(current.value.card))
+  }
+
+  let openingPlan = false
+  async function preparePlanChat(text: string) {
+    if (openingPlan || !user.value || !current.value || current.value.ended_at || busy.value) return null
+    openingPlan = true
+    const account = token.value, issueId = current.value.id
+    try {
+      const target = homeConversationFor(current.value, conversations.value, activeConversation.value?.id)
+      if (target && !workspace.get(target.id).draft.value.trim() && !workspace.get(target.id).sending.value) {
+        await activateConversation(target)
+        if (token.value !== account || current.value?.id !== issueId) return null
+        // A remote draft may have arrived while the conversation loaded.
+        if (workspace.active.value.draft.value.trim()) startNewChat()
+      } else startNewChat()
+      workspace.active.value.draft.value = text
+      return workspace.active.value
+    } finally { openingPlan = false }
+  }
+  async function openPlanChat(concern = '', record = false) {
+    if (tab.value !== 'plan') return
+    const text = (concern.trim() || (record ? plan.state.value?.latest?.text || '' : '')).slice(0, 2000)
+    await preparePlanChat(`${text ? '我想从这件事聊起：' + text + '\n\n' : ''}${record ? '我想和你说说后来发生的事，请先听我讲，帮我理清经历和感受。等我说整理时，帮我写成可编辑的记录草稿；不把未决定的想法写成结论，也不自动改变下一步。' : '我想围绕当前探索，一起想一个适合现在的小尝试。请先了解具体难处、希望改变什么以及现实条件。信息足够时整理成可编辑的计划草稿，把行动与经历分开；不要把追问当成下一步。'}`)
+  }
+  const plan = usePlan({ current, userKey: computed(() => user.value?.id || ''), retained: computed(() => !!user.value?.save_chat), request,
+    chat: preparePlanChat, id: requestId, changed: (sourceId, draft) => {
+      for (const session of Object.values(workspace.sessions)) for (const message of session.messages.value) {
+        if (message.payload && ((sourceId && message.id === sourceId) || (draft && message.payload.plan_draft && toRaw(message.payload.plan_draft) === toRaw(draft)))) {
+          message.payload.plan_draft = null
+          message.payload.plan_saved = true
+        }
+      }
+      notify('已保存你确认的内容'); void refreshWorkspace()
+    } })
+  watch([tab, () => current.value?.id], () => { if (tab.value === 'plan' && current.value) void plan.load() })
+  const planDraft = computed(() => {
+    const last = messages.value[messages.value.length - 1]
+    return last?.role === 'assistant' ? last.payload?.plan_draft || null : null
+  })
+  const canSummarizePlan = computed(() => {
+    if (planDraft.value || messages.value[messages.value.length - 1]?.role !== 'assistant') return false
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      const message = messages.value[i]
+      if (message.payload?.plan_saved) return false
+      if (message.role === 'user') return true
+    }
+    return false
+  })
+  function reviewPlanDraft() {
+    const last = messages.value[messages.value.length - 1]
+    if (planDraft.value) plan.review(planDraft.value, user.value?.save_chat ? last?.id : undefined, workspace.active.value)
+  }
+  function summarizeForPlan() {
+    const session = workspace.active.value
+    if (session.sending.value || readOnlyConversation.value || !current.value || !canSummarizePlan.value) return
+    const text = '请把我们刚才聊到的真实经历、感受和仍未决定的部分整理成一份可编辑的记录草稿。不要复制整段回复，不把追问写成下一步。只在已讨论出具体行动时单独列出下一步，否则先不写下一步。我会修改并确认后再保存。'
+    if (session.draft.value.trim()) { notify('输入框里还有未发送内容，请先处理；原文已保留'); return }
+    session.draft.value = text
+  }
+
+  function openPlanPause() {
+    if (!current.value || current.value.ended_at || busy.value) return
+    if (!feedbackText.value.trim()) {
+      feedbackText.value = '我想先放一放这一步，之后再决定是否继续'
+      feedbackKind.value = 'change'
+    }
+    error.value = ''
+    modal.value = 'feedback'
   }
 
   async function saveFeedback() {
@@ -780,10 +901,26 @@ export function useIndexPage() {
 
   async function sendChat() {
     const key = workspace.activeId.value, session = workspace.active.value
+    if (validatingDiscovery.has(key)) return
     if (sending.value || creatingConversation.value || !session.draft.value.trim() || readOnlyConversation.value || !user.value) return
     if (!activeConversation.value && !isDrafting.value) return
     if (!user.value.ai_consent) { modal.value = 'ai'; return }
     const account = user.value.id, sessionToken = token.value
+    const discoverySource = discoveryDrafts.get(key)
+    if (discoverySource) {
+      validatingDiscovery.add(key)
+      try {
+        const valid = await discovery.verify(discoverySource)
+        if (user.value?.id !== account || token.value !== sessionToken || workspace.activeId.value !== key) return
+        if (!valid) {
+          withdrawDiscoveryDraft(key, discoverySource)
+          return
+        }
+      } catch {
+        session.error.value = '暂时无法确认建议的依据，输入已保留，请稍后重试'
+        return
+      } finally { validatingDiscovery.delete(key) }
+    }
     const context = workspace.drafts[key]
     operations.clear('ai')
     let conversationId = activeConversation.value?.id
@@ -802,6 +939,7 @@ export function useIndexPage() {
         changedConversation(result.conversation)
         workspace.promote(key, conversationId)
         void draftSync.transfer(key, conversationId, session.draft.value, result.issue.id)
+        if (discoverySource) { discoveryDrafts.delete(key); discoveryDrafts.set(conversationId, discoverySource) }
         openedIds.value = openedIds.value.map(id => id === key ? conversationId! : id)
         if (workspace.activeId.value === conversationId) {
           current.value = result.issue
@@ -819,6 +957,7 @@ export function useIndexPage() {
     const before = session.messages.value.length
     await session.send(conversationId)
     if (user.value?.id !== account || token.value !== sessionToken) return
+    if (session.messages.value.length > before) discoveryDrafts.delete(conversationId)
     if (context?.recommendation && session.messages.value.length > before) {
       discovery.explored(context.recommendation); delete workspace.drafts[conversationId]
     }
@@ -1020,12 +1159,17 @@ export function useIndexPage() {
   }
 
   async function showHistory() {
-    await guarded(async () => {
-      await refreshWorkspace(); drawer.value = 'list'
-    })
+    drawer.value = 'list'
+    if (historyLoading.value) return
+    const session = token.value
+    historyLoading.value = true; historyError.value = ''
+    try { await refreshWorkspace() }
+    catch (err) { if (token.value === session) historyError.value = err instanceof Error ? err.message : '会话列表未能更新，请重试' }
+    finally { if (token.value === session) historyLoading.value = false }
   }
 
   async function refreshWorkspace() {
+    const session = token.value
     async function all<T extends { id: string }>(path: string): Promise<T[]> {
       const items = new Map<string, T>()
       for (let offset = 0; ; offset += 100) {
@@ -1037,6 +1181,7 @@ export function useIndexPage() {
     const [issues, live, archived] = await Promise.all([
       all<Issue>('/issues'), all<Conversation>('/conversations'), all<Conversation>('/conversations?archived=true'),
     ])
+    if (token.value !== session) return
     archives.value = issues; conversations.value = [...live, ...archived]
   }
   function changedConversation(item: Conversation) {
@@ -1057,11 +1202,16 @@ export function useIndexPage() {
       else if (current.value && !current.value.ended_at) startNewChat()
     }
   }
+  let activationRun = 0
   async function activateConversation(item: Conversation, navigate = true) {
+    const run = ++activationRun, account = token.value, owner = user.value?.id
+    const isCurrent = () => run === activationRun && token.value === account && user.value?.id === owner
     const session = workspace.get(item.id)
     const issue = await request<Issue>('GET', `/issues/${item.issue_id}`)
+    if (!isCurrent()) return
     if (!session.loaded.value) {
       const page = await request<{ items: ChatMessage[]; next_cursor: string | null }>('GET', `/conversations/${item.id}/messages`)
+      if (!isCurrent()) return
       session.messages.value = page.items; session.olderCursor.value = page.next_cursor; session.summary.value = item.summary
       const last = page.items[page.items.length - 1]
       session.suggestion.value = last?.payload?.suggestion || null; session.insight.value = last?.payload?.insight || null
@@ -1158,20 +1308,49 @@ export function useIndexPage() {
   }
 
   let openingDiscovery = false
-  async function explorePrompt(item: DiscoveryRecommendation) {
+  async function explorePrompt(item: DiscoveryAngle, separate = false) {
     if (openingDiscovery || tab.value !== 'discover' || !user.value || discovery.loading.value) return
     if (!discovery.recommendations.value.some(value => value.id === item.id)) return
     openingDiscovery = true
     const account = user.value.id
     try {
-      // Confirm ownership/current status before attaching an existing topic.
-      const issue = item.issueId ? await request<Issue>('GET', `/issues/${item.issueId}`) : null
+      // Re-read the source before transferring any quoted material into a draft.
+      await discovery.load()
       if (user.value?.id !== account || tab.value !== 'discover') return
-      if (issue?.ended_at) { notify('这段探索已经结束，请先在走过的路中回看'); await discovery.load(); return }
+      const fresh = discovery.recommendations.value.find(r => r.id === item.id)
+      if (!fresh || discovery.error.value) { notify('这条建议的依据已变化或暂时无法确认，请重新查看'); return }
+      const issue = discovery.issues.value.find(i => i.id === fresh.issueId) || null
+      const destination = separate ? null : discoveryDestination(conversations.value, fresh.issueId, activeConversation.value?.id)
+      const text = discoveryDraft(fresh)
+      if (destination) {
+        const target = await request<Conversation>('GET', '/conversations/' + destination.id)
+        if (target.archived_at || target.issue_id !== fresh.issueId) { notify('原对话已不可用，请选择另开一段聊聊'); return }
+        const session = workspace.get(target.id)
+        if (session.draft.value.trim() && session.draft.value !== text) {
+          if (!await confirm('保留原草稿？', '这段对话已有未发送内容。确认后保留原草稿，另开一段聊这个角度')) return
+        } else {
+          if (user.value?.id !== account || tab.value !== 'discover') return
+          await activateConversation(target)
+          if (user.value?.id !== account || activeConversation.value?.id !== target.id) return
+          // A retained draft may arrive while opening the conversation. Preserve it.
+          if (session.draft.value.trim() && session.draft.value !== text) {
+            startNewChat()
+            const key = workspace.activeId.value, context = workspace.drafts[key]
+            if (context) context.recommendation = fresh
+            workspace.active.value.draft.value = text
+            discoveryDrafts.set(key, fresh)
+            return
+          }
+          session.draft.value = text
+          discoveryDrafts.set(target.id, fresh)
+          return
+        }
+      }
+      if (user.value?.id !== account || tab.value !== 'discover') return
       current.value = issue
       startNewChat()
       const key = workspace.activeId.value, context = workspace.drafts[key]
-      if (context) { context.recommendation = item; workspace.get(key).draft.value = item.question }
+      if (context) { context.recommendation = fresh; workspace.get(key).draft.value = text; discoveryDrafts.set(key, fresh) }
     } catch (err) { notify(err instanceof Error ? err.message : '暂时无法打开这段探索') }
     finally { openingDiscovery = false }
   }
@@ -1220,6 +1399,8 @@ export function useIndexPage() {
     activeConversation,
     isDrafting,
     drawer,
+    historyLoading,
+    historyError,
     phaseError,
     skipPhaseChange,
     savePhaseChange,
@@ -1265,6 +1446,15 @@ export function useIndexPage() {
     authenticate,
     selectTab,
     openEditor,
+    openPlanStep,
+    openPlanChat,
+    plan,
+    planDraft,
+    canSummarizePlan,
+    reviewPlanDraft,
+    summarizeForPlan,
+    openPlanPause,
+    planStepOnly,
     saveEditor,
     reloadVersion,
     saveFeedback,
@@ -1296,6 +1486,8 @@ export function useIndexPage() {
     logOut,
     deleteAccount,
     explorePrompt,
+    openDiscoveryChat,
+    invalidateDiscoverySources,
     discovery,
     bloomMoment,
     spaceForeground,

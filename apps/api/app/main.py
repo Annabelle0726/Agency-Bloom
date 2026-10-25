@@ -45,6 +45,8 @@ from .models import (
 )
 from .moments import purge_moments, register_moment_routes
 from .perspective_shift import fingerprint as perspective_fingerprint
+from .plan import plan_from_card_edit, plan_view, register_plan_routes
+from .plan_continuity import lock_plan_owner, sync_plan_context
 from .schemas import (
     Card,
     CardUpdate,
@@ -112,6 +114,7 @@ def issue_view(db, item):
         "stage": item.stage,
         "background": item.background,
         "card": item.card,
+        "plan": plan_view(db, item),
         "version": item.version,
         "created_at": item.created_at,
         "updated_at": item.updated_at,
@@ -478,6 +481,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         user: User = Depends(authenticated),
         db: Session = Depends(db_dependency),
     ):
+        lock_plan_owner(db, user.id)
         item = owned(db, user, issue_id)
         active(item)
         proposal_message = None
@@ -499,7 +503,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             )
             .values(
                 card=body.card.model_dump(),
-                exploration={**(item.exploration or {}), 'card_reviewed_at': now()},
+                exploration={**plan_from_card_edit(db, item, body.card.next_step), 'card_reviewed_at': now()},
                 title=body.card.title,
                 version=Issue.version + 1,
                 updated_at=now(),
@@ -509,7 +513,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             db.rollback()
             raise HTTPException(409, "卡片已在别处更新，请刷新后再保存；当前修改仍可保留")
         if proposal_message is not None:
-            proposal_message.payload = {**(proposal_message.payload or {}), 'suggestion': None}
+            proposal_message.payload = {**(proposal_message.payload or {}), 'suggestion': None, 'plan_saved': True}
+        sync_plan_context(db, item)
         db.commit()
         db.refresh(item)
         return issue_view(db, item)
@@ -518,6 +523,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     def end_issue(
         issue_id: str, user: User = Depends(authenticated), db: Session = Depends(db_dependency)
     ):
+        lock_plan_owner(db, user.id)
         item = owned(db, user, issue_id)
         item.ended_at = now()
         item.updated_at = now()
@@ -527,6 +533,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             .where(AIRequest.conversation_id.in_(conversation_ids), AIRequest.status == "pending")
             .values(status="cancelled")
         )
+        sync_plan_context(db, item)
         db.commit()
         return issue_view(db, item)
 
@@ -534,9 +541,11 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     def resume_issue(
         issue_id: str, user: User = Depends(authenticated), db: Session = Depends(db_dependency)
     ):
+        lock_plan_owner(db, user.id)
         item = owned(db, user, issue_id)
         item.ended_at = None
         item.updated_at = now()
+        sync_plan_context(db, item)
         db.commit()
         return issue_view(db, item)
 
@@ -547,10 +556,12 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         user: User = Depends(authenticated),
         db: Session = Depends(db_dependency),
     ):
+        lock_plan_owner(db, user.id)
         item = owned(db, user, issue_id)
         active(item)
         db.add(Feedback(issue_id=item.id, **body.model_dump()))
         item.updated_at = now()
+        sync_plan_context(db, item)
         db.commit()
         return issue_view(db, item)
 
@@ -711,7 +722,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             item.life_contexts,
             item.concerns,
             current_issue={"title": item.title, "stage": item.stage},
-            exploration=item.exploration,
+            exploration={key: value for key, value in (item.exploration or {}).items() if key != 'plan'},
             conversation_context=context,
             history=history,
             web_results=web_results,
@@ -719,6 +730,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             # Frozen Mock evaluations keep their reviewed prompt version.
             # Normal conversations use the explicitly versioned current style.
             reply_style='warm-v1' if evaluation_guard is None else None,
+            plan_review=evaluation_guard is None,
+            evaluation_system=evaluation_guard is not None,
         )
         perspective = None
         if perspective_prototype is not None:
@@ -916,6 +929,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                             if result.suggestion
                             else None,
                             "insight": result.insight.model_dump() if result.insight else None,
+                            "plan_draft": result.plan_draft.model_dump() if result.plan_draft else None,
                             "request_id": str(body.request_id),
                             "visual_id": result.visual_id,
                             "reasoning_summary": [p.model_dump() for p in result.reasoning_summary] if result.reasoning_summary else None,
@@ -1002,6 +1016,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
                            evaluation=getattr(app.state, 'evaluation_sessions', None) is not None)
     register_discovery_routes(app, authenticated, db_dependency, owned, issue_view)
     register_journey_routes(app, authenticated, db_dependency, owned)
+    register_plan_routes(app, authenticated, db_dependency, owned)
     register_routes(app, authenticated, db_dependency, owned, run_chat)
     register_draft_routes(app, authenticated, db_dependency, owned)
     speech.register(app, authenticated)

@@ -30,6 +30,7 @@ def test_saved_suggestion_stays_consumed_when_conversation_reloads(tmp_path):
         assert saved.status_code == 200
         message = c.get(f'{path}/messages', headers=auth).json()['items'][-1]
         assert message['payload']['suggestion'] is None
+        assert message['payload']['plan_saved'] is True
         assert message['content'] == reply['reply']
         # A later independent proposal is still available.
         c.post(f'{path}/chat', headers=auth, json={

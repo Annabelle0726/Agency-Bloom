@@ -29,7 +29,7 @@ const emit = defineEmits<{
 
 <template>
   <view class="chat-header header-chrome">
-    <button class="chat-header-button" aria-label="打开会话列表" hover-class="pressed" :hover-start-time="0"
+    <button class="chat-header-button" aria-label="打开会话列表" hover-class="pressed" :hover-stop-propagation="true" :hover-start-time="0"
             :hover-stay-time="70" @click="emit('history')">
       <image class="chat-header-glyph" :src="iconSources.menu.ink" mode="aspectFit" aria-hidden="true" />
     </button>

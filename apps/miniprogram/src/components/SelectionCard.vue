@@ -54,7 +54,7 @@ defineEmits<{ select: [] }>()
 .selection-card.inline-icon { align-items:center; gap:10px; }
 .inline-icon .selection-detail { margin-top:7px; }
 .selection-title { display:block; font-size:14.5px; font-weight:500; line-height:1.55; letter-spacing:.1px; color:var(--quiet-title); }
-.selection-detail { display:block; font-size:12px; line-height:1.72; letter-spacing:.05px; margin-top:3px; color:var(--quiet-detail); }
+.selection-detail { display:block; font-size:12.5px; line-height:1.72; letter-spacing:.05px; margin-top:3px; color:var(--quiet-detail); }
 .selection-control {
   display:flex; align-items:center; justify-content:center; width:22px; height:22px; flex-shrink:0;
   border:1px solid var(--quiet-control); border-radius:6px; background:transparent;
@@ -81,7 +81,7 @@ defineEmits<{ select: [] }>()
   .selection-card.compact { min-height:62px; padding:11px 14px; }
   .selection-icon-tile { width:40px; height:40px; border-radius:12px; }
   .selection-title { font-size:14px; }
-  .selection-detail { font-size:11.5px; }
+  .selection-detail { font-size:12px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .selection-card, .selection-icon-tile, .selection-control, .selection-radio, .selection-radio > view { transition:none; }

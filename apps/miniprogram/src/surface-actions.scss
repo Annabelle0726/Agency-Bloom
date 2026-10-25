@@ -1,0 +1,46 @@
+/* Thin top light and a 2px lower edge give frequent actions a tangible surface.
+   Keep the content still on press; only the local lighting and shadow change. */
+.preview-stage .app-shell .surface-action {
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  box-sizing:border-box; min-height:50px; margin:0; padding:12px 16px;
+  border:1px solid; border-radius:8px;
+  font-family:var(--font-body); font-size:var(--type-button); font-weight:500; line-height:1.5;
+  touch-action:manipulation; text-shadow:none; transform:none; animation:none;
+  transition:background-color 130ms var(--ease-out),box-shadow 130ms var(--ease-out),border-color 130ms var(--ease-out);
+}
+.preview-stage .app-shell .surface-action::after { border:0; }
+.preview-stage .app-shell .surface-action.surface-action-primary {
+  border-color:var(--surface-action-edge); color:var(--surface-action-ink);
+  background:linear-gradient(180deg,var(--surface-action-top),var(--surface-action-fill) 46%,var(--surface-action-bottom));
+  box-shadow:inset 0 1px 0 var(--surface-action-highlight),inset 0 -1px 0 rgba(0,0,0,.1),0 2px 0 var(--surface-action-base),0 5px 9px var(--surface-action-shadow);
+}
+.preview-stage .app-shell .surface-action.surface-action-secondary {
+  border-color:var(--surface-secondary-edge); color:var(--ink);
+  background:linear-gradient(180deg,var(--surface-secondary-top),var(--surface-secondary-fill) 52%,var(--surface-secondary-bottom));
+  box-shadow:inset 0 1px 0 var(--surface-secondary-highlight),0 2px 0 var(--surface-secondary-base),0 4px 7px var(--surface-action-shadow);
+}
+.preview-stage .app-shell .surface-action.surface-action-pressed,
+.preview-stage .app-shell .surface-action:active:not([disabled]) {
+  transform:none;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.12),0 1px 0 var(--surface-action-base),0 2px 3px var(--surface-action-shadow);
+}
+.preview-stage .app-shell .surface-action.surface-action-secondary.surface-action-pressed,
+.preview-stage .app-shell .surface-action.surface-action-secondary:active:not([disabled]) {
+  box-shadow:inset 0 1px 2px var(--surface-action-shadow),0 1px 0 var(--surface-secondary-base);
+}
+.preview-stage .app-shell .surface-action.surface-action-primary[disabled],
+.preview-stage .app-shell .surface-action.surface-action-secondary[disabled] {
+  color:var(--control-disabled-ink); background:var(--control-disabled-bg);
+  border-color:var(--line); box-shadow:none; text-shadow:none; opacity:1;
+}
+.preview-stage .app-shell .surface-action:focus-visible { outline:2px solid var(--selection-border); outline-offset:4px; }
+.preview-stage .app-shell .start-action { width:100%; }
+.preview-stage .app-shell .new-conversation.surface-action { justify-content:flex-start; gap:12px; }
+.bloom-content .plan-empty-actions { display:flex; gap:12px; align-items:stretch; }
+.preview-stage .app-shell .plan-empty-actions .surface-action { flex:1; min-width:0; width:auto; padding:11px 10px; gap:7px; }
+.plan-empty-edit-icon { display:flex; align-items:center; justify-content:center; width:17px; height:17px; flex:0 0 17px; border-radius:0; background:transparent; }
+@media(max-width:360px) {
+  .bloom-content .plan-empty-actions { flex-direction:column; }
+  .preview-stage .app-shell .plan-empty-actions .surface-action { width:100%; flex:auto; }
+}
+@media(prefers-reduced-motion:reduce) { .preview-stage .app-shell .surface-action { transition:none; } }

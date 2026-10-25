@@ -33,6 +33,9 @@ function onInput(event: Event) {
 <template>
   <ModalShell title="最近，有什么变化？" :busy="busy" :error="error" @close="emit('close')">
     <text class="page-description">新的发现、疲惫、暂时停下或改变主意，都可以留在这里</text>
+    <textarea :value="text" class="text-area" maxlength="2000"
+              :placeholder="placeholder" @input="onInput"/>
+    <text class="muted small">也可以想想：发生了什么？和想象有什么不同？现在想继续、调整，还是先放一放？</text>
     <view class="chips">
       <button
           v-for="item in feedbackOptions"
@@ -41,8 +44,6 @@ function onInput(event: Event) {
         {{ item.label }}
       </button>
     </view>
-    <textarea :value="text" class="text-area" maxlength="2000"
-              :placeholder="placeholder" @input="onInput"/>
     <button class="primary feedback-submit" :disabled="busy || !text.trim()" :loading="busy" @click="emit('save')"
             hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">留下这次变化
       <SvgIcon name="check" light :size="19"/>

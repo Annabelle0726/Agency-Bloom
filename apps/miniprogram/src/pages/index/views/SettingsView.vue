@@ -31,6 +31,7 @@ const expanded = ref('')
 function toggleGroup(id: string) { expanded.value = expanded.value === id ? '' : id }
 watch(() => props.user?.id, () => { expanded.value = '' })
 const atmosphere = computed(() => settingsAtmosphere(props.activeTheme.id))
+const dangerColor = computed(() => props.activeTheme.dark ? '#ef9b9b' : '#b43b3b')
 const emit = defineEmits<{
   contextChanged: []
   userChanged: [user: User]
@@ -52,7 +53,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <view class="settings-content">
+  <view class="settings-content" :style="{ '--me-danger': dangerColor }">
     <image class="settings-atmosphere" :src="atmosphere" mode="aspectFill" aria-hidden="true" />
     <view class="settings-foreground">
     <text class="eyebrow">MAKE YOURSELF AT HOME</text>
@@ -92,6 +93,11 @@ const emit = defineEmits<{
       </button>
       <button class="setting-row speech-settings" @click="emit('speech')" hover-class="pressed" :hover-start-time="0"><view><text class="setting-title">朗读与语音隐私</text><text class="setting-description">单独授权、按需播放，可随时撤回</text></view><SvgIcon name="volume" :size="17" /></button>
       <button class="setting-row" @click="emit('privacy')" hover-class="pressed" :hover-start-time="0"><view><text class="setting-title">隐私与使用说明</text><text class="setting-description">了解保存、使用与删除的边界</text></view><SvgIcon name="arrow-diagonal" :size="17" /></button>
+      <button class="setting-row me-delete-account" :disabled="busy" @click="emit('deleteAccount')" hover-class="pressed"
+              :hover-start-time="0" :hover-stay-time="70">
+        <view><text class="setting-title">删除账号与全部个人记录</text><text class="setting-description">删除后无法恢复，操作前会再次确认</text></view>
+        <SvgIcon name="chevron" :size="17" :color="dangerColor" />
+      </button>
       </view>
     </MeAccordion>
     <MeAccordion id="me-preferences" title="回应与外观" :summary="(supportStyles.find(item => item.id === canonicalSupportStyle(user?.support_style))?.title || '') + ' · ' + activeTheme.name" :open="expanded === 'preferences'" @toggle="toggleGroup('preferences')">
@@ -103,17 +109,8 @@ const emit = defineEmits<{
     </MeAccordion>
     </view>
     <view class="me-usage"><text>今天已对话 {{ usage.daily_calls }} / {{ usage.daily_limit }} 次</text><text>{{ aiMode === 'demo' ? '本地演示 · 不产生模型费用' : '额度用完后，记录仍可查看' }}</text></view>
-    <view v-if="devAuth" class="settings-group">
-      <button class="setting-row" :disabled="busy" @click="emit('restartDemo')" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70">
-        <view><text class="setting-title">重新注册（本机演示）</text><text class="setting-description">返回注册页，用新演示账号重新体验五步引导</text></view>
-        <SvgIcon name="arrow-diagonal" :size="17" />
-      </button>
-    </view>
     <button class="secondary logout-button" :disabled="busy" @click="emit('logout')" hover-class="gem-logout-pressed"
             :hover-start-time="0" :hover-stay-time="70">退出登录
-    </button>
-    <button class="text-button danger-link" :disabled="busy" @click="emit('deleteAccount')" hover-class="pressed"
-            :hover-start-time="0" :hover-stay-time="70">删除账号与全部个人记录
     </button>
     <text class="version-label">{{ 'AGENCY BLOOM · 0.1.0\n给自己一点空间' }}</text>
     </view>
@@ -123,6 +120,7 @@ const emit = defineEmits<{
 <style scoped lang="scss">
 .settings-atmosphere { position: fixed; z-index: 0; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; max-width: 440px; margin: auto; pointer-events: none; }
 .settings-foreground { position: relative; z-index: 1; }
+.settings-content .version-label { margin-top:20px; margin-bottom:18px; }
 .settings-content .avatar-settings { margin:18px 0 22px; }
 .settings-content .page-title { font-size:26px; line-height:1.6; }
 .me-groups { margin:4px 0 0; }
@@ -132,6 +130,7 @@ const emit = defineEmits<{
 .me-section .setting-title,.me-section .setting-description,.me-preference-note { font-family:var(--font-body); font-weight:400; }
 .me-section .setting-row > view:first-child { flex:1; min-width:0; }
 .me-section .toggle { flex-shrink:0; }
+.me-section .me-delete-account .setting-title { color:var(--me-danger); }
 .me-preference-note { display:block; margin-top:5px; font-size:12px; line-height:1.75; color:var(--muted); }
 @media(max-width:360px) { .settings-content { padding-left:20px; padding-right:20px; } .settings-content .page-title { font-size:23px; } }
 </style>

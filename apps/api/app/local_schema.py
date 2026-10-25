@@ -7,7 +7,10 @@ from .models import now
 
 def upgrade_local(engine):
     additions = {
-        "conversations": {"dismissed_change_ids": "JSON NOT NULL DEFAULT '[]'"},
+        "conversations": {
+            "dismissed_change_ids": "JSON NOT NULL DEFAULT '[]'",
+            "pinned_at": "VARCHAR(40)",
+        },
         "memories": {
             "horizon": "VARCHAR(20) NOT NULL DEFAULT 'long_term'",
             "status": "VARCHAR(20) NOT NULL DEFAULT 'active'",

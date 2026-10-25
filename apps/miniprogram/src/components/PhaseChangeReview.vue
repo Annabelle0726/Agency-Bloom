@@ -12,7 +12,7 @@ const content = ref(props.change.evidence), keepHistory = ref(false)
     <view class="workspace-drawer" role="dialog" aria-label="核实当前方向" @click.stop>
       <view class="drawer-heading"><text class="section-title">{{ confirmed ? '审阅更新建议' : '核实当前方向' }}</text><button class="text-button" :disabled="busy" @click="emit('close')">关闭</button></view>
       <view class="drawer-body">
-      <scroll-view scroll-y :show-scrollbar="false" class="drawer-scroll">
+      <scroll-view scroll-y enhanced class="drawer-scroll">
         <view class="drawer-scroll-content">
           <text class="field-label">{{ change.source_kind === 'snapshot' ? '初始快照中的方向' : '之前确认的记录' }}</text>
           <text class="body-copy">{{ change.previous }}</text>

@@ -11,7 +11,7 @@ describe('reflection page presentation', () => {
     expect(card.confirmed).toEqual(['用户确认的原话'])
     expect(visibleDecisionFields(empty)).toEqual([])
   })
-  it('uses local bitmap artwork for every saved theme and falls back to morning mist', () => {
+  it('uses reviewed local or verified cloud artwork for every saved theme and falls back to morning mist', () => {
     for (const theme of themes) {
       const art = resolvePageArt(theme.id)
       expect([art.discover, art.plan, ...art.cards]).toHaveLength(5)

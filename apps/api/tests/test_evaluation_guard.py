@@ -14,6 +14,7 @@ from test_journey import issue, login
 from test_workspace import conversation
 
 from app import ai
+from app import evaluation_guard as guard_module
 from app.config import Settings
 from app.evaluation_guard import (
     CAP,
@@ -133,7 +134,8 @@ def test_pre_dispatch_rejection_never_calls_provider(guarded, kind, monkeypatch)
     if kind == 'rate':
         guarded[0].app.state.settings.input_price_per_million = 10
     if kind == 'system':
-        monkeypatch.setattr(ai, 'SYSTEM_PROMPT', ai.SYSTEM_PROMPT + '\nchanged')
+        approved = guard_module.reviewed_system_prompt()
+        monkeypatch.setattr(guard_module, 'reviewed_system_prompt', lambda: approved + '\nchanged')
     response, _ = post(guarded, 1 if kind == 'case' else 0)
     assert response.status_code in {402, 409}
     assert not guarded[4]
@@ -182,7 +184,7 @@ def test_restart_cannot_reset_or_create_new_run(guarded):
 def test_dispatch_bound_and_crash_recovery(guarded):
     guard, sessions = guarded[3], guarded[2]
     body = ChatInput(request_id=uuid4(), message=fixed_cases()[0]['input'])
-    payload = ai.provider_payload(settings(), ai.messages_for({}, [], body))
+    payload = ai.provider_payload(settings(), ai.messages_for({}, [], body, evaluation_system=True))
     with sessions.begin() as db:
         guard.reserve(db, 'crashed', body, *guarded[5]['A1'], payload,
                       settings(), httpx.MockTransport(good_response))
@@ -202,7 +204,7 @@ def reserve_worker(url, bindings, queue):
     """Separate process and independent SQL connection; races one durable run row."""
     engine = create_engine(url)
     body = ChatInput(request_id=uuid4(), message=fixed_cases()[0]['input'])
-    payload = ai.provider_payload(settings(), ai.messages_for({}, [], body))
+    payload = ai.provider_payload(settings(), ai.messages_for({}, [], body, evaluation_system=True))
     try:
         with Session(engine) as db, db.begin():
             EvaluationGuard().reserve(db, str(uuid4()), body, *bindings, payload,
@@ -232,7 +234,7 @@ def test_multiple_processes_atomic_reservation(guarded):
 
 def test_real_transport_is_hard_blocked_without_network():
     body = ChatInput(request_id=uuid4(), message=fixed_cases()[0]['input'])
-    payload = ai.provider_payload(settings(), ai.messages_for({}, [], body))
+    payload = ai.provider_payload(settings(), ai.messages_for({}, [], body, evaluation_system=True))
     with pytest.raises(GuardError, match='hosted_input_bound_unverified'):
         check_payload(payload, settings(), None)
     with pytest.raises(GuardError, match='hosted_input_bound_unverified'):
@@ -242,6 +244,21 @@ def test_real_transport_is_hard_blocked_without_network():
 def test_frozen_inputs_and_system_hash():
     assert len(fixed_cases()) == 8
     body = ChatInput(request_id=uuid4(), message=fixed_cases()[0]['input'])
-    payload = ai.provider_payload(settings(), ai.messages_for({}, [], body))
+    payload = ai.provider_payload(settings(), ai.messages_for({}, [], body, evaluation_system=True))
     assert check_payload(payload, settings(), httpx.MockTransport(good_response)) < 30000
     assert Path(__file__).parents[1].joinpath('evaluation/live_first/rubric.json').exists()
+
+
+def test_frozen_prompt_is_independent_of_product_copy_and_rejects_modified_fixture(tmp_path, monkeypatch):
+    from app.evaluation_guard import SYSTEM_SHA, reviewed_system_prompt, sha
+
+    approved = reviewed_system_prompt()
+    assert sha(approved.encode()) == SYSTEM_SHA
+    monkeypatch.setattr(ai, 'SYSTEM_PROMPT', ai.SYSTEM_PROMPT + '\nproduct wording changed')
+    body = ChatInput(request_id=uuid4(), message=fixed_cases()[0]['input'])
+    assert ai.messages_for({}, [], body, evaluation_system=True)[0]['content'] == approved
+    assert ai.messages_for({}, [], body)[0]['content'] != approved
+    monkeypatch.setattr(guard_module, 'MANIFEST', tmp_path / 'manifest.json')
+    (tmp_path / 'system-prompt.txt').write_text('changed fixture', encoding='utf-8')
+    with pytest.raises(GuardError, match='evaluation_system_changed'):
+        reviewed_system_prompt()

@@ -22,6 +22,8 @@ Deletion is available in both active and archived lists, after an explicit scope
 
 ## Context contract
 
+Conversation pins are account-owned presentation metadata. `PUT /api/conversations/{id}/pin` accepts `{version, pinned}` and checks ownership and the current context version. Pinned conversations sort first by pin time, then actual conversation recency; unpinning restores normal recency without pretending the conversation was newly discussed. Pinning does not change context versions, cancel pending replies, retain a transcript, or call a model. The UI confirms the saved row before reordering and preserves the previous order on failure. PostgreSQL deployments apply `20261024010000_conversation_pins.sql`; the local development upgrade adds the same nullable field without rewriting records.
+
 Long-pressing a user message offers **Edit**, **Copy**, and **Select text**.
 Assistant replies offer copying and selection only. Editing opens a review sheet
 that explicitly states the replacement scope: the edited message and every later
@@ -87,6 +89,20 @@ Apply `20261025010000_chat_drafts.sql` before starting the updated hosted API.
 SQLite development startup creates the additive table without changing old rows.
 
 Memories have content, category (fact/preference/constraint), scope (global or exploration), enabled state, source conversation reference and optimistic version. There are at most forty memories per user. Memory use is a separate switch, off by default. Editing, disabling, deleting or merging a memory invalidates pending generations so a late response does not silently use superseded context. Merging is atomic, requires current versions, and replaces selected records only after the user reviews the new text and scope. It uses no additional model call.
+
+Plan continuity (2026-10-25): each conversation also receives its primary
+exploration's latest confirmed Plan status and bounded recent changes, so
+completed or paused steps are not treated as pending actions from an old
+transcript. This is saved workspace context, independent of the memory-use
+switch. The Plan review sheet can explicitly authorize continuing sync to one
+exploration-scoped, long-term fact memory (`source=plan_sync`). It uses the
+existing memory-use preference and never enables that preference itself.
+Disabling/deleting the managed memory stops automatic sync; substantive edits
+detach it into a user revision. Turning off Plan sync disables the previous
+snapshot instead of continuing to serve stale state. Memory and Plan writes
+are atomic, and affected pending replies are invalidated. See
+[Plan continuity](PLAN_PAGE.md#plan-continuity-and-long-term-memory) for scope,
+bounded history, conflict behavior and validation.
 
 Deleting a memory removes it from the memory context; it does not redact the same words from old chat messages or externally processed requests. All content access stays behind account ownership checks. Database tables have RLS enabled and direct Supabase API roles revoked, consistent with the existing FastAPI-owned data model.
 

@@ -29,8 +29,9 @@ text. This prevents the native disabled-button default from becoming a pale
 block in Quiet Night. Empty initial answers remain visibly different from
 failed loading, without exposing an unavailable action.
 
-Usage is a small text row. Logout and account deletion remain outside the
-accordions. The existing logout markup and its dedicated styles are preserved.
+Usage is a small text row. Logout remains outside the accordions. Account
+deletion is the final row in Data and authorization, with theme-aware danger
+text and its existing explicit confirmation flow. The existing logout markup and its dedicated styles are preserved.
 The static local vine background is unchanged.
 
 ## Data and corrections

@@ -65,6 +65,18 @@ it('keeps body, muted text and button labels readable in every palette', () => {
   }
 })
 
+it('keeps raised action labels readable across every gradient stop in all six themes', () => {
+  for (const theme of themes) {
+    const style = themeStyle(theme)
+    for (const stop of ['--surface-action-top', '--surface-action-fill', '--surface-action-bottom']) {
+      expect(contrast(style['--surface-action-ink'], style[stop]), theme.id + stop).toBeGreaterThanOrEqual(4.5)
+    }
+    for (const stop of ['--surface-secondary-top', '--surface-secondary-fill', '--surface-secondary-bottom']) {
+      expect(contrast(style['--ink'], style[stop]), theme.id + stop).toBeGreaterThanOrEqual(4.5)
+    }
+  }
+})
+
 
 it('keeps tag surfaces, borders and check marks legible in every palette', () => {
   for (const theme of themes) {

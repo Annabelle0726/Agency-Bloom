@@ -10,6 +10,7 @@ const fading = ref(false)
 const backgroundReady = ref(false)
 let requested = false
 let timer: ReturnType<typeof setTimeout> | undefined
+let backgroundTimer: ReturnType<typeof setTimeout> | undefined
 
 function revealAuth() {
   if (props.opening || !backgroundReady.value || !coverVisible.value || fading.value) return
@@ -24,16 +25,21 @@ function start() {
 }
 watch(() => props.opening, opening => {
   clearTimeout(timer)
+  clearTimeout(backgroundTimer)
   if (opening) { coverVisible.value = true; fading.value = false; requested = false }
-  else revealAuth()
+  else {
+    revealAuth()
+    // The destination already has a solid background; never block login on artwork.
+    backgroundTimer = setTimeout(() => { backgroundReady.value = true; revealAuth() }, 1200)
+  }
 })
-onUnmounted(() => clearTimeout(timer))
+onUnmounted(() => { clearTimeout(timer); clearTimeout(backgroundTimer) })
 </script>
 
 <template>
   <view class="entry-welcome">
     <!-- Mount the destination before leaving the opening. The cover stays
-         painted until the real destination image has loaded (or failed). -->
+         painted until the destination image settles, with a bounded fallback. -->
     <view class="entry-auth" :class="{ 'entry-auth-covered': coverVisible && !fading }" :aria-hidden="coverVisible && !fading">
       <AuthWelcome v-bind="auth" @background-ready="loaded" @login="emit('login', $event)"
         @replay="emit('replay')" @privacy="emit('privacy')" @retry="emit('retry')" />

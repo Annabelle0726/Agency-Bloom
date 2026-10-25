@@ -74,6 +74,14 @@ class EvaluationAttempt(EvaluationBase):
     review: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
+def reviewed_system_prompt():
+    """Exact approved Mock prompt; current product wording cannot change this run."""
+    data = MANIFEST.with_name('system-prompt.txt').read_text(encoding='utf-8').encode('utf-8')
+    if sha(data) != SYSTEM_SHA:
+        raise GuardError('evaluation_system_changed')
+    return data.decode('utf-8')
+
+
 def fixed_cases():
     if sha(MANIFEST.read_bytes()) != MANIFEST_SHA or sha(RUBRIC.read_bytes()) != RUBRIC_SHA:
         raise GuardError('evaluation_manifest_changed')

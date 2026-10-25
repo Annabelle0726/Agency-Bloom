@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { computed, getCurrentInstance, inject, isRef, onBeforeUnmount, reactive, ref, watch, type Ref } from 'vue'
+import { computed, inject, isRef, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, type Ref } from 'vue'
+// #ifdef H5
+import { manageDrawerKeyboard } from '../drawer-keyboard'
+// #endif
 import type { Conversation, ConversationSummary, Issue, Memory, User, InitialSnapshot } from '../domain'
 import SvgIcon from './SvgIcon.vue'
 import MemorySource from './MemorySource.vue'
@@ -14,7 +17,7 @@ type View = 'list' | 'summary' | 'memories' | 'direction' | 'details' | 'snapsho
 const props = defineProps<{
   view: View; conversations: Conversation[]; active: Conversation | null; issues: Issue[];
   user: User | null; summary: ConversationSummary | null; summaryDraft: ConversationSummary | null;
-  generating: boolean; running: string[]; error?: string; initialIssueId?: string;
+  generating: boolean; running: string[]; error?: string; loading?: boolean; loadError?: string; backgroundColor?: string; initialIssueId?: string;
   request: <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) => Promise<T>
 }>()
 const providedPalette = inject<Ref<IconPalette> | IconPalette>(ICON_PALETTE_KEY, fallbackIconPalette)
@@ -23,27 +26,26 @@ const emit = defineEmits<{
   close: []; select: [conversation: Conversation]; refresh: []; createIssue: []; selectIssue: [issue: Issue];
   newChat: []; generate: []; reviewed: [summary: ConversationSummary | null]; changed: [conversation: Conversation];
   userChanged: [user: User]; contextChanged: []; viewChanged: [view: View]; deleted: [id: string]
+  retry: []
 }>()
 const busy = ref(false), notice = ref(''), archive = ref(false), filterIssue = ref(''), showExplorations = ref(false)
 const search = ref('')
-const instance = getCurrentInstance()
-const scrollIndicator = ref<{ height: number; top: number } | null>(null)
-let scrollTimer: ReturnType<typeof setTimeout> | undefined
-let alive = true
-onBeforeUnmount(() => { alive = false; clearTimeout(scrollTimer) })
-function onScroll(event: { detail: { scrollTop: number; scrollHeight: number } }) {
-  const { scrollTop, scrollHeight } = event.detail
-  uni.createSelectorQuery().in(instance?.proxy).select('.drawer-scroll').boundingClientRect(rect => {
-    if (!alive || !rect || Array.isArray(rect)) return
-    const height = rect.height || 0
-    if (scrollHeight <= height + 1) { scrollIndicator.value = null; return }
-    const thumb = Math.max(8, Math.min(100, height / scrollHeight * 100))
-    scrollIndicator.value = { height: thumb, top: Math.max(0, Math.min(100 - thumb, scrollTop / (scrollHeight - height) * (100 - thumb))) }
-    clearTimeout(scrollTimer); scrollTimer = setTimeout(() => { scrollIndicator.value = null }, 800)
-  }).exec()
-}
+// #ifdef H5
+let releaseKeyboard = () => {}
+onMounted(() => {
+  // Custom-renderer tests have no browser tree; native builds omit this branch.
+  const root = typeof document.querySelector === 'function' ? document.querySelector<HTMLElement>('.workspace-drawer') : null
+  if (root) releaseKeyboard = manageDrawerKeyboard(root, () => { if (!busy.value) emit('close') })
+})
+onBeforeUnmount(() => releaseKeyboard())
+// #endif
+const scrollTarget = ref<number | undefined>(undefined)
+let lastScrollTop = 0
+function onScroll(event: { detail: { scrollTop: number } }) { lastScrollTop = event.detail.scrollTop }
 const activeIssues = computed(() => props.issues.filter(i => !i.ended_at))
-const visible = computed(() => props.conversations.filter(c => Boolean(c.archived_at) === archive.value && (!filterIssue.value || c.issue_id === filterIssue.value) && (!search.value.trim() || c.title.toLowerCase().includes(search.value.trim().toLowerCase()))))
+const visible = computed(() => props.conversations
+  .filter(c => Boolean(c.archived_at) === archive.value && (!filterIssue.value || c.issue_id === filterIssue.value) && (!search.value.trim() || c.title.toLowerCase().includes(search.value.trim().toLowerCase())))
+  .sort((a, b) => (b.pinned_at || '').localeCompare(a.pinned_at || '') || b.updated_at.localeCompare(a.updated_at) || a.id.localeCompare(b.id)))
 const edited = reactive({ overview: '', decisions: '', open_questions: '', next_steps: '' })
 const summaryFields = [{ key: 'decisions', label: '已经决定的' }, { key: 'open_questions', label: '还没弄清的' }, { key: 'next_steps', label: '接下来可做的' }] as const
 const savedSummaryFingerprint = ref('')
@@ -83,6 +85,8 @@ function loadMemories() { return run(async () => {
 watch([()=>props.view,()=>props.user?.id,()=>props.initialIssueId,()=>props.issues.map(item=>item.id).join('|')],()=>{
   snapshotEpoch++;snapshots.value=[];snapshotError.value='';snapshotsLoading.value=false
   if(props.view==='snapshots')void loadSnapshots()
+  scrollTarget.value=lastScrollTop
+  void nextTick(()=>{if(!disposed)scrollTarget.value=0})
 },{immediate:true,flush:'sync'})
 async function loadSnapshots(){
   const epoch=++snapshotEpoch,owner=props.user?.id
@@ -111,6 +115,17 @@ function openNewConversation() {
 async function archiveConversation(item: Conversation) {
   if (!item.archived_at && !await confirm('归档这段会话？', '会话会移入归档列表，所属探索继续保留。未开启聊天保存时，原文只在本次使用中可见')) return
   await run(async () => { const updated = await props.request<Conversation>('PUT', `/conversations/${item.id}`, { version: item.version, archived: !item.archived_at }); emit('changed', updated); emit('refresh') })
+}
+async function pinConversation(item: Conversation) {
+  await run(async () => {
+    const updated = await props.request<Conversation>('PUT', `/conversations/${item.id}/pin`, { version: item.version, pinned: !item.pinned_at })
+    emit('changed', updated)
+    if (updated.pinned_at) {
+      scrollTarget.value = lastScrollTop
+      await nextTick()
+      scrollTarget.value = 0
+    }
+  })
 }
 async function deleteConversation(item: Conversation) {
   if (busy.value || !await confirm('删除这段会话？', '这段会话的消息、总结和未发送草稿将永久删除，正在生成的回复会停止。探索卡片和已确认的长期记忆保留；记忆可单独删除')) return
@@ -181,12 +196,14 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
       <image class="drawer-atmosphere drawer-atmosphere-stem" :src="atmosphere.stem" mode="aspectFit" :draggable="false" aria-hidden="true" />
       <view class="drawer-heading"><view><text class="eyebrow">YOUR SPACE</text><text class="section-title">{{ heading }}</text></view><button class="icon-button" :disabled="busy" aria-label="关闭会话面板" @click="emit('close')"><SvgIcon name="close" :size="20" /></button></view>
       <view class="drawer-tabs"><button class="drawer-main-tab" data-view="list" :aria-pressed="['list','summary','details'].includes(view)" @click="emit('viewChanged', 'list')"><text class="drawer-tab-label" :class="{ selected: ['list','summary','details'].includes(view) }">会话</text></button><button class="drawer-main-tab" data-view="memories" :aria-pressed="view === 'memories'||view==='direction'" @click="emit('viewChanged', 'memories')"><text class="drawer-tab-label" :class="{ selected: view === 'memories'||view==='direction' }">长期记忆</text></button><button class="drawer-main-tab" data-view="snapshots" :aria-pressed="view==='snapshots'" @click="emit('viewChanged','snapshots')"><text class="drawer-tab-label" :class="{selected:view==='snapshots'}">初始快照</text></button></view>
+      <view v-if="view === 'list'" class="drawer-create"><button class="primary new-conversation surface-action surface-action-primary" :disabled="busy" hover-class="surface-action-pressed" :hover-stop-propagation="true" :hover-start-time="0" :hover-stay-time="70" @click="openNewConversation()"><view class="new-conversation-mark"><SvgIcon name="plus" :size="18" :light="!busy" tone="muted" /></view><text>新会话</text></button></view>
       <view class="drawer-body">
-      <scroll-view scroll-y enhanced :show-scrollbar="false" class="drawer-scroll" @scroll="onScroll">
+      <scroll-view scroll-y enhanced :scroll-top="scrollTarget" :bounces="false" :refresher-enabled="false" :refresher-background="backgroundColor || '#ffffff'" class="drawer-scroll" @scroll="onScroll">
         <view class="drawer-scroll-content">
         <view v-if="notice || error" class="notice">{{ notice || error }}</view>
+        <view v-if="loadError" class="drawer-load-error" role="alert"><text>{{ loadError }}</text><button class="text-button" :disabled="loading" @click="emit('retry')">重试</button></view>
         <template v-if="view === 'list'">
-          <button class="primary new-conversation" :disabled="busy" hover-class="new-conversation-pressed" :hover-start-time="0" :hover-stay-time="70" @click="openNewConversation()">＋ 新会话</button>
+          <text v-if="loading" class="drawer-loading" role="status">正在更新会话列表…</text>
           <view class="drawer-search"><input v-model="search" class="drawer-search-input" maxlength="60" placeholder="搜索会话" placeholder-class="drawer-search-placeholder" aria-label="搜索会话" /></view>
           <view class="drawer-tabs drawer-filter-tabs conversation-sections"><button :class="{ selected: !archive && !showExplorations }" @click="archive = false; showExplorations = false">进行中</button><button :class="{ selected: showExplorations }" @click="showExplorations = true">探索</button><button :class="{ selected: archive && !showExplorations }" @click="archive = true; showExplorations = false">已归档</button></view>
           <template v-if="!showExplorations">
@@ -197,8 +214,9 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
               <button class="secondary empty-create" :disabled="busy" @click="openNewConversation">＋ 从一段新会话开始</button>
             </view>
             <view v-for="item in visible" :key="item.id" class="conversation-item" :class="{ active: active?.id === item.id }">
+              <view v-if="item.pinned_at" class="conversation-pin-label"><SvgIcon name="pin" :size="12" tone="muted"/><text>已置顶</text></view>
               <button class="conversation-select" :disabled="busy" @click="emit('select', item)"><text class="conversation-title">{{ item.title }}</text><text class="muted small">{{ issueName(item.issue_id) }}</text><text class="muted small">{{ running.includes(item.id) ? '正在回应…' : new Date(item.updated_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) }} · {{ user?.save_chat ? '已保存' : '原文未保存' }}</text></button>
-              <view class="conversation-actions"><button class="text-button archive-action" :disabled="busy" @click="archiveConversation(item)">{{ item.archived_at ? '恢复会话' : '归档' }}</button><button class="text-button delete-conversation" :disabled="busy" @click="deleteConversation(item)">删除</button></view>
+              <view class="conversation-actions"><button class="text-button pin-conversation" :disabled="busy" :aria-pressed="!!item.pinned_at" :aria-label="(item.pinned_at ? '取消置顶：' : '置顶：') + item.title" @click="pinConversation(item)">{{ item.pinned_at ? '取消置顶' : '置顶' }}</button><button class="text-button archive-action" :disabled="busy" @click="archiveConversation(item)">{{ item.archived_at ? '恢复会话' : '归档' }}</button><button class="text-button delete-conversation" :disabled="busy" @click="deleteConversation(item)">删除</button></view>
             </view>
           </template>
           <template v-else><button v-for="issue in issues" :key="issue.id" class="exploration-item" @click="emit('selectIssue', issue)"><text>{{ issue.title || '未命名探索' }}</text><text class="muted small">{{ issue.ended_at ? '已结束 · 查看或恢复' : '进行中 · 打开探索' }}</text></button><button class="secondary" @click="emit('createIssue')">＋ 开始另一个探索</button></template>
@@ -246,6 +264,7 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
           <text class="memory-merge-hint">{{ selected.length < 2 ? '选中至少两条记忆后可以合并' : `已选 ${selected.length} 条记忆，可合并整理` }}</text>
           <view v-if="memoryForm" class="drawer-form memory-editor">
             <text class="field-label">{{ merging ? '审阅合并结果 · 保存后替换选中的记忆' : editing ? '编辑记忆' : '你希望长期记住什么？' }}</text>
+            <text v-if="editing?.source === 'plan_sync'" class="muted small">这条记忆跟随 Plan 更新；修改内容或范围后会成为独立记忆，保留你的文字，不再自动覆盖</text>
             <textarea v-model="memoryContent" class="text-area" :maxlength="-1" placeholder="写具体事实或偏好，避免替自己下结论" /><text class="muted small">{{ memoryContent.length }} / 400</text>
             <view class="drawer-tabs"><button v-for="kind in categories" :key="kind.id" :class="{ selected: category === kind.id }" @click="category = kind.id">{{ kind.label }}</button></view>
             <text class="field-label">适用阶段</text><view class="drawer-tabs"><button :class="{ selected: horizon === 'long_term' }" @click="horizon = 'long_term'">长期</button><button :class="{ selected: horizon === 'current_phase' }" @click="horizon = 'current_phase'">当前阶段</button></view>
@@ -261,23 +280,23 @@ function rememberSummary(content: string) { emit('viewChanged', 'memories'); edi
             <text class="muted small">{{ categories.find(k => k.id === item.category)?.label }} · {{ issueName(item.issue_id) }} · {{ item.enabled ? '启用' : '停用' }}</text>
             <text class="muted small">{{ item.horizon === 'current_phase' ? '当前阶段' : '长期' }} · {{ statusLabels[item.status || 'active'] }} · 来源：{{ item.source === 'user_revision' ? '用户确认的更新' : '用户确认' }}</text>
             <text class="muted small">创建 {{ item.created_at?.slice(0, 10) || '时间未知' }} · 确认 {{ item.confirmed_at?.slice(0, 10) || '旧记录未记载' }} · 最近核实 {{ item.last_verified_at?.slice(0, 10) || '未记载' }}</text>
+            <text v-if="item.source === 'plan_sync'" class="muted small">来自这段探索的 Plan · 随确认的更新同步；停用或删除后停止同步</text>
             <MemorySource :item="item" :user-id="user?.id || ''" :retain-chat="!!user?.save_chat" :request="request" />
             <view class="memory-actions"><button @click="editMemory(item)">编辑</button><button :disabled="busy" @click="toggleMemory(item)">{{ item.enabled ? '停用' : '启用' }}</button><button :disabled="busy" @click="deleteMemory(item)">删除</button></view>
           </view>
         </template>
         </view>
       </scroll-view>
-      <view v-if="scrollIndicator" class="drawer-scroll-indicator" aria-hidden="true"><view :style="{ height: scrollIndicator.height + '%', top: scrollIndicator.top + '%' }" /></view>
       </view>
     </view>
   </view>
 </template>
 
 <style scoped lang="scss">
+.drawer-main-tab::after,.drawer-heading .icon-button::after { border:0; }
 .memory-record-head { display:flex; align-items:flex-start; gap:4px; }
 .memory-merge-select { flex:0 0 44px; width:44px; min-height:44px; color:var(--accent); background:transparent; font-size:17px; line-height:1.6; }
 .memory-record-head .memory-select { flex:1; min-width:0; }
-.drawer-main-tab::after,.drawer-heading .icon-button::after { border:0; }
 .snapshot-intro { display:block; margin:4px 0 18px; padding:0 2px; color:var(--muted); font-family:var(--font-body); font-size:13px; line-height:22px; }
 .snapshot-readonly { display:block; margin:-10px 0 18px; padding:0 2px; color:var(--muted); font-family:var(--font-body); font-size:12px; line-height:20px; }
 .snapshot-item { box-sizing:border-box; margin:0 0 16px; padding:18px 16px 10px; border:1px solid var(--quote-border); border-radius:8px; background:linear-gradient(155deg,var(--quote-fill-a),var(--quote-fill-b)); box-shadow:var(--quote-inset); }

@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { toggleConcern, makePreview, mergeSuggestion, experimentProposal } from '../src/domain'
 
 describe('onboarding and confirmation boundaries', () => {
+  it('keeps optional experiment conditions absent instead of inserting empty labels', () => {
+    const saved = { title: '', options: [], constraints: ['保留收入'], confirmed: [], hypotheses: [], unknowns: [], next_step: '' }
+    expect(experimentProposal(saved, { action: '问问朋友', tests: '', effort: '半小时', stop_rule: '' }).next_step).toBe('问问朋友\n投入：半小时')
+  })
   it('allows several concerns and toggles without duplicate entries', () => {
     expect(toggleConcern(['direction'], 'choices')).toEqual(['direction', 'choices'])
     expect(toggleConcern(['direction', 'choices'], 'direction')).toEqual(['choices'])

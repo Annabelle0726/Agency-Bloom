@@ -26,6 +26,8 @@ import SpeechConsentModal from './modals/SpeechConsentModal.vue'
 import {SPEECH_KEY} from '../../speech'
 import EditCardModal from './modals/EditCardModal.vue'
 import ExperimentModal from './modals/ExperimentModal.vue'
+import PlanReviewModal from './modals/PlanReviewModal.vue'
+import PlanDirectionModal from './modals/PlanDirectionModal.vue'
 import FeedbackModal from './modals/FeedbackModal.vue'
 import AiConsentModal from './modals/AiConsentModal.vue'
 import AppearanceModal from './modals/AppearanceModal.vue'
@@ -36,6 +38,7 @@ import EditMessageModal from './modals/EditMessageModal.vue'
 import {useIndexPage} from './useIndexPage'
 import {homeConversationFor} from '../../home-entry'
 
+const planDirectionOpen = ref(false)
 const {
   speech,
   user,
@@ -80,6 +83,8 @@ const {
   activeConversation,
   isDrafting,
   drawer,
+  historyLoading,
+  historyError,
   phaseError,
   skipPhaseChange,
   savePhaseChange,
@@ -125,6 +130,15 @@ const {
   authenticate,
   selectTab,
   openEditor,
+  openPlanStep,
+  openPlanChat,
+  plan,
+  planDraft,
+  canSummarizePlan,
+  reviewPlanDraft,
+  summarizeForPlan,
+  openPlanPause,
+  planStepOnly,
   saveEditor,
   reloadVersion,
   saveFeedback,
@@ -156,6 +170,8 @@ const {
   logOut,
   deleteAccount,
   explorePrompt,
+  openDiscoveryChat,
+  invalidateDiscoverySources,
   discovery,
   bloomMoment,
   spaceForeground,
@@ -165,6 +181,7 @@ const {
   greeting,
   canonicalSupportStyle,
 } = useIndexPage()
+watch([() => user.value?.id, () => current.value?.id, tab], () => { planDirectionOpen.value = false })
 const homeConversation = computed(() => homeConversationFor(current.value, conversations.value, activeConversation.value?.id))
 const homeReply = computed(() => {
   const conversation=homeConversation.value
@@ -178,13 +195,13 @@ async function continueHomeChat() {
   openingHomeChat.value = true
   try {
     if (homeConversation.value) await selectConversation(homeConversation.value)
+    else if(current.value?.ended_at) await selectTab('plan')
     else await selectTab('chat')
   } finally { openingHomeChat.value = false }
 }
 // Keep scroll registration in the page entry: the Mini Program compiler uses
 // this import to enable page-scroll lifecycle dispatch.
-const discoverScrollTop = ref(0)
-watch(tab, () => { discoverScrollTop.value = 0 }, { flush: 'sync' })
+const discoverScrollTop = discovery.scrollTop
 onPageScroll(event => {
   if (screen.value === 'space' && tab.value === 'discover') discoverScrollTop.value = event.scrollTop
   handleChatScroll(event)
@@ -194,12 +211,13 @@ provide(ICON_PALETTE_KEY, computed(() => activeTheme.value.palette))
 provide(SPEECH_KEY, speech)
 const exploreVisual = computed(() => resolveExploreVisual(activeTheme.value.id))
 const meRecordsRevision = ref(0)
-function meContextChanged() { workspace.cancelAll(); meRecordsRevision.value++ }
+function meContextChanged() { workspace.cancelAll(); meRecordsRevision.value++; void invalidateDiscoverySources(); void plan.refreshMemory() }
 
 const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.value || !!chatError.value))
 </script>
 
 <template>
+  <page-meta :page-style="(drawer ? 'overflow:hidden;' : '') + 'background-color:' + activeTheme.palette.bg + ';'" :background-color="activeTheme.palette.bg" />
   <view class="preview-stage"
         :class="['theme-' + activeTheme.id, { dark, 'theme-space': screen === 'space', 'theme-home': screen === 'space' && tab === 'now', 'theme-reflection': screen === 'space' && (tab === 'plan' || tab === 'discover'), 'keyboard-open': keyboardHeight > 0 }]"
         :style="{ ...activeThemeStyle, '--keyboard-height': `${keyboardHeight}px`, '--chat-dock-height': `${composerHeight}px`, '--status-bar-height': `${statusHeight}px`, '--capsule-bottom': `${capsuleBottom}px` }">
@@ -235,12 +253,12 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
         @privacy="modal = 'privacy'" @chat="selectTab('chat')" @navigate="operations.clear('auth')" />
 
       <template v-else-if="screen === 'space'">
-        <HomeView v-if="tab === 'now'" :card="card" :current="current" :greeting="greeting" :foreground="spaceForeground"
+        <HomeView v-if="tab === 'now'" :card="card" :current="current" :greeting="greeting" :foreground="spaceForeground" :theme-id="activeTheme.id"
                   :today-label="todayLabel" :conversation="homeConversation" :reply="homeReply" :retain-chat="!!user?.save_chat" :opening-chat="openingHomeChat"
                   @open-editor="openEditor()" @plan="selectTab('plan')"
                   @feedback="modal = 'feedback'" @chat="continueHomeChat" @onboarding="beginOnboarding" @context="drawer = 'snapshots'" />
-        <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id"
-                  @open-editor="openEditor()" @feedback="modal = 'feedback'" @chat="selectTab('chat')"
+        <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id" :plan-state="plan.state.value" :plan-error="plan.error.value" :plan-loading="plan.loading.value"
+                  @open-editor="openEditor()" @step="plan.open('step')" @next="plan.open('next')" @direction="planDirectionOpen = true" @pause="plan.open('paused')" @feedback="plan.open('record')" @chat="openPlanChat" @record-chat="openPlanChat('', true)" @edit-record="plan.open('record', $event)" @status="plan.open($event)" @retry="plan.load()" @switch="drawer = 'list'"
                   @resume="resumeExploration" @end="endIssue" />
         <ChatView :foreground="spaceForeground" v-else-if="(current || isDrafting) && tab === 'chat'" :busy="busy" :sending="sending"
                   :generating-summary="generatingSummary" :active-conversation="activeConversation"
@@ -254,7 +272,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                   :speaking-index="speakingIndex" :older-cursor="workspace.active.value.olderCursor.value"
                   :stream-text="streamText" :reply-phase="replyPhase" :follow-latest="followLatest" :selection-open="messageSelectionOpen"
                   @jump-latest="jumpLatest" @ask-bloom="askBloom" @selection="messageSelectionOpen = $event"
-                  :pending-text="pendingText" :suggestion="suggestion" :insight="insight"
+                  :pending-text="pendingText" :suggestion="suggestion" :insight="insight" :plan-draft="planDraft" :can-summarize-plan="canSummarizePlan" @review-plan="reviewPlanDraft" @summarize-plan="summarizeForPlan"
                   :insight-reaction="insightReaction"
                   :current-ended="!!current?.ended_at" :phase-change="workspace.active.value.phaseChange.value"
                   @back="tab = 'now'" @history="showHistory"
@@ -269,7 +287,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />
         <view v-if="tab === 'chat'" id="chat-bottom" :style="{ height: `${composerHeight + keyboardHeight}px` }" />
-        <ChatComposer v-if="(current || isDrafting) && tab === 'chat' && !modal" :draft="draft" :sending="sending"
+        <ChatComposer v-if="(current || isDrafting) && tab === 'chat' && !modal && !plan.visible.value" :draft="draft" :sending="sending"
                       :creating="creatingConversation" :sending-started-at="workspace.active.value.sendingStartedAt.value" :generating-summary="generatingSummary"
                       :read-only-conversation="readOnlyConversation" :active-conversation="activeConversation"
                       :is-drafting="isDrafting" :web-search-on="workspace.active.value.webSearchOn.value"
@@ -282,8 +300,11 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
           <template #notice><SpeechConsentNotice /></template>
         </ChatComposer>
         <DiscoverView v-else-if="tab === 'discover'" :scroll-top="discoverScrollTop" :theme-id="activeTheme.id" :recommendations="discovery.recommendations.value"
+                      :issues="discovery.issues.value" :focus-id="discovery.focusId.value" :conversations="conversations" :active-conversation-id="activeConversation?.id"
+                      :can-rotate="discovery.canRotate.value" :empty-reason="discovery.emptyReason.value"
+                      :ui="discovery.ui"
                       :loading="discovery.loading.value" :error="discovery.error.value" :loaded="discovery.loaded.value"
-                      @explore="explorePrompt" @dismiss="discovery.dismiss" @rotate="discovery.rotate" @retry="discovery.load">
+                      @explore="explorePrompt" @dismiss="discovery.dismiss" @rotate="discovery.rotate" @retry="discovery.load" @focus="discovery.chooseFocus" @chat="openDiscoveryChat" @clue="openDiscoveryChat">
           <template #moment>
             <BloomMoment :foreground="spaceForeground" :moment="bloomMoment.moment.value" :day="bloomMoment.day.value" :theme-id="activeTheme.id"
               :loading="bloomMoment.loading.value" :generating="bloomMoment.generating.value" :error="bloomMoment.error.value"
@@ -309,7 +330,10 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
         <AppTabbar v-if="tab !== 'chat'" :tab="tab" :nav-images="navImages" @select="selectTab" />
       </template>
 
-      <EditCardModal v-if="modal === 'edit'" :busy="busy" :error="error" :editor="editor"
+      <PlanDirectionModal v-if="planDirectionOpen && current && !current.ended_at" :busy="busy" @close="planDirectionOpen = false" @replace="planDirectionOpen = false; plan.open('next')" @explore="planDirectionOpen = false; beginAnotherExploration()" />
+      <PlanReviewModal v-if="plan.visible.value && plan.editor.value" :editor="plan.editor.value" :busy="plan.busy.value || plan.loading.value" :error="plan.error.value" :latest="plan.state.value" :incoming="plan.incoming.value" :memory-use-enabled="!!user?.use_memory" @memories="plan.visible.value = false; drawer = 'memories'"
+                       @close="plan.visible.value = false" @save="plan.save()" @refine="plan.refine()" @reload="plan.reload()" @adopt="plan.adopt()" @keep="plan.keep()" />
+      <EditCardModal v-if="modal === 'edit'" :busy="busy" :error="error" :editor="editor" :step-only="planStepOnly" :latest-step="card.next_step"
                      @close="modal = ''" @save="saveEditor" @reload="reloadVersion" />
       <ExperimentModal v-if="modal === 'experiment'" :busy="busy" :error="error"
                        :can-save="canSaveExperiment" :editor="experimentEditor" @close="modal = ''"
@@ -342,6 +366,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                          :change="workspace.active.value.phaseChange.value" :confirmed="workspace.active.value.phaseConfirmed.value" :busy="busy" :error="phaseError"
                          @confirm="workspace.active.value.confirmPhaseChange()" @skip="skipPhaseChange" @close="workspace.active.value.phaseOpen.value = false" @save="savePhaseChange" />
       <ConversationDrawer v-if="drawer && user" :key="user.id" :view="drawer" :conversations="conversations" :active="activeConversation" :issues="archives" :user="user" :initial-issue-id="current?.id"
+                          :loading="historyLoading" :load-error="historyError" :background-color="activeTheme.palette.paper" @retry="showHistory"
                           :summary="workspace.active.value.summary.value" :summary-draft="workspace.active.value.summaryDraft.value"
                           :generating="sending" :running="runningIds" :error="chatError || error" :request="request"
                           @close="drawer = ''" @view-changed="drawer = $event" @select="selectConversation" @refresh="guarded(refreshWorkspace)"

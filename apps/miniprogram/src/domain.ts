@@ -15,6 +15,7 @@ export interface Suggestion {
   options: string[]; hypotheses: string[]; unknowns: string[]; next_step: string
 }
 export interface Issue {
+  plan?: PlanState
   id: string; title: string; concerns: string[]; stage: string; background: string;
   card: Card; version: number; created_at: string; updated_at: string; ended_at: string | null;
   feedback: { id: string; kind: string; text: string; created_at: string }[]
@@ -35,9 +36,10 @@ export interface PerspectiveShift {
   evidence: { message_id: string; quote: string; supports: ('observation' | 'possible_blind_spot' | 'alternative_perspective')[] }[]
   trigger: 'repeated_choice' | 'new_constraint' | 'assistant_revision'
 }
-export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { speech_proof?: string | null; perspective_shift?: PerspectiveShift | null; perspective_token?: string | null; suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; reasoning_summary?: ReasoningPoint[]; web_sources?: WebSource[] | null; visual_id?: string | null } | null }
+export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { plan_saved?: boolean; plan_draft?: PlanDraft | null; speech_proof?: string | null; perspective_shift?: PerspectiveShift | null; perspective_token?: string | null; suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; reasoning_summary?: ReasoningPoint[]; web_sources?: WebSource[] | null; visual_id?: string | null } | null }
 export interface ConversationSummary { overview: string; decisions: string[]; open_questions: string[]; next_steps: string[] }
 export interface Conversation {
+  pinned_at?: string | null
   dismissed_change_ids?: string[]
   id: string; issue_id: string; title: string; support_style: string; summary: ConversationSummary | null;
   linked_issue_ids: string[]; version: number; created_at: string; updated_at: string; archived_at: string | null
@@ -56,12 +58,16 @@ export interface InitialSnapshot {
 export interface PhaseChange {
   source_id: string; source_kind: 'memory' | 'snapshot'; source_version: number; previous: string; evidence: string
 }
+export interface PlanDraft { title: string; text: string; next_step: string | null }
+export interface PlanRecord { id: string; title: string; text: string; kind: string; version: string; created_at: string; attempt_id: string | null; editable: boolean }
+export interface PlanState { issue_id: string; version: number; next_step: string; status: 'active' | 'paused' | 'completed' | 'empty'; attempt_id: string | null; records: PlanRecord[]; latest: PlanRecord | null; memory_sync?: boolean | null; memory_version?: number | null }
 export interface Experiment { action: string; tests: string; effort: string; stop_rule: string }
 export interface Insight {
   title: '还有一种可能'; observation: string; possibility: string; uncertainty: string
   evidence: string[]; experiment: Experiment | null
 }
 export interface SuppliedContext {
+  confirmed_plan?: { next_step: string; status: PlanState['status']; exploration_ended: boolean; observations: { title: string; text: string; created_at: string }[]; changes: { title: string; text: string; created_at: string }[] } | null
   memories: { id: string; content: string; category: 'fact' | 'preference' | 'constraint'; horizon?: Memory['horizon']; status?: Memory['status'] }[]
   initial_snapshot?: InitialSnapshot | null
   primary_card?: Partial<Card>
@@ -76,6 +82,7 @@ export interface WebSource {
   name?: string; url: string; snippet?: string; site?: string; published?: string
 }
 export interface ChatResponse {
+  plan_draft?: PlanDraft | null
   speech_proof?: string | null
   perspective_shift?: PerspectiveShift | null
   perspective_token?: string | null
@@ -121,5 +128,7 @@ export function mergeSuggestion(card: Card, suggestion: Suggestion): Card {
 export function experimentProposal(card: Card, experiment: Experiment): Card {
   return { ...card, options: [...card.options], constraints: [...card.constraints], confirmed: [...card.confirmed],
     hypotheses: [...card.hypotheses], unknowns: [...card.unknowns],
-    next_step: `${experiment.action}\n验证：${experiment.tests}\n投入：${experiment.effort}\n停止条件：${experiment.stop_rule}` }
+    next_step: [experiment.action.trim(), experiment.tests.trim() ? `验证：${experiment.tests.trim()}` : '',
+      experiment.effort.trim() ? `投入：${experiment.effort.trim()}` : '',
+      experiment.stop_rule.trim() ? `停止条件：${experiment.stop_rule.trim()}` : ''].filter(Boolean).join('\n') }
 }

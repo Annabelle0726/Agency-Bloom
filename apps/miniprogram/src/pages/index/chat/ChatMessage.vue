@@ -92,7 +92,7 @@ watch(() => [props.message.id, props.message.content, props.message.payload?.rea
   </ModalShell>
   <ModalShell v-if="selecting" title="选择文字" :busy="false" @close="selecting = false">
     <text class="page-description">长按下方文字，拖动选区后复制</text>
-    <scroll-view scroll-y class="selection-scroll">
+    <scroll-view scroll-y enhanced class="selection-scroll">
       <text class="selectable-message" selectable user-select>{{ message.content }}</text>
     </scroll-view>
     <button class="text-button" @click="copy">复制全部</button>

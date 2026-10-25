@@ -23,7 +23,7 @@ const emit = defineEmits<{ close: [] }>()
           <SvgIcon name="close" :size="20"/>
         </button>
       </view>
-      <scroll-view scroll-y class="modal-scroll" :class="{ 'appearance-scroll': appearance }">
+      <scroll-view scroll-y enhanced class="modal-scroll" :class="{ 'appearance-scroll': appearance }">
         <view v-if="error" class="notice error-notice">{{ error }}</view>
         <slot/>
       </scroll-view>

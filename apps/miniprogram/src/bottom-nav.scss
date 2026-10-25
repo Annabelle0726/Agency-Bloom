@@ -32,6 +32,9 @@
   background:rgba(252,253,255,.94);
   box-shadow:0 -8px 32px rgba(60,79,118,.055);
   backdrop-filter:blur(18px);
+  /* #ifdef MP-WEIXIN */
+  backdrop-filter:none;
+  /* #endif */
   overflow:visible;
 }
 .journey-nav button.nav-item {

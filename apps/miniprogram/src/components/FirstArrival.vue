@@ -8,7 +8,7 @@ defineEmits<{ enter: [] }>()
   <view class="first-arrival">
     <image class="arrival-background" :src="resolveAppMedia('/static/morning-light.jpg')" mode="aspectFill" />
     <view class="arrival-header"><text>AGENCY BLOOM</text><button class="arrival-skip" hover-class="pressed" @click="$emit('enter')">直接进入</button></view>
-    <scroll-view class="arrival-scroll" scroll-y :show-scrollbar="false">
+    <scroll-view class="arrival-scroll" scroll-y enhanced>
       <view class="arrival-letter">
         <text class="arrival-eyebrow">在开始之前，想对你说</text>
         <text class="arrival-title">{{ '我还想\n按自己的意愿活一活' }}</text>

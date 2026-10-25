@@ -205,6 +205,11 @@ class ConversationUpdate(StrictModel):
     dismissed_change_ids: list[Annotated[str, StringConstraints(max_length=80)]] | None = Field(default=None, max_length=40)
 
 
+class ConversationPinUpdate(StrictModel):
+    version: int = Field(ge=1)
+    pinned: bool
+
+
 class SummaryUpdate(StrictModel):
     version: int = Field(ge=1)
     summary: ConversationSummary | None
@@ -307,7 +312,33 @@ class ReasoningPoint(StrictModel):
     evidence: list[ReasoningEvidence] = Field(min_length=1, max_length=2)
 
 
+class PlanDraft(StrictModel):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    text: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] = ''
+    next_step: Annotated[str, StringConstraints(strip_whitespace=True, max_length=600)] | None = None
+
+    @field_validator('next_step')
+    @classmethod
+    def exclude_conversation_prompt(cls, value):
+        if value and value.startswith(('你可以先回答', '请先告诉我', '你能告诉我', '可以告诉我', '先回答一句')):
+            return None
+        return value
+
+
 class AIOutput(StrictModel):
+    plan_draft: PlanDraft | None = None
+
+    @field_validator('plan_draft', mode='before')
+    @classmethod
+    def optional_plan_draft(cls, value):
+        if value is None:
+            return None
+        try:
+            draft = PlanDraft.model_validate(value)
+            return draft if draft.text or draft.next_step else None
+        except (ValidationError, TypeError, ValueError):
+            return None
+
     perspective_shift: PerspectiveShift | None = None
 
     @field_validator("perspective_shift", mode="before")

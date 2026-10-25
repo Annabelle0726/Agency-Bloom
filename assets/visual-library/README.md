@@ -82,3 +82,14 @@ The Mini Program Vite writeBundle hook runs after static copying for both develo
 Both fresh development and release builds measured 131 media files, 183,372 bytes (179.07KiB), below the limit. The release build passed native compilation (38 WXSS, 60 WXML). Focused frontend tests passed 29/29; tool tests passed 24/24; TypeScript passed. Backend visual-selection MockTransport tests and manifest validation passed. These results do not claim physical-device image loading or a fresh UI code-quality-panel scan. Recompile the current project and rerun its code-quality scan; do not reuse a pre-migration result.
 
 The commit contains only this cloud/source and media-budget work. Other in-progress UI/API edits remain outside it. No push or Git history rewrite is authorized.
+
+
+## Opening artwork loading (2026-10-25)
+
+Keep the original five opening scenes and their existing media resolver. The
+experimental single local mountain image was reverted. Opening image load/error
+state is visible without blocking reading; after six seconds offer an explicit
+retry and allow late load success. The opening-to-auth cover waits at most 1.2
+seconds before fading onto the existing solid login background, even when the
+background load/error event never arrives. This is a responsiveness safeguard,
+not proof that network or native image decoding latency has been fixed.

@@ -83,14 +83,14 @@ defineEmits<{ click: [] }>()
 /* Auth-only finishes follow the mountain mist and warm morning light. */
 .action-auth-wechat, .action-auth-demo {
   position:relative; overflow:hidden; justify-content:space-between; gap:16px;
-  min-height:56px; padding:11px 16px 11px 20px; border-radius:var(--radius-button);
+  min-height:54px; padding:11px 18px 11px 20px; border-radius:8px;
   font-size:var(--type-button); font-weight:500;
   transition:transform 130ms cubic-bezier(.23,1,.32,1),background 130ms ease-out,box-shadow 130ms ease-out;
 }
 .action-auth-wechat {
-  background:linear-gradient(150deg,var(--button-fill),var(--ink));
-  color:#fff; border:1px solid var(--button-fill); text-shadow:none;
-  box-shadow:0 6px 16px rgba(41,55,75,.14),inset 0 1px 0 rgba(255,255,255,.12);
+  background:linear-gradient(155deg,#426974,#284b56 65%,#233f49);
+  color:#fff; border:1px solid rgba(214,233,233,.42); text-shadow:none;
+  box-shadow:0 5px 14px rgba(30,58,66,.13),inset 0 1px 0 rgba(255,255,255,.18);
 }
 .action-auth-demo {
   background:var(--paper); color:var(--ink); border:1px solid var(--line); text-shadow:none;
@@ -100,8 +100,8 @@ defineEmits<{ click: [] }>()
   content:none;
 }
 .action-auth-wechat .action-label, .action-auth-demo .action-label { position:relative; flex:1; min-width:0; text-align:left; font-family:inherit; letter-spacing:.2px; }
-.action-auth-wechat .action-arrow, .action-auth-demo .action-arrow { position:relative; width:30px; height:30px; border:1px solid rgba(255,255,255,.22); border-radius:50%; background:rgba(255,255,255,.08); transition:transform 130ms cubic-bezier(.23,1,.32,1); }
-.action-auth-demo .action-arrow { border-color:var(--line); background:var(--soft); }
+.action-auth-wechat .action-arrow, .action-auth-demo .action-arrow { position:relative; width:24px; height:24px; border:0; border-radius:0; background:transparent; transition:transform 130ms cubic-bezier(.23,1,.32,1); }
+.action-auth-demo .action-arrow { border:0; background:transparent; }
 .action-auth-wechat[disabled], .action-auth-demo[disabled] { background:var(--soft); border-color:var(--line); color:var(--muted); text-shadow:none; box-shadow:none; }
 .action-auth-wechat[disabled] .action-arrow, .action-auth-demo[disabled] .action-arrow { opacity:1; border-color:var(--line); background:transparent; }
 .action-auth-wechat.action-pressed:not([disabled]), .action-auth-demo.action-pressed:not([disabled]),

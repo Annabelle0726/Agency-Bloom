@@ -64,7 +64,12 @@ def public_payload(payload, reply=None):
         return None
     clean = {k: v for k, v in payload.items()
              if k in {"supplied_context", "suggestion", "insight", "request_id",
-                      "tail_line", "web_sources", "reasoning_summary", "visual_id"}}
+                      "tail_line", "web_sources", "reasoning_summary", "visual_id", "plan_draft", "plan_saved"}}
+    if 'plan_saved' in clean:
+        clean['plan_saved'] = clean['plan_saved'] is True
+    if 'plan_draft' in clean:
+        draft = AIOutput(reply='history validation', plan_draft=clean['plan_draft']).plan_draft
+        clean['plan_draft'] = draft.model_dump() if draft else None
     visual_id = clean.get("visual_id")
     if visual_id is not None and (not isinstance(visual_id, str) or not re.fullmatch(r"[a-z0-9_]{1,80}", visual_id)):
         clean.pop("visual_id", None)

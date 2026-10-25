@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from .models import Base, Feedback, Issue, Message, User, now, uid
+from .plan_continuity import lock_plan_owner, sync_plan_context
 
 Kind = Literal["thought", "decision", "change", "action", "pause"]
 LABELS = {"thought": "留下一个想法", "decision": "重新选择", "change": "想法变了",
@@ -204,6 +205,7 @@ def register_journey_routes(app, authenticated, db_dependency, owned):
 
     @app.post("/api/journey/records", status_code=201)
     def create(body: WriteRecord, user: User = Depends(authenticated), db: Session = Depends(db_dependency)):
+        lock_plan_owner(db, user.id)
         issue = owned(db, user, body.issue_id)
         if body.request_id and (existing := db.get(JourneyRecord, body.request_id)):
             if (existing.user_id == user.id and existing.issue_id == issue.id and
@@ -220,6 +222,7 @@ def register_journey_routes(app, authenticated, db_dependency, owned):
                             title=body.title, text=body.text, source_message_id=body.source_message_id)
         db.add(row)
         try:
+            sync_plan_context(db, issue)
             db.commit()
         except IntegrityError as exc:
             db.rollback()
@@ -246,6 +249,7 @@ def register_journey_routes(app, authenticated, db_dependency, owned):
     @app.put("/api/journey/events/{event_id}")
     def edit(event_id: str, body: EditRecord, user: User = Depends(authenticated),
              db: Session = Depends(db_dependency)):
+        lock_plan_owner(db, user.id)
         value = detail(db, user, event_id)
         if not value["editable"]:
             raise HTTPException(409, "这条记录来自探索状态，不能在这里改写")
@@ -263,12 +267,14 @@ def register_journey_routes(app, authenticated, db_dependency, owned):
         if changed.rowcount != 1:
             db.rollback()
             raise HTTPException(409, "记录已变化，请重新打开核对；你的文字仍保留")
+        sync_plan_context(db, owned(db, user, value['issue_id']))
         db.commit()
         return detail(db, user, event_id)
 
     @app.delete("/api/journey/events/{event_id}", status_code=204)
     def remove(event_id: str, version: str = Query(max_length=64),
                user: User = Depends(authenticated), db: Session = Depends(db_dependency)):
+        lock_plan_owner(db, user.id)
         value = detail(db, user, event_id)
         if not value["editable"] or value["version"] != version:
             raise HTTPException(409, "记录已变化，或不能在这里删除")
@@ -285,27 +291,29 @@ def register_journey_routes(app, authenticated, db_dependency, owned):
         if changed.rowcount != 1:
             db.rollback()
             raise HTTPException(409, "记录已变化，请刷新")
+        sync_plan_context(db, owned(db, user, value['issue_id']))
         db.commit()
         return Response(status_code=204)
 
     @app.put("/api/journey/directions/{issue_id}")
     def direction(issue_id: str, body: DirectionInput, user: User = Depends(authenticated),
                   db: Session = Depends(db_dependency)):
+        from .plan import plan_from_card_edit
+
+        lock_plan_owner(db, user.id)
         issue = owned(db, user, issue_id)
         if issue.ended_at:
             raise HTTPException(409, "这段探索已结束，请先恢复探索")
-        previous, next_step = (issue.card or {}).get("next_step", ""), body.next_step.strip()
+        next_step = body.next_step.strip()
+        exploration = plan_from_card_edit(db, issue, next_step)
         changed = db.execute(update(Issue).where(
             Issue.id == issue.id, Issue.user_id == user.id, Issue.version == body.version,
             Issue.ended_at.is_(None)).values(
-                card={**issue.card, "next_step": next_step}, version=Issue.version + 1, updated_at=now()))
+                card={**issue.card, "next_step": next_step}, exploration=exploration,
+                version=Issue.version + 1, updated_at=now()))
         if changed.rowcount != 1:
             db.rollback()
             raise HTTPException(409, "决策卡已变化，请重新打开核对；你的文字仍保留")
-        if previous != next_step:
-            db.add(JourneyRecord(user_id=user.id, issue_id=issue.id, kind="decision",
-                title="调整下一步" if next_step else "放下这一步",
-                text=(("原先：\n" + previous + "\n\n") if previous else "") +
-                     ("现在愿意尝试：\n" + next_step if next_step else "暂时不保留下一步")))
+        sync_plan_context(db, issue)
         db.commit()
         return {"next_step": next_step, "version": body.version + 1}

@@ -195,7 +195,7 @@ defineExpose({ clearDraft })
         <view class="flow-nav"><button class="icon-button flow-back" aria-label="返回上一步" :disabled="busy || moving" hover-class="pressed" :hover-start-time="0" @click="go(step - 1)"><SvgIcon name="back" :size="22" /></button><text class="flow-wordmark">YOUR SPACE</text><button class="icon-button" aria-label="草稿与隐私" hover-class="pressed" :hover-start-time="0" @click="draftInfo = true"><SvgIcon name="more" :size="22" /></button></view>
         <ProgressIndicator :current="step + 1" :total="5" />
       </view>
-      <scroll-view class="flow-scroll" scroll-y :scroll-top="scrollTop" :show-scrollbar="false">
+      <scroll-view class="flow-scroll" scroll-y enhanced :scroll-top="scrollTop">
         <view class="flow-body" :class="['flow-' + direction + '-' + (step % 2), 'flow-step-' + step]">
           <view class="flow-heading"><text class="eyebrow">{{ heading.label }}</text><text class="flow-title">{{ heading.title }}</text><text class="flow-description">{{ heading.detail }}</text></view>
           <view v-if="legacyDraft && step === 0" class="legacy-draft">
@@ -359,18 +359,18 @@ defineExpose({ clearDraft })
 .flow-page { position:relative; z-index:1; background:transparent; }
 .flow-chrome { padding-top:calc(var(--capsule-bottom,64px) + 12px); }
 .flow-nav { margin-bottom:14px; }
-.flow-wordmark { color:var(--muted); }
+.flow-wordmark { color:var(--muted); font-family:var(--font-heading); letter-spacing:2px; }
 /* Do not animate the entire rasterized contents of a native scroll-view.
    Backgrounds remain mounted; only local color feedback changes on input. */
-.onboarding-flow .flow-body { padding-top:22px; animation:none; transform:none; }
+.onboarding-flow .flow-body { padding-top:clamp(30px, 5.5vh, 58px); animation:none; transform:none; }
 .onboarding-flow .pressed { transform:none; opacity:1; }
 .flow-heading { position:relative; padding-bottom:8px; }
-.flow-heading .eyebrow { color:var(--muted); letter-spacing:2.2px; }
+.flow-heading .eyebrow { color:var(--muted); font-family:var(--font-heading); font-size:10px; font-weight:500; letter-spacing:2.4px; }
 .flow-heading .flow-title {
   font-family:var(--font-heading); font-size:24px; font-weight:500; line-height:1.5;
   letter-spacing:.5px; color:var(--ink);
 }
-.flow-heading .flow-description { color:var(--muted); font-size:13px; line-height:1.9; max-width:100%; margin-top:12px; margin-bottom:24px; }
+.flow-heading .flow-description { color:var(--muted); font-size:13.5px; line-height:1.9; max-width:100%; margin-top:12px; margin-bottom:24px; }
 .flow-step-2 .flow-heading .eyebrow { color:var(--accent); }
 .flow-step-2 .flow-heading .flow-title { color:var(--ink); }
 .flow-step-2 .flow-heading .flow-description { color:var(--muted); }
@@ -381,7 +381,7 @@ defineExpose({ clearDraft })
 .refinement-note { margin:12px 0 0; }
 .refinement-tabs { margin-bottom:16px; }
 .refinement-record { margin-top:12px; }
-.selection-reassurance { display:block; text-align:center; color:var(--muted); font-size:var(--type-caption); line-height:1.8; margin:0 0 9px; }
+.selection-reassurance { display:block; text-align:center; color:var(--muted); font-size:13px; line-height:1.8; margin:0 0 9px; }
 .flow-footer :deep(.action-button) { border-radius:var(--radius-button); }
 .flow-footer-detail { justify-content:space-between; }
 .flow-footer .flow-skip { color:var(--ink); font-size:var(--type-button); min-height:44px; }
@@ -445,7 +445,7 @@ defineExpose({ clearDraft })
 .onboarding-flow .life-tag { transition:background-color 130ms var(--ease-out),border-color 130ms var(--ease-out); }
 .onboarding-flow .life-tag.life-tag-pressed { transform:none; }
 .onboarding-flow .life-tag-check { transition:none; transform:none; }
-.context-status { display:block; min-height:22px; margin:15px 0 30px; color:var(--muted); font-size:12px; line-height:1.8; letter-spacing:.1px; }
+.context-status { display:block; min-height:22px; margin:15px 0 30px; color:var(--muted); font-size:13px; line-height:1.8; letter-spacing:.1px; }
 .context-writing { margin:0; padding:0; }
 .context-writing-heading { display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
 .context-writing-title { color:var(--ink); font-size:15px; font-weight:500; line-height:1.6; }

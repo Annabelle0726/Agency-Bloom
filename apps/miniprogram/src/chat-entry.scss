@@ -57,6 +57,7 @@
 }
 .app-shell .chat-header-title.header-title-pressed,
 .app-shell .chat-header-title.is-open { background: var(--soft); border-color: var(--line); opacity: 1; }
+.app-shell .chat-header-title[disabled] { background:transparent; color:var(--ink); opacity:1; }
 .app-shell .chat-header-title::after { border: 0; }
 .header-title-pressed { background: var(--soft); }
 .chat-header-name {

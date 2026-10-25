@@ -11,6 +11,7 @@
 <style lang="scss" src="./workspace.scss"></style>
 <style lang="scss" src="./bloom-pages.scss"></style>
 <style lang="scss" src="./ui-foundation.scss"></style>
+<style lang="scss" src="./surface-actions.scss"></style>
 <script setup lang="ts">
 import { onLaunch, onShow } from '@dcloudio/uni-app'
 import { refreshHomeQuote } from './use-home-quote'

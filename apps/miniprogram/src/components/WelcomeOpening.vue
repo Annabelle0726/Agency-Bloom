@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { resolveAppMedia } from '../app-media'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import ActionButton from './ActionButton.vue'
 import SvgIcon from './SvgIcon.vue'
 const emit = defineEmits<{ start: [] }>()
@@ -8,6 +8,8 @@ const current = ref(0)
 const reducedMotion = ref(false)
 const revealed = ref<number[]>([])
 const loaded = ref<number[]>([])
+const failed = ref<number[]>([])
+const retryVersion = ref(0)
 const slides = [
   {
     scene: 'mountain-person', label: '01 / 变化中的生活', accent: '#934d36',
@@ -46,6 +48,12 @@ const slides = [
   },
 ]
 const slide = computed(() => slides[current.value])
+// Wrap at meaningful phrase boundaries before splitting a single Chinese word.
+function readingPhrases(line: string) {
+  if (line === '还没有成为理想的自己') return ['还没有成为', '理想的自己']
+  if (line.startsWith('Agency Bloom ')) return ['Agency Bloom\u00a0', line.slice('Agency Bloom '.length)]
+  return [line]
+}
 let navigationAt = 0
 let gestureMoved = false
 let scrollingUntil = 0
@@ -78,7 +86,22 @@ function next() {
 }
 function imageLoaded(index: number) {
   if (!loaded.value.includes(index)) loaded.value = [...loaded.value, index]
+  failed.value = failed.value.filter(value => value !== index)
 }
+function imageFailed(index: number) {
+  if (!failed.value.includes(index)) failed.value = [...failed.value, index]
+}
+function retryImage() {
+  failed.value = failed.value.filter(value => value !== current.value)
+  retryVersion.value++
+}
+let imageTimer: ReturnType<typeof setTimeout> | undefined
+watch([current, retryVersion], () => {
+  clearTimeout(imageTimer)
+  const index = current.value
+  if (!loaded.value.includes(index)) imageTimer = setTimeout(() => { if (!loaded.value.includes(index)) imageFailed(index) }, 6000)
+}, { immediate: true })
+onUnmounted(() => clearTimeout(imageTimer))
 // #ifdef H5
 let query: MediaQueryList | undefined
 const motionChanged = () => { reducedMotion.value = !!query?.matches }
@@ -94,17 +117,23 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
 <template>
   <view class="opening-story" :class="[{ 'motion-reduced': reducedMotion }, 'scene-' + current]" :style="{ '--story-accent': slides[current].accent }">
     <view class="story-backdrop" aria-hidden="true">
-      <image v-for="(slide, index) in slides" :key="slide.scene"
+      <image v-for="(slide, index) in slides" :key="slide.scene + '-' + (index === current ? retryVersion : 0)"
         class="story-scene" :class="{ 'scene-active': current === index && loaded.includes(index) }"
-        :src="resolveAppMedia('/static/opening-' + slide.scene + '.jpg')" mode="aspectFill" @load="imageLoaded(index)" />
+        :src="resolveAppMedia('/static/opening-' + slide.scene + '.jpg')" mode="aspectFill" @load="imageLoaded(index)" @error="imageFailed(index)" />
       <view class="story-wash" />
     </view>
     <view class="story-header">
       <view class="story-brand"><text>AGENCY BLOOM</text><text class="story-brand-note">YOUR LIFE, YOUR WAY</text></view>
       <button class="story-skip" hover-class="pressed" @click="emit('start')">直接登录</button>
     </view>
+    <view class="story-image-status" aria-live="polite">
+      <template v-if="!loaded.includes(current)">
+        <text>{{ failed.includes(current) ? '画面暂未加载，可继续阅读' : '正在加载画面…' }}</text>
+        <button v-if="failed.includes(current)" class="story-image-retry" hover-class="pressed" @click="retryImage">重试</button>
+      </template>
+    </view>
     <view class="story-stage" @click="advance">
-        <scroll-view :key="slide.scene" class="story-scroll" scroll-y :show-scrollbar="false"
+        <scroll-view :key="slide.scene" class="story-scroll" scroll-y enhanced
           @touchstart="touchStart" @touchmove="touchMove" @scroll="scrollingUntil = Date.now() + 200">
           <view class="story-page"
             :class="{ playing: true, settled: revealed.includes(current) }"
@@ -113,13 +142,15 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
             <view class="story-title">
               <text v-for="(line, lineIndex) in slide.title" :key="line"
                 class="story-title-line reveal-line" :class="{ 'story-emphasis': lineIndex === 1 }"
-                :style="{ animationDelay: (lineIndex * 140) + 'ms' }">{{ line }}</text>
+                :style="{ animationDelay: (lineIndex * 140) + 'ms' }"><text v-for="phrase in readingPhrases(line)" :key="phrase" class="story-phrase">{{ phrase }}</text></text>
             </view>
             <view class="story-body">
               <text v-for="(line, lineIndex) in slide.lines" :key="line" class="story-body-line reveal-line"
-                :style="{ animationDelay: (360 + lineIndex * 160) + 'ms' }">{{ line }}</text>
+                :style="{ animationDelay: (360 + lineIndex * 160) + 'ms' }"><text v-for="phrase in readingPhrases(line)" :key="phrase" class="story-phrase">{{ phrase }}</text></text>
             </view>
-            <text class="story-closing reveal-line" :style="{ animationDelay: (440 + slide.lines.length * 160) + 'ms' }">{{ slide.emphasis }}</text>
+            <view class="story-closing reveal-line" :style="{ animationDelay: (440 + slide.lines.length * 160) + 'ms' }">
+              <text v-for="line in slide.emphasis.split('\n')" :key="line" class="story-closing-line">{{ line }}</text>
+            </view>
           </view>
         </scroll-view>
     </view>
@@ -139,8 +170,16 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
   </view>
 </template>
 
+<style lang="scss" src="../opening-serif.scss"></style>
 <style scoped>
-.opening-story { position:relative; isolation:isolate; height:var(--app-height, 100vh); min-height:0; display:flex; flex-direction:column; box-sizing:border-box; overflow:hidden; color:#28332f; background:#f4f0e8; }
+.opening-story {
+  --font-heading:'Bloom Opening Serif','Songti SC','SongtiSC-Regular','STSong','Noto Serif CJK SC','SimSun',serif;
+  --font-body:-apple-system,BlinkMacSystemFont,'PingFang SC','Noto Sans SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --type-title:30px; --type-section:20px; --type-body:16px; --type-button:15px;
+  position:relative; isolation:isolate; height:var(--app-height, 100vh); min-height:0;
+  display:flex; flex-direction:column; box-sizing:border-box; overflow:hidden;
+  color:#28332f; background:#f4f0e8; font-family:var(--font-body);
+}
 .story-backdrop { position:absolute; inset:0; pointer-events:none; z-index:0; }
 .story-scene { position:absolute; width:100%; height:100%; left:0; top:0; opacity:0; transition:opacity 650ms ease; }
 .story-scene.scene-active { opacity:1; }
@@ -149,14 +188,17 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
 .story-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:calc(var(--capsule-bottom, 64px) + 14px) 28px 4px; }
 .story-brand { display:flex; flex-direction:column; gap:8px; font-size:14px; letter-spacing:3px; }
 .story-brand-note { font-size:8px; letter-spacing:1.8px; color:#556057; }
-.opening-story .story-skip { background:transparent; color:#465047; font-size:12px; line-height:1.6; min-height:44px; padding:12px 0 12px 12px; margin:0; }
+.opening-story .story-skip { background:transparent; color:#465047; font-size:13px; line-height:1.6; min-height:44px; padding:12px 0 12px 12px; margin:0; }
 .opening-story button::after { border:0; }
+.story-image-status { position:relative; z-index:1; flex-shrink:0; height:44px; padding:0 28px; display:flex; align-items:center; gap:12px; color:#465047; font-size:11px; }
+.opening-story .story-image-retry { margin:0; padding:8px; min-height:44px; font-size:12px; line-height:1.5; color:inherit; background:transparent; }
 .story-stage { flex:1; height:0; min-height:0; width:100%; }
 .story-scroll { height:100%; }
 .story-page { min-height:100%; cursor:pointer; padding:32px 28px 28px; box-sizing:border-box; }
-.story-label { display:block; font-size:10px; letter-spacing:1.8px; color:#566157; margin-bottom:20px; }
+.story-label { display:block; font-size:11px; letter-spacing:1.4px; color:#566157; margin-bottom:20px; }
 .story-title { font-family:var(--font-heading); font-size:26px; line-height:1.65; letter-spacing:0; font-weight:500; }
 .story-title-line, .story-body-line { display:block; }
+.story-phrase { display:inline-block; max-width:100%; vertical-align:bottom; white-space:normal; }
 .story-body { font-size:14px; line-height:2.05; margin-top:24px; color:#3d4940; }
 .story-emphasis { color:var(--story-accent); font-weight:600; }
 .story-closing { display:block; margin-top:19px; font-size:14px; line-height:1.9; }
@@ -169,7 +211,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
 .story-dot { width:5px; height:5px; border-radius:9px; background:rgba(255,255,255,.6); transition:width 280ms ease,background 280ms ease; }
 .story-dot.active { width:20px; background:#fff; }
 .story-count { margin-left:auto; font-size:10px; color:#fff; text-shadow:0 1px 6px #26382d; }
-.story-note { display:block; color:#fff; text-shadow:0 1px 6px #26382d; font-size:11px; line-height:1.8; margin:0 0 14px; min-height:20px; }
+.story-note { display:block; color:#fff; text-shadow:0 1px 6px #26382d; font-family:var(--font-body); font-size:13px; line-height:1.75; margin:0 0 14px; min-height:23px; }
 .opening-story .story-about { min-height:44px; margin:3px auto 0; padding:12px; background:transparent; color:#fff; font-size:11px; line-height:1.8; text-shadow:0 1px 5px #253b2c; }
 .motion-reduced .story-scene, .motion-reduced .story-dot { transition:none; }
 @media(prefers-reduced-motion:reduce) {
@@ -191,29 +233,25 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
 /* Each scene is a composition: headline, breathing room, then a quiet aside. */
 .story-wash { background:linear-gradient(180deg,rgba(250,248,241,.32),rgba(250,248,241,.34) 42%,rgba(250,248,241,.08) 62%,rgba(15,26,27,.50)); }
 .story-page { display:flex; flex-direction:column; padding-top:30px; padding-bottom:22px; }
-.story-title { font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:30px; font-weight:400; line-height:1.65; letter-spacing:1px; }
-.story-emphasis { font-weight:400; }
-.story-body { font-family:var(--font-heading); font-size:14px; line-height:2.15; margin-top:22px; }
+.opening-story .story-title { font-family:var(--font-heading); font-size:var(--type-title); font-weight:400; line-height:1.55; letter-spacing:.3px; }
+.opening-story .story-emphasis { font-weight:400; }
+.opening-story .story-body { font-family:var(--font-body); font-size:var(--type-body); font-weight:400; line-height:1.95; letter-spacing:.1px; margin-top:22px; }
 .story-body-line:last-child { color:var(--story-accent); }
-.story-closing { align-self:flex-end; max-width:86%; margin-top:auto; padding-top:40px; white-space:pre-line; text-align:right; font-family:'Kaiti SC','STKaiti','KaiTi',var(--font-heading); font-size:19px; font-weight:400; line-height:1.8; letter-spacing:1px; color:#fffaf1; text-shadow:0 2px 12px rgba(14,28,32,.6); }
-.scene-0 .story-closing { max-width:100%; font-size:var(--type-section); }
+.opening-story .story-closing { align-self:stretch; width:100%; min-width:0; max-width:100%; box-sizing:border-box; margin-top:auto; padding:32px 4px 0; text-align:right; font-family:var(--font-heading); font-size:var(--type-section); font-weight:400; line-height:1.85; letter-spacing:0; color:#fffaf1; text-shadow:0 2px 12px rgba(14,28,32,.6); }
+.story-closing-line { display:block; width:100%; min-width:0; white-space:normal; word-break:normal; overflow-wrap:break-word; }
 .scene-1 .story-page { padding-top:48px; }
-.scene-2 .story-title { font-size:27px; }
 .scene-3 .story-body { margin-left:24px; }
-.scene-4 .story-body { font-size:13px; line-height:1.95; margin-top:16px; }
-.scene-4 .story-closing { padding-top:24px; font-size:17px; }
+.scene-4 .story-body { margin-top:16px; }
+.scene-4 .story-closing { padding-top:24px; }
 /* Lift the entire action/copy composition above the phone's bottom edge. */
 .story-footer { padding-bottom:calc(52px + env(safe-area-inset-bottom, 0px)); }
 @media(max-width:360px) {
-  .story-title { font-size:26px; }
-  .scene-2 .story-title { font-size:24px; }
-  .story-body { font-size:13px; }
+  .opening-story { --type-title:28px; --type-section:19px; }
 }
 @media(max-height:720px) {
   .story-page,.scene-1 .story-page { padding-top:16px; padding-bottom:12px; }
-  .story-body { margin-top:14px; line-height:1.9; }
+  .opening-story .story-body { margin-top:14px; }
   .story-closing { padding-top:24px; }
-  .scene-4 .story-body { font-size:12px; line-height:1.85; }
   .story-footer { padding-bottom:calc(36px + env(safe-area-inset-bottom, 0px)); }
 }
 </style>

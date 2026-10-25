@@ -83,6 +83,13 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     lavender: { hi: '#eadcf7', deep: '#4f3b68' },
     minimal: { hi: '#dfe7db', deep: '#374440' },
   }
+  // Raised workspace actions use quieter mineral colors than the older CTA fill.
+  const actionColors: Record<ThemeId, string> = {
+    light: '#50647b', dark: '#4d5365', dawn: '#80645d',
+    forest: '#536657', lavender: '#6d617b', minimal: '#5c605b',
+  }
+  const action = actionColors[theme.id]
+  const secondaryAction = mixHex(p.paper, p.soft, theme.dark ? .6 : .38)
   const rgba = (hex: string, alpha: number) => {
     const value = parseInt(hex.slice(1), 16)
     return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${alpha})`
@@ -166,6 +173,20 @@ export function themeStyle(theme: ThemeDefinition): Record<string, string> {
     '--cta-disabled': mixHex(p.paper, p.line, .55),
     '--cta-shadow': theme.dark ? 'none' : `0 6px 18px ${rgba(p.fill, .2)}`,
     '--cta-pressed-shadow': theme.dark ? 'none' : `0 3px 10px ${rgba(p.fill, .16)}`,
+    '--surface-action-fill': action,
+    '--surface-action-top': mixHex(action, '#ffffff', .055),
+    '--surface-action-bottom': mixHex(action, '#111620', .12),
+    '--surface-action-ink': '#ffffff',
+    '--surface-action-edge': mixHex(action, '#ffffff', .2),
+    '--surface-action-base': mixHex(action, '#111620', .44),
+    '--surface-action-highlight': rgba('#ffffff', theme.dark ? .19 : .27),
+    '--surface-action-shadow': rgba(p.ink, theme.dark ? .18 : .12),
+    '--surface-secondary-fill': secondaryAction,
+    '--surface-secondary-top': mixHex(secondaryAction, '#ffffff', theme.dark ? .035 : .55),
+    '--surface-secondary-bottom': mixHex(secondaryAction, p.ink, theme.dark ? .015 : .035),
+    '--surface-secondary-edge': mixHex(p.line, p.ink, theme.dark ? .13 : .11),
+    '--surface-secondary-base': mixHex(secondaryAction, '#111620', theme.dark ? .45 : .18),
+    '--surface-secondary-highlight': rgba('#ffffff', theme.dark ? .09 : .95),
     '--onboarding-image-opacity': theme.dark ? '.4' : '.62',
     '--onboarding-wash-top': rgba(p.bg, theme.dark ? .58 : .5),
     '--onboarding-wash-mid': rgba(p.bg, theme.dark ? .82 : .78),

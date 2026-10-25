@@ -7,10 +7,12 @@ from sqlalchemy.orm import Session
 from .adaptive import relevant, snapshot_for
 from .context_selection import CANDIDATE_MESSAGES, memory_for_turn, select_history
 from .models import AIRequest, Conversation, ConversationLink, Issue, Memory, Message, User, now
+from .plan_continuity import plan_context
 from .response_reasoning import public_payload
 from .schemas import (
     ConversationChatInput,
     ConversationInput,
+    ConversationPinUpdate,
     ConversationUpdate,
     MemoryInput,
     MemoryMerge,
@@ -45,6 +47,7 @@ def conversation_view(db, item):
             "created_at",
             "updated_at",
             "archived_at",
+            "pinned_at",
         )
     } | {
         "linked_issue_ids": list(
@@ -163,8 +166,8 @@ def context_for(db, user, conversation, body, anchor=None):
     topic = body.message
     if body.message.strip('。！ ') in ('继续', '接着说', '然后呢', '继续聊'):
         topic += ' ' + ' '.join(m['content'] for m in history[-4:] if m['role'] == 'user')
-    memories = [m for m in memories if relevant(m['content'], topic)]
-    memories.sort(key=lambda m: m['horizon'] != 'current_phase')
+    memories = [m for m in memories if (m['source'] == 'plan_sync' and m['issue_id'] == conversation.issue_id) or relevant(m['content'], topic)]
+    memories.sort(key=lambda m: (m['source'] != 'plan_sync', m['horizon'] != 'current_phase'))
     memories = [memory_for_turn(m, body.message) for m in memories[:6]]
     current = [m for m in memories if m['horizon'] == 'current_phase' and m['status'] == 'active']
     long_term = [m for m in memories if m['horizon'] == 'long_term' and m['status'] == 'active']
@@ -188,6 +191,7 @@ def context_for(db, user, conversation, body, anchor=None):
         .limit(1)
     )
     model_context = {
+        "confirmed_plan": plan_context(db, issue),
         "confirmed_card": primary_card,
         "current_issue": {"title": issue.title} if primary_card else {},
         "reviewed_conversation_summary": summary,
@@ -203,6 +207,7 @@ def context_for(db, user, conversation, body, anchor=None):
         "summary_scope": "已审阅总结及最近最多80条消息" if body.task == "summary" else None,
     }
     sources = {
+        "confirmed_plan": model_context['confirmed_plan'],
         "memories": [
             {k: m[k] for k in ('id', 'content', 'category', 'horizon', 'status', 'last_verified_at')}
             for m in memories
@@ -244,7 +249,9 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
         item.stage = 'unsure'
         item.concerns = []
         item.life_contexts = []
-        item.exploration = {'snapshot_deleted': True, 'card_reviewed_at': (item.exploration or {}).get('card_reviewed_at', item.version > 1)}
+        item.exploration = {'snapshot_deleted': True,
+                            'card_reviewed_at': (item.exploration or {}).get('card_reviewed_at', item.version > 1),
+                            **({'plan': item.exploration['plan']} if (item.exploration or {}).get('plan') else {})}
 
     @app.get("/api/issues/{issue_id}/snapshot")
     def get_snapshot(issue_id: str, user: User = Depends(authenticated),
@@ -313,7 +320,7 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
         return [
             conversation_view(db, c)
             for c in db.scalars(
-                query.order_by(Conversation.updated_at.desc(), Conversation.id)
+                query.order_by(Conversation.pinned_at.desc().nulls_last(), Conversation.updated_at.desc(), Conversation.id)
                 .offset(offset)
                 .limit(limit)
             )
@@ -398,6 +405,28 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
             for linked in set(body.linked_issue_ids) - {item.issue_id}:
                 db.add(ConversationLink(conversation_id=item.id, issue_id=linked))
         cancel_pending(db, user.id, item.id)
+        db.commit()
+        db.refresh(item)
+        return conversation_view(db, item)
+
+    @app.put("/api/conversations/{conversation_id}/pin")
+    def pin_conversation(
+        conversation_id: str,
+        body: ConversationPinUpdate,
+        user: User = Depends(authenticated),
+        db: Session = Depends(db_dependency),
+    ):
+        lock_user(db, user)
+        item = owned_conversation(db, user, conversation_id)
+        changed = db.execute(
+            update(Conversation)
+            .where(Conversation.id == item.id, Conversation.version == body.version)
+            .values(pinned_at=(item.pinned_at or now()) if body.pinned else None)
+        )
+        if changed.rowcount != 1:
+            raise HTTPException(409, "会话已更新，请刷新列表后再试")
+        # Pinning does not invalidate a pending reply, change context versions,
+        # or make an old conversation look newly discussed.
         db.commit()
         db.refresh(item)
         return conversation_view(db, item)
@@ -519,6 +548,9 @@ def register_routes(app, authenticated, db_dependency, owned_issue, run_chat):
         item = memory_owned(db, user, memory_id)
         validate_memory(db, user, body)
         values = body.model_dump(exclude={"confirmed", "version"}, exclude_unset=True)
+        if item.source == 'plan_sync' and any(key in values and values[key] != getattr(item, key)
+                for key in ('content', 'category', 'issue_id', 'horizon', 'status')):
+            values['source'] = 'user_revision'
         # Disabling/re-enabling alone is not a new verification of its content.
         status = values.get('status', item.status)
         if body.content != item.content or status != item.status or 'horizon' in values:

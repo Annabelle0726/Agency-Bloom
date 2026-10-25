@@ -541,6 +541,14 @@ Plan, Journey and Home and confirm there are no duplicates or stale copies.
 Validate with users whether the attempt taught something relevant, not just
 whether the completion control was used.
 
+**Confirmed follow-up, 2026-10-25:** Plan changes must reach Bloom's next
+conversation within the same exploration. The implementation now supplies
+the latest confirmed step/status and bounded recent changes, and the review
+sheet can explicitly authorize ongoing synchronization to one scoped
+long-term fact memory. This does not enable memory use, infer stable traits,
+or merge unrelated explorations. Stop/delete/edit controls and the original
+record remain independent; see [Plan continuity](PLAN_PAGE.md#plan-continuity-and-long-term-memory).
+
 ### Me: inspect and correct what Bloom is allowed to understand
 
 **User task and reason to return.** See the current understanding, change it

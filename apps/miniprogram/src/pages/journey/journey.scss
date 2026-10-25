@@ -63,7 +63,7 @@
 .journey-page .journey-candidate .journey-copy { margin:10px 0; }
 .journey-page .journey-field-label { display:block; margin:24px 0 9px; font-size:14px; line-height:1.8; }
 .journey-page .journey-input,.journey-page .journey-textarea,.journey-page .journey-select { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink); font-size:14px; line-height:1.8; padding:13px; }
-.journey-page .journey-input { height:50px; }
+.journey-page .journey-input { height:50px; padding:0 13px; }
 .journey-page .journey-textarea { min-height:170px; margin-bottom:12px; }
 .journey-page .journey-select { display:flex; align-items:center; justify-content:space-between; min-height:48px; }
 .journey-page .journey-save { display:block; width:100%; min-height:50px; line-height:1.5; padding:13px 16px; background:linear-gradient(180deg,var(--cta-highlight),var(--cta-fill) 45%,var(--cta-deep)); color:var(--cta-ink); font-size:var(--type-button); font-weight:500; margin:28px 0 6px; }
