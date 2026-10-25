@@ -11,10 +11,17 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
 - A small transparent character rests on the top-right card edge. The invitation
   beside it is content-sized, single-line, padded by 6px/10px and has no close
   control. No unsolicited model request or saved assistant greeting is created.
-- A questionnaire option is not rendered as a claim about the user's present
-  condition. Selection-only cards use a neutral continuation heading and dated
-  topic metadata. User-authored questions and authorized reviewed summaries
-  remain available; no account data is rewritten or deleted.
+- The cover heading is an editorial invitation, never a pain-point label or a
+  saved problem title. For example, life rhythm uses `留一点余地，给自己`, choices
+  uses `给选择，多一点从容`, and an unclear focus uses `把此刻，留给自己`.
+  A focus must match an explicitly selected concern; multiple selections alone
+  do not establish a primary concern. Closed explorations use a reflective
+  heading instead. These are local presentation strings, with no model request.
+- A recorded non-catalog topic remains below the dated metadata as a smaller
+  quotation. Reviewed summaries still follow retention settings, and duplicate
+  topic/detail/kept text is suppressed. Questionnaire labels are not displayed
+  as claims about the person's present condition. No saved title or account
+  data is rewritten or deleted.
 - Card corners stay 8px. Existing theme quotation-surface tokens provide the
   translucent fill, edge light and shadow. Titles use the existing heading font.
   Extra foliage and the all-conversations link were removed after owner review.
@@ -33,6 +40,11 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
 
 ## Validation
 
+- The editorial-heading follow-up passed TypeScript, two focused suites / 14
+  tests, and the Mini Program build with 36 WXSS and 58 WXML compiler checks.
+  Both dev and production artifacts contain the new cover-copy map. Auxiliary
+  captures are in output/home-bloom/title-copy-20261025/; native runtime
+  acceptance remains unverified for this follow-up.
 - TypeScript check passed
 - Four focused UI suites / eighteen tests passed, including dated selection-only
   clues, retention boundaries, user-authored titles, duplicate-copy removal,

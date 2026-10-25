@@ -27,7 +27,8 @@ function openChat() { if(!props.busy) emit('continue') }
           <view class="bloom-topic-symbol" aria-hidden="true"><SvgIcon name="leaf" :size="20" tone="accent" /></view>
         </view>
         <text v-if="entry.stamp" class="bloom-card-stamp">{{ entry.stamp }}</text>
-        <text class="bloom-card-detail">{{ entry.detail }}</text>
+        <text v-if="entry.topic" class="bloom-card-topic">「{{ entry.topic }}」</text>
+        <text v-if="entry.detail" class="bloom-card-detail">{{ entry.detail }}</text>
         <view v-if="entry.kept" class="bloom-kept"><text class="bloom-kept-label">你留下的话</text><text class="bloom-kept-text">{{ entry.kept }}</text></view>
       </view>
       <view v-if="hasConcern" class="bloom-card-footer">
@@ -65,6 +66,7 @@ function openChat() { if(!props.busy) emit('continue') }
 .bloom-topic-symbol { display:flex; align-items:center; justify-content:center; flex:0 0 24px; width:24px; height:24px; }
 .bloom-card-stamp { display:block; color:var(--muted); font-family:var(--font-body); font-size:10.5px; line-height:1.7; margin-top:6px; }
 .bloom-card-title { display:block; flex:0 1 auto; min-width:0; color:var(--ink); font-family:var(--font-heading); font-size:18px; line-height:1.9; letter-spacing:.4px; font-weight:400; overflow-wrap:break-word; }
+.bloom-card-topic { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; color:var(--ink); font-family:var(--font-body); font-size:13px; line-height:1.8; margin-top:8px; }
 .bloom-card-detail { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; color:var(--muted); font-family:var(--font-body); font-size:13px; line-height:1.9; margin-top:8px; }
 .bloom-kept { margin-top:13px; }
 .bloom-kept-label { display:block; color:var(--accent); font-size:10px; line-height:1.8; letter-spacing:.7px; }
