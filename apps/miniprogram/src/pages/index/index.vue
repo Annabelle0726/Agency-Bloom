@@ -34,6 +34,7 @@ import PrivacyModal from './modals/PrivacyModal.vue'
 import ConversationActionModal from './modals/ConversationActionModal.vue'
 import EditMessageModal from './modals/EditMessageModal.vue'
 import {useIndexPage} from './useIndexPage'
+import {homeConversationFor} from '../../home-entry'
 
 const {
   speech,
@@ -164,6 +165,16 @@ const {
   greeting,
   canonicalSupportStyle,
 } = useIndexPage()
+const homeConversation = computed(() => homeConversationFor(current.value, conversations.value, activeConversation.value?.id))
+const openingHomeChat = ref(false)
+async function continueHomeChat() {
+  if (openingHomeChat.value) return
+  openingHomeChat.value = true
+  try {
+    if (homeConversation.value) await selectConversation(homeConversation.value)
+    else await selectTab('chat')
+  } finally { openingHomeChat.value = false }
+}
 // Keep scroll registration in the page entry: the Mini Program compiler uses
 // this import to enable page-scroll lifecycle dispatch.
 const discoverScrollTop = ref(0)
@@ -218,9 +229,10 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
         @privacy="modal = 'privacy'" @chat="selectTab('chat')" @navigate="operations.clear('auth')" />
 
       <template v-else-if="screen === 'space'">
-        <HomeView v-if="tab === 'now'" :card="card" :current="current" :greeting="greeting"
-                  :today-label="todayLabel" @open-editor="openEditor()" @plan="selectTab('plan')"
-                  @feedback="modal = 'feedback'" @chat="selectTab('chat')" @onboarding="beginOnboarding" />
+        <HomeView v-if="tab === 'now'" :card="card" :current="current" :greeting="greeting" :foreground="spaceForeground"
+                  :today-label="todayLabel" :conversation="homeConversation" :retain-chat="!!user?.save_chat" :opening-chat="openingHomeChat"
+                  @open-editor="openEditor()" @plan="selectTab('plan')"
+                  @feedback="modal = 'feedback'" @chat="continueHomeChat" @onboarding="beginOnboarding" />
         <PlanView v-else-if="current && tab === 'plan'" :current="current" :card="card" :theme-id="activeTheme.id"
                   @open-editor="openEditor()" @feedback="modal = 'feedback'" @chat="selectTab('chat')"
                   @resume="resumeExploration" @end="endIssue" />

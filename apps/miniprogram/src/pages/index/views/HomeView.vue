@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import SvgIcon from '../../../components/SvgIcon.vue'
-import StartActions from '../../../components/StartActions.vue'
+import { computed } from 'vue'
+import HomeBloomCard from '../../../components/HomeBloomCard.vue'
 import { homeQuote } from '../../../use-home-quote'
-import type { Card, Issue } from '../../../domain'
+import { homeEntryFor } from '../../../home-entry'
+import type { Card, Conversation, Issue } from '../../../domain'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
-defineProps<{
+const props = defineProps<{
   card: Card
   current: Issue | null
   greeting: string
   todayLabel: string
+  conversation: Conversation | null
+  retainChat: boolean
+  openingChat: boolean
+  foreground?: boolean
 }>()
+const entry = computed(() => homeEntryFor(props.current, props.card, props.conversation, props.retainChat))
 const emit = defineEmits<{
   openEditor: []
   plan: []
@@ -31,14 +38,7 @@ const emit = defineEmits<{
         <text class="hero-aside">{{ '远处有方向\n此刻也有生活' }}</text>
       </view>
     </view>
-    <button v-if="current" class="home-mission glass-card" data-home="mission" @click="emit('openEditor')" hover-class="pressed" :hover-start-time="0">
-      <view class="mission-copy">
-        <view class="mission-eyebrow"><view class="mission-dot" aria-hidden="true"/><text class="mission-label">此刻，我在意的</text></view>
-        <text class="mission-title">{{ card.title || current.title || '一次还未命名的探索' }}</text>
-        <text class="mission-detail">{{ current.focus_response || '方向可以慢慢清晰，也可以重新选择' }}</text>
-      </view>
-      <view class="mission-arrow" aria-hidden="true"><SvgIcon name="chevron" :size="15" tone="accent" /></view>
-    </button>
+    <HomeBloomCard :entry="entry" :has-concern="!!current" :busy="openingChat" :foreground="foreground !== false" @continue="emit('chat')" @details="emit('openEditor')" />
     <view v-if="current" class="home-focus-card glass-card">
       <view class="focus-card-heading"><text>今日聚焦</text><text>{{ todayLabel }}</text></view>
       <button class="focus-row" data-home="plan" @click="emit('plan')" hover-class="pressed" :hover-start-time="0">
@@ -54,11 +54,7 @@ const emit = defineEmits<{
         <view class="focus-row-copy"><text>把挂心的事，慢慢说清楚</text><text>接着上一次，也可以换个话题</text></view><text class="focus-tag focus-tag-chat">对话</text>
       </button>
     </view>
-    <view v-if="!current" class="paper-card home-empty-start">
-      <text class="card-title">不必先有答案，也可以开始聊</text>
-      <text class="body-copy">从你此刻想说的一句话开始</text>
-      <StartActions @chat="emit('chat')" @onboarding="emit('onboarding')" />
-    </view>
+    <button v-if="!current" class="home-onboarding-link" hover-class="pressed" :hover-start-time="0" @click="emit('onboarding')">也可以先整理一点自己的情况 <SvgIcon name="chevron" :size="13" tone="muted" /></button>
     <view class="home-quote">
       <view class="quote-body">
         <text class="quote-eyebrow">留一句给自己</text>
@@ -74,6 +70,8 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.home-empty-start { margin:0 0 20px; }
-.home-empty-start .body-copy { margin:8px 0 18px; }
+.home-heading.hero-heading { min-height:185px; }
+.hero-aside { transform:translateY(-16px) rotate(-6deg); }
+.home-onboarding-link { display:flex; align-items:center; justify-content:center; gap:5px; min-height:44px; margin:0 0 18px; padding:0; font-size:12px; color:var(--muted); background:transparent; }
+.home-onboarding-link::after { border:0; }
 </style>
