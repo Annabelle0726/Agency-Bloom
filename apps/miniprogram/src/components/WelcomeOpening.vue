@@ -10,39 +10,39 @@ const revealed = ref<number[]>([])
 const loaded = ref<number[]>([])
 const slides = [
   {
-    scene: 'mountain-person', label: '01 / 向前的意义', accent: '#934d36',
-    title: ['你是否也曾迷茫', '向前，想抵达哪里？'],
-    lines: ['我们学着努力，也学着成为更好的人', '却很少停下来，问一问自己', '我想让这些努力', '带我过上怎样的一天？'],
+    scene: 'mountain-person', label: '01 / 变化中的生活', accent: '#934d36',
+    title: ['我想过的生活', '向前，想抵达哪里？'],
+    lines: ['工作、学习和生活中的选择', '有时需要重新想一想', '有些现实暂时改变不了', '也可以先看清自己在意什么'],
     emphasis: '向前的意义，\n也许藏在你想过的一天里',
-    note: '不必现在回答，先把这个问题留给自己',
+    note: '不必现在回答，可以从一件具体的事开始',
   },
   {
-    scene: 'water', label: '02 / 听见自己的意愿', accent: '#246660',
-    title: ['那些想要的', '有多少出自我的意愿'],
-    lines: ['有些目标，让我们感到投入', '有些期待，却让人越来越疲惫', '如果暂时放下别人的评价', '有什么，仍然是你愿意选择的？'],
-    emphasis: '给自己的感受，也留一个位置',
-    note: '愿望会受世界影响，你仍可以重新辨认它',
+    scene: 'water', label: '02 / 一起看见可能', accent: '#246660',
+    title: ['那些想要的', '也许还有更多选择'],
+    lines: ['Bloom 陪你整理经历、比较取舍', '一起看看困惑里的不同角度', '也许眼前的几条路之外', '还有值得了解、甚至亲手创造的选择'],
+    emphasis: '多一点选择，\n也多一点自己的余地',
+    note: '新的角度是否适用，仍由你判断',
   },
   {
     scene: 'rest', label: '03 / 给休息一点余地', accent: '#85501f',
     title: ['还没有成为理想的自己', '也可以先好好生活'],
-    lines: ['疲惫的时候，可以停一停', '喜欢的事，不必都变成收获', '一个无需表现的下午', '也是你真实度过的一部分'],
+    lines: ['疲惫的时候，可以停一停', '喜欢的事，不必都变成收获', '今天只想说说，暂时不找办法', '也可以从这里开始'],
     emphasis: '休息，不需要先用成绩换取',
     note: '此刻的你，也值得被照顾',
   },
   {
-    scene: 'path', label: '04 / 从小小的选择开始', accent: '#466238',
+    scene: 'path', label: '04 / 让体验带来新理解', accent: '#466238',
     title: ['现实会划出边界', '选择仍可以慢慢发生'],
-    lines: ['不必一下子改变整个人生', '可以比较一条路，尝试一小步', '也可以求助、犹豫、重新选择', '让新的体验，修正原来的方向'],
+    lines: ['先了解一种工作的日常', '试做一个小作品，或准备一次沟通', '看看实际发生了什么', '再决定继续、调整，还是放一放'],
     emphasis: '在尚有余地的地方，留一点自己的决定',
-    note: '愿意承担什么代价，也由你慢慢辨认',
+    note: '尝试的投入和边界，由你决定',
   },
   {
-    scene: 'meadow', label: '05 / 从这个愿望出发', accent: '#5a602e',
+    scene: 'meadow', label: '05 / 从此刻开始', accent: '#5a602e',
     title: ['我还想', '按自己的意愿活一活'],
-    lines: ['Agency Bloom 从这个朴素的愿望出发', '现实会划出边界', '但在尚有余地的地方', '我们仍可以辨认意愿，争取选择', '这里陪你理清工作与方向中的困惑', '比较选择，尝试一点改变', '也给休息、犹豫和重新选择留下位置'],
-    emphasis: '愿每一次向前\n都更靠近你愿意亲自度过的生活',
-    note: '就从此刻，最想理清的一个问题开始',
+    lines: ['从此刻在意的一件事开始', '先听你说，也一起看见更多可能', '可以认真比较，也可以暂时停下', '你的选择，仍然可以改变'],
+    emphasis: '愿每一次选择\n都更靠近你愿意亲自度过的生活',
+    note: '不用先有答案，也可以开始',
   },
 ]
 const slide = computed(() => slides[current.value])
@@ -133,7 +133,7 @@ onUnmounted(() => query?.removeEventListener('change', motionChanged))
         <text class="story-count">{{ current + 1 }} / {{ slides.length }}</text>
       </view>
       <text v-if="current === slides.length - 1" class="story-note">{{ slides[current].note }}</text>
-      <ActionButton v-if="current === slides.length - 1" kind="opening" @click="next">开始我的探索</ActionButton>
+      <ActionButton v-if="current === slides.length - 1" kind="opening" @click="next">进入 Bloom</ActionButton>
       <button v-else class="story-next" hover-class="pressed" :hover-start-time="0" @click="next"><text>继续阅读</text><SvgIcon name="arrow" light :size="17" /></button>
     </view>
   </view>
