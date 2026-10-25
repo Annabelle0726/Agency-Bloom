@@ -26,9 +26,8 @@ describe('Home continuation uses available, authorized context', () => {
     const entry = homeEntryFor({ ...issue, concerns:['relationships'], follow_ups:{ relationships:{
       selections:['家人的期待'], note:'', refinements:{ '家人的期待':['想保留自己的选择'] },
     } } }, card, null, true)
-    expect(entry.title).toBe('把在意的话，慢慢说清')
-    expect(entry.stamp).toContain('关系与期待')
-    expect(entry.detail).toContain('家人的期待')
+    expect(entry.title).toBe('家人的期待')
+    expect(entry.stamp).toContain('起点记录')
     expect(entry.detail).toContain('想保留自己的选择')
     expect(entry.stamp).toContain('10月23日')
     expect(entry.kept).toBe('')
@@ -44,7 +43,7 @@ describe('Home continuation uses available, authorized context', () => {
     expect(homeEntryFor(null, speculative, null, true).bubble).toBe('你想先聊聊什么？')
     expect(homeEntryFor(issue, speculative, null, true).bubble).toBe('你想先聊聊什么？')
     expect(JSON.stringify(homeEntryFor(issue, speculative, null, true))).not.toContain('猜测你害怕改变')
-    expect(homeEntryFor({ ...issue, title:'想换个方向' }, { ...card, confirmed:['我想保留创作时间'] }, null, true).kept).toBe('我想保留创作时间')
+    expect(homeEntryFor({ ...issue, title:'想换个方向' }, { ...card, confirmed:['我想保留创作时间'] }, null, true).detail).toBe('我想保留创作时间')
   })
   it('uses one empty-state headline and avoids echoing a title as its description or saved line', () => {
     const empty = homeEntryFor(null, card, null, false)
@@ -55,35 +54,37 @@ describe('Home continuation uses available, authorized context', () => {
     expect(entry.detail).not.toBe(entry.title)
     expect(entry.kept).toBe('')
   })
-  it('does not turn a selected difficulty into a current-state headline', () => {
+  it('uses the concrete user response rather than a broad questionnaire category as the headline', () => {
     const selected='生活有些满，精力跟不上'
     const entry=homeEntryFor({ ...issue,title:selected,concerns:['overload'],focus_response:'现在只想缓一缓，不急着找办法' },{...card,title:selected},null,true)
-    expect(entry.title).toBe('留一点余地，给自己')
-    expect(entry.stamp).toContain('生活节奏')
+    expect(entry.title).toBe('现在只想缓一缓，不急着找办法')
+    expect(entry.stamp).toContain('起点记录')
     expect(entry.stamp).toContain('10月23日')
-    expect(entry.detail).toBe('现在只想缓一缓，不急着找办法')
+    expect(entry.detail).not.toBe(entry.title)
     expect(JSON.stringify(entry)).not.toContain(selected)
     const personal=homeEntryFor({...issue,title:'我想给照顾家人留出时间',concerns:['overload']},card,null,true)
-    expect(personal.title).toBe('留一点余地，给自己')
+    expect(personal.title).toBe('我想给照顾家人留出时间')
     expect(personal.topic).toBe('我想给照顾家人留出时间')
   })
-  it('uses an editorial invitation for saved free-text titles and preserves the original topic without rewriting data',()=>{
+  it('prioritizes the saved free-text topic without rewriting it or inferring a diagnosis',()=>{
     const source={...issue,title:'最近工作很乱，快要撑不住了',concerns:['overload']}
     const before=JSON.stringify(source)
     const entry=homeEntryFor(source,card,null,true)
-    expect(entry.title).toBe('留一点余地，给自己')
+    expect(entry.title).toBe(source.title)
     expect(entry.topic).toBe(source.title)
     expect(JSON.stringify(source)).toBe(before)
-    expect(entry.title).not.toContain('撑不住')
+    expect(entry.kicker).toBe('此刻，我在意的')
   })
   it('does not pick an arbitrary pain point from multiple selections, but respects an explicit focus',()=>{
     const multiple={...issue,concerns:['overload','choices']}
-    expect(homeEntryFor(multiple,card,null,true).title).toBe('把此刻，留给自己')
-    expect(homeEntryFor({...multiple,exploration_intent:'choices'},card,null,true).title).toBe('给选择，多一点从容')
-    expect(homeEntryFor({...multiple,exploration_intent:'job_search'},card,null,true).title).toBe('把此刻，留给自己')
+    expect(homeEntryFor(multiple,card,null,true).title).toBe('从你想接着说的事开始')
+    expect(homeEntryFor({...multiple,exploration_intent:'choices',follow_ups:{choices:{selections:['我想比较两个机会'],note:''}}},card,null,true).title).toBe('我想比较两个机会')
+    expect(homeEntryFor({...multiple,exploration_intent:'job_search'},card,null,true).title).toBe('从你想接着说的事开始')
   })
   it('keeps unknown topics neutral and treats an ended exploration as a past record',()=>{
-    expect(homeEntryFor({...issue,concerns:['unknown-topic']},card,null,true).title).toBe('把此刻，留给自己')
-    expect(homeEntryFor({...issue,ended_at:'2026-10-24T10:00:00Z',concerns:['choices']},card,null,true).title).toBe('让这段经历，慢慢沉淀')
+    expect(homeEntryFor({...issue,concerns:['unknown-topic']},card,null,true).title).toBe('从你想接着说的事开始')
+    const ended=homeEntryFor({...issue,ended_at:'2026-10-24T10:00:00Z',concerns:['choices']},card,null,true)
+    expect(ended.title).toBe('这段探索的记录')
+    expect(ended.kicker).toBe('这段探索里')
   })
 })

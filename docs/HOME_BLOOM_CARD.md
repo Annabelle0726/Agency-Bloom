@@ -1,5 +1,8 @@
 # Home card and Bloom
 
+The card uses a question-first hierarchy and a compact source footer.
+The existing Bloom artwork and greeting behavior are preserved.
+
 Updated 2026-10-25 after owner review. This implements the Home card portion of
 PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
 
@@ -11,17 +14,23 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
 - A small transparent character rests on the top-right card edge. The invitation
   beside it is content-sized, single-line, padded by 6px/10px and has no close
   control. No unsolicited model request or saved assistant greeting is created.
-- The cover heading is an editorial invitation, never a pain-point label or a
-  saved problem title. For example, life rhythm uses `留一点余地，给自己`, choices
-  uses `给选择，多一点从容`, and an unclear focus uses `把此刻，留给自己`.
-  A focus must match an explicitly selected concern; multiple selections alone
-  do not establish a primary concern. Closed explorations use a reflective
-  heading instead. These are local presentation strings, with no model request.
-- A recorded non-catalog topic remains below the dated metadata as a smaller
-  quotation. Reviewed summaries still follow retention settings, and duplicate
-  topic/detail/kept text is suppressed. Questionnaire labels are not displayed
-  as claims about the person's present condition. No saved title or account
-  data is rewritten or deleted.
+- The small label `此刻，我在意的` precedes the actual saved question or an
+  explicitly selected concrete starting point. Two soft theme-colored corners,
+  at the upper left and lower right, frame that headline without literal square
+  brackets. The contextual label and leaf share a single row with an 8px gap.
+  The question remains the strongest text and
+  its original wording stays selectable and unchanged. Generic invitation
+  headlines are superseded by the owner's question-first direction.
+- Only one related, authorized clue supplies the two-to-three-line description.
+  A sibling questionnaire selection is not used as evidence for a different
+  selected headline. Several unprioritized areas do not establish a primary
+  concern. Reviewed summaries still follow retention settings; no model call
+  or saved record rewrite is introduced.
+- Source/date and the right-aligned View and edit action share one quiet footer
+  with 11px text and 44px touch targets. When starting answers exist, tapping
+  the source/date opens their existing detail viewer. All answers remain there,
+  rather than being flattened into the card. The duplicate conversation link
+  and second metadata row were removed; Bloom remains the chat entry.
 - Card corners stay 8px. Existing theme quotation-surface tokens provide the
   translucent fill, edge light and shadow. Titles use the existing heading font.
   Extra foliage and the all-conversations link were removed after owner review.
@@ -40,6 +49,22 @@ PRODUCT_DIRECTION.md; conversational onboarding remains a separate task.
 
 ## Validation
 
+- The offset-corner follow-up passed TypeScript, the same 21 focused tests and
+  the native bundled compilers (37 WXSS / 59 WXML). Compilation completed;
+  its first post-build check saw no app.json, then a separate check passed
+  after the output was available. Auxiliary captures at 375x667 and 390x844
+  are in output/home-bloom/corner-frame-20261025/final/. They verify the two
+  separate corners and the adjacent label/leaf row, not native runtime behavior.
+- The question-card refinement passed TypeScript and three focused suites / 21
+  tests. The Mini Program build passed 37 WXSS / 59 WXML bundled compiler
+  checks; both watched dev and production WXML contain the bracketed question
+  and no duplicate card CTA. Native runtime acceptance is unverified: the isolated automation port
+  9457 was unavailable. Auxiliary component-only captures and fixture data are
+  in output/home-bloom/question-card-20261025/; these are not simulator evidence.
+  Forest captures at 375x667, 390x844 and 320x740 have no console errors,
+  horizontal overflow or failed images. A dark 390x844 capture also passed.
+  Initial cold-preview compilation exceeded the element wait; those failed
+  captures were discarded and the Forest set was retaken after compilation.
 - The editorial-heading follow-up passed TypeScript, two focused suites / 14
   tests, and the Mini Program build with 36 WXSS and 58 WXML compiler checks.
   Both dev and production artifacts contain the new cover-copy map. Auxiliary
