@@ -10,6 +10,7 @@ beforeEach(() => {
  hooks.show=[];hooks.hide=[];hooks.requests=[]
  const storage = new Map<string, unknown>()
  vi.stubGlobal('uni', {
+    onNetworkStatusChange: vi.fn(), offNetworkStatusChange: vi.fn(),
  getStorageSync: (key:string) => storage.get(key), setStorageSync:(key:string,value:unknown)=>storage.set(key,value), removeStorageSync:(key:string)=>storage.delete(key),
  getWindowInfo:()=>({statusBarHeight:20}), getMenuButtonBoundingClientRect:()=>({bottom:64}), getSystemInfoSync:()=>({windowHeight:932,windowWidth:430}),
  onKeyboardHeightChange:(fn:any)=>{hooks.keyboard=fn},offKeyboardHeightChange:vi.fn(), $on:vi.fn(),$off:vi.fn(),

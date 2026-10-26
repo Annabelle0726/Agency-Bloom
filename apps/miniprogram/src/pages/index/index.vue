@@ -53,6 +53,11 @@ const {
   finishOpening,
   beginOnboarding,
   pauseOnboarding,
+  onboardingProgress,
+  restoreRemoteOnboarding,
+  onboardingResume,
+  onboardingSyncMessage,
+  onboardingSyncMode,
   keyboardHeight,
   statusHeight,
   capsuleBottom,
@@ -249,6 +254,9 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
         @start="finishOpening" @login="authenticate"
         @replay="screen = 'opening'" @privacy="modal = 'privacy'" @retry="initialize" />
       <OnboardingFlow v-else-if="screen === 'onboard' && user" :key="user.id" :user-id="user.id"
+        :resume="onboardingResume" :sync-message="onboardingSyncMessage" :sync-mode="onboardingSyncMode"
+        @progress="onboardingProgress.set" @retry-sync="onboardingProgress.retry()"
+        @keep-local="onboardingProgress.keepLocal()" @use-remote="restoreRemoteOnboarding"
         :busy="busy" :error="authError" @save="saveQuestions" @skip="pauseOnboarding"
         @privacy="modal = 'privacy'" @chat="selectTab('chat')" @navigate="operations.clear('auth')" />
 

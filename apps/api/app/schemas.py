@@ -95,6 +95,7 @@ class FollowUpAnswer(StrictModel):
 
 
 class IssueInput(StrictModel):
+    onboarding_progress_version: int | None = Field(default=None, ge=0)
     title: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] = ""
     exploration_intent: ExplorationIntent = ""
     actual_question: Annotated[str, StringConstraints(max_length=400)] = ""
@@ -122,6 +123,8 @@ class IssueInput(StrictModel):
 
     @model_validator(mode="after")
     def exclusive_uncertainty(self):
+        if self.onboarding_progress_version is not None and not self.concerns:
+            raise ValueError("完成问答前，请先选择至少一项想聊的事情")
         if "unsure" in self.concerns and len(self.concerns) > 1:
             raise ValueError("unsure must be selected on its own")
         if self.exploration_intent and self.exploration_intent not in self.concerns:

@@ -22,6 +22,7 @@ export const startingConcernOptions = [
   { id: 'change', title: '担心跟不上变化', detail: '担心 AI 或行业变化带来的影响', icon: 'orbit' },
   { id: 'choices', title: '有选择要做，却害怕选错', detail: '每条路都有让我犹豫的地方', icon: 'split' },
   { id: 'start', title: '想改变，又怕失去稳定', detail: '想照顾收入，也想试着迈出一步', icon: 'shield-check' },
+  { id: 'unsure', title: '暂时说不清，先聊聊', detail: '还没有明确问题，也可以从最近的感受开始', icon: 'message-more' },
 ]
 export interface ExplorationStart {
   value: string
@@ -207,13 +208,14 @@ export function reflectionHeading(form: Onboarding) {
   return form.exploration_intent === 'unsure' ? '还没有方向，也可以开始探索' : '这次探索，不急着下结论'
 }
 export function saveDraft(form: Onboarding, step: number, now = Date.now()) {
-  return { version: 3, form: JSON.parse(JSON.stringify(form)), step, savedAt: now }
+  return { version: 4, form: JSON.parse(JSON.stringify(form)), step, savedAt: now }
 }
 export function restoreDraft(value: unknown, now = Date.now()): { form: Onboarding; step: number } | null {
   if (!value || typeof value !== 'object') return null
   const item = value as ReturnType<typeof saveDraft>
-  if (![2, 3].includes(item.version) || !Number.isInteger(item.step) || item.step < -1 || item.step > 6 ||
-      typeof item.savedAt !== 'number' || item.savedAt > now || now - item.savedAt > 7 * 86400000) return null
+  if (![2, 3, 4].includes(item.version) || !Number.isInteger(item.step) || item.step < -1 || item.step > 6 ||
+      !Number.isFinite(item.savedAt) || item.savedAt < 0 ||
+      (item.version !== 4 && (item.savedAt > now || now - item.savedAt > 7 * 86400000))) return null
   const raw = item.form
   const allowed = [...concernOptions.map(o => o.id), 'relationships', 'overload']
   const text = (v: unknown, n: number) => typeof v === 'string' && v.length <= n

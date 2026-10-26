@@ -53,7 +53,8 @@ it('restores the last step and exact local draft without inventing context', () 
   const restored = restoreDraft(saveDraft(form, 3, 1000), 2000)!
   expect(restored.step).toBe(3)
   expect(restored.form).toEqual(form)
-  expect(restoreDraft(saveDraft(form, 3, 1000), 8 * 86400000)).toBeNull()
+  expect(restoreDraft(saveDraft(form, 3, 1000), 8 * 86400000)?.form).toEqual(form)
+  expect(restoreDraft({ ...saveDraft(form, 3, 1000), version: 3 }, 8 * 86400000)).toBeNull()
   expect(restoreDraft({ version: 2, form: { title: 123 } }, 2000)).toBeNull()
 })
 

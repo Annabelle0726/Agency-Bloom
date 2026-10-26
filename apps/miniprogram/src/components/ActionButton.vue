@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import SvgIcon from './SvgIcon.vue'
-withDefaults(defineProps<{ kind?: 'primary' | 'secondary' | 'ghost' | 'wechat' | 'quiet' | 'opening' | 'auth-wechat' | 'auth-demo'; loading?: boolean; disabled?: boolean; locked?: boolean; arrow?: boolean; stablePress?: boolean }>(), { kind: 'primary', arrow: true })
+withDefaults(defineProps<{ kind?: 'primary' | 'secondary' | 'ghost' | 'wechat' | 'quiet' | 'onboarding' | 'opening' | 'auth-wechat' | 'auth-demo'; loading?: boolean; disabled?: boolean; locked?: boolean; arrow?: boolean; stablePress?: boolean }>(), { kind: 'primary', arrow: true })
 defineEmits<{ click: [] }>()
 </script>
 <template>
   <button class="action-button" :class="[`action-${kind}`, { 'is-loading': loading, 'has-arrow': arrow, 'is-locked': locked && !disabled, 'stable-press': stablePress }]" :disabled="disabled || loading || locked" :loading="loading" hover-class="action-pressed" :hover-start-time="0" :hover-stay-time="70" @click="!disabled && !loading && !locked && $emit('click')">
-    <text class="action-label"><slot /></text><view v-if="arrow && !loading" class="action-arrow"><SvgIcon :name="kind === 'auth-wechat' || kind === 'auth-demo' ? 'chevron' : 'arrow'" :light="(kind === 'primary' || kind === 'wechat' || kind === 'quiet' || kind === 'auth-wechat') && (!disabled || locked)" :tone="disabled && !locked ? 'muted' : 'ink'" :color="kind === 'opening' ? '#514331' : undefined" :size="kind === 'auth-wechat' || kind === 'auth-demo' ? 18 : 22" /></view>
+    <text class="action-label"><slot /></text><view v-if="arrow && !loading" class="action-arrow"><SvgIcon :name="kind === 'auth-wechat' || kind === 'auth-demo' ? 'chevron' : 'arrow'" :light="(kind === 'primary' || kind === 'wechat' || kind === 'quiet' || kind === 'onboarding' || kind === 'auth-wechat') && (!disabled || locked)" :tone="disabled && !locked ? 'muted' : 'ink'" :color="kind === 'opening' ? '#514331' : undefined" :size="kind === 'auth-wechat' || kind === 'auth-demo' ? 18 : 22" /></view>
   </button>
 </template>
 
@@ -115,6 +115,12 @@ defineEmits<{ click: [] }>()
 .action-button.stable-press.action-pressed, .action-button.stable-press:active:not([disabled]),
 .stable-press .action-arrow, .stable-press.action-pressed .action-arrow { transform:none; }
 .action-button.stable-press.is-locked[disabled] { opacity:1; }
+.action-button.action-onboarding { min-height:54px; padding:13px 18px; border:1px solid transparent; border-radius:8px; background:var(--cta-fill); color:var(--cta-ink); font-size:15px; line-height:1.5; text-shadow:none; box-shadow:0 5px 12px rgba(45,63,118,.1); }
+.action-onboarding .action-arrow { width:22px; height:22px; border:0; border-radius:0; background:transparent; }
+.action-onboarding .action-label { letter-spacing:0; }
+.action-onboarding.is-locked[disabled] { background:var(--cta-fill); color:var(--cta-ink); }
+.action-button.action-onboarding[disabled]:not(.is-locked) { background:var(--cta-disabled); color:var(--muted); border-color:transparent; box-shadow:none; }
+.action-onboarding.action-pressed, .action-button.action-onboarding:active:not([disabled]) { background:var(--cta-deep); transform:none; }
 @media (prefers-reduced-motion: reduce) {
   .action-button, .action-opening .action-arrow, .action-auth-wechat .action-arrow, .action-auth-demo .action-arrow { transition:none; }
 }

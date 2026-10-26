@@ -8,10 +8,21 @@ onboarding flow descriptions below: specific multi-select concerns drive concret
 multi-select follow-ups and a further question for each chosen blocker. Relationship
 and daily-life concerns have first-class paths alongside career concerns. Each topic preserves its own answers, basic life context
 and constraints remain optional, and the last page reviews only supplied content.
-Skipping or leaving every question unanswered still permits a direct conversation.
+Pausing an unanswered questionnaire still permits a direct conversation. Completing
+it requires at least one Q1 topic (including an exclusive uncertainty choice);
+Q2-Q4 remain optional, and Q5 confirms saving. See ONBOARDING.md for the rules.
 Keep the existing Morning Mist visual system and the non-flashing transitions.
 Q1 places its distinct icon beside the label, then a separate description row.
 Continue follows the answers inside the scroll view; it is not pinned to the viewport.
+
+Onboarding presentation update (2026-10-26): the approved five-page redesign
+uses system sans throughout, including question titles and review/quote text.
+Titles are 24px/600, body/options 15px, secondary text 13px, buttons 15px/500
+and inputs 16px. This overrides older serif-heading descriptions for onboarding
+only. A single mounted landscape, light Q2 rows, expandable Q3 context, local Q4
+response illustrations and editable Q5 records establish the five-page rhythm.
+Further review answers have neutral labels; existing resources are not described
+as difficulties. Native capsule space and document-flow actions remain explicit.
 
 ## 圆角规范（硬性约束）
 

@@ -11,6 +11,7 @@ beforeEach(() => {
   drafts = {}
   const storage = new Map<string, unknown>([['agency.session', 'test-session']])
   vi.stubGlobal('uni', {
+    onNetworkStatusChange: vi.fn(), offNetworkStatusChange: vi.fn(),
     getStorageSync: (key: string) => storage.get(key), setStorageSync: (key: string, value: unknown) => storage.set(key, value), removeStorageSync: (key: string) => storage.delete(key),
     getWindowInfo: () => ({ statusBarHeight: 20 }), getMenuButtonBoundingClientRect: () => ({ bottom: 64 }), getSystemInfoSync: () => ({ windowHeight: 932, windowWidth: 430 }),
     onKeyboardHeightChange: vi.fn(), offKeyboardHeightChange: vi.fn(), $on: vi.fn(), $off: vi.fn(), setNavigationBarColor: vi.fn(), pageScrollTo: vi.fn(),

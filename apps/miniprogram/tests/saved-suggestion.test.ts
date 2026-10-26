@@ -7,6 +7,7 @@ let requests: any[]
 beforeEach(() => {
   requests = []
   vi.stubGlobal('uni', {
+    onNetworkStatusChange: vi.fn(), offNetworkStatusChange: vi.fn(),
     getStorageSync: vi.fn(), setStorageSync: vi.fn(), removeStorageSync: vi.fn(),
     getWindowInfo: () => ({ statusBarHeight: 20 }), getMenuButtonBoundingClientRect: () => ({ bottom: 64 }),
     getSystemInfoSync: () => ({ windowHeight: 932, windowWidth: 430 }),

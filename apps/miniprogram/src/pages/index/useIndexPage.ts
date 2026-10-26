@@ -16,6 +16,7 @@ import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
 import {createDraftSync} from '../../chat-drafts'
+import { createOnboardingProgress } from '../../onboarding-progress'
 import {useBloomMoment, momentDraft} from '../../bloom-moment'
 import {useDiscovery} from '../../use-discovery'
 import {discoveryStateKey} from '../../discovery'
@@ -96,12 +97,14 @@ export function useIndexPage() {
   }
   function beginOnboarding() {
     if (!user.value) { screen.value = 'auth'; return }
+    onboardingProgress.resume()
     try { uni.removeStorageSync(pauseKeyFor(user.value.id)) } catch { /* Continue in memory. */ }
     operations.clear('auth')
     screen.value = 'onboard'
   }
   function pauseOnboarding() {
     if (busy.value || !user.value) return
+    onboardingProgress.pause()
     try { uni.setStorageSync(pauseKeyFor(user.value.id), true) } catch { /* Continue in memory. */ }
     screen.value = 'space'
     tab.value = 'now'
@@ -131,6 +134,33 @@ export function useIndexPage() {
   const offline = computed(() => !!operations.errors.init)
   const toast = ref('')
   const form = reactive<Onboarding>(newOnboarding())
+  const onboardingProgress = createOnboardingProgress({
+    storage: { read: key => uni.getStorageSync(key), write: (key, value) => uni.setStorageSync(key, value), remove: key => uni.removeStorageSync(key) },
+    transport: { get: () => request('GET', '/onboarding-progress'), save: body => request('PUT', '/onboarding-progress', body) },
+  })
+  watch(() => `${user.value?.id || ''}:${token.value}`, () => {
+    onboardingProgress.reset(token.value && user.value ? user.value.id : '')
+  }, { flush: 'sync' })
+  const onboardingNetworkChanged = ({ isConnected }: { isConnected: boolean }) => {
+    if (isConnected && user.value) void refreshOnboardingProgress()
+  }
+  async function refreshOnboardingProgress() {
+    const account = user.value?.id
+    await onboardingProgress.retry()
+    if (account && account === user.value?.id && onboardingProgress.isCompleted() && screen.value === 'onboard' && !busy.value) await guarded(loadCurrent, 'auth')
+  }
+  async function restoreRemoteOnboarding() {
+    const account = user.value?.id
+    await onboardingProgress.useRemote()
+    if (account && account === user.value?.id && onboardingProgress.isCompleted()) await guarded(loadCurrent, 'auth')
+  }
+  uni.onNetworkStatusChange(onboardingNetworkChanged)
+  onHide(() => { void onboardingProgress.flush() })
+  onShow(() => { if (user.value) void refreshOnboardingProgress() })
+  onUnmounted(() => {
+    uni.offNetworkStatusChange(onboardingNetworkChanged)
+    void onboardingProgress.flush(); onboardingProgress.dispose()
+  })
   const preview = computed(() => makePreview(form))
   const themePreference = createThemePreference({
     read: key => uni.getStorageSync(key),
@@ -598,6 +628,8 @@ export function useIndexPage() {
     current.value = next
     await refreshWorkspace()
     await restoreComposerDrafts()
+    await onboardingProgress.load()
+    void onboardingProgress.flush()
     if (current.value) {
       screen.value = 'space'
       // Restore account drafts before choosing the last visible composer.
@@ -611,7 +643,7 @@ export function useIndexPage() {
     } else {
       // A returning account may have only ended explorations. It still lands at home.
       archives.value = await request<Issue[]>('GET', '/issues')
-      const paused = !!user.value && !!uni.getStorageSync(pauseKeyFor(user.value.id))
+      const paused = onboardingProgress.paused() || (!!user.value && !!uni.getStorageSync(pauseKeyFor(user.value.id)))
       screen.value = signedInScreen(false, archives.value.length > 0, paused)
       const shell = Object.keys(workspace.drafts).filter(key => workspace.get(key).draft.value).slice(-1)[0]
       if (shell) { workspace.select(shell); screen.value = 'space' }
@@ -664,7 +696,11 @@ export function useIndexPage() {
   })
 
   async function saveInitial() {
-    current.value = await request<Issue>('POST', '/issues', form)
+    const version = await onboardingProgress.prepareCompletion()
+    try {
+      current.value = await request<Issue>('POST', '/issues', { ...form, onboarding_progress_version: version })
+      onboardingProgress.completed()
+    } catch (error) { onboardingProgress.completionFailed(); throw error }
     if (user.value && form.support_style) user.value.support_style = form.support_style
     await refreshWorkspace()
     const first = conversations.value.find(c => c.issue_id === current.value?.id)
@@ -1284,7 +1320,7 @@ export function useIndexPage() {
           rememberDemo(user.value.id, result.resume_token)
         } catch { /* Existing WeChat accounts use their own sign-in path. */ }
       }
-      syncComposerDrafts(); await draftSync.flush()
+      syncComposerDrafts(); await draftSync.flush(); await onboardingProgress.flush()
       await request('POST', '/auth/logout');
       clearSession()
       if (restartDemo) screen.value = 'auth'
@@ -1296,6 +1332,7 @@ export function useIndexPage() {
     await guarded(async () => {
       const id = user.value?.id;
       await request('DELETE', '/me');
+      onboardingProgress.forget()
       if (demoCredential.value?.userId === id) forgetDemo()
       if (id) {
         try { uni.removeStorageSync(draftKeyFor(id)); uni.removeStorageSync(pauseKeyFor(id)); uni.removeStorageSync(selectedConversationKey(id)); uni.removeStorageSync(discoveryStateKey(id)) }
@@ -1369,6 +1406,11 @@ export function useIndexPage() {
     finishOpening,
     beginOnboarding,
     pauseOnboarding,
+    onboardingProgress,
+    restoreRemoteOnboarding,
+    onboardingResume: onboardingProgress.restored,
+    onboardingSyncMessage: onboardingProgress.message,
+    onboardingSyncMode: onboardingProgress.mode,
     keyboardHeight,
     statusHeight,
     capsuleBottom,

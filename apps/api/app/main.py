@@ -44,6 +44,7 @@ from .models import (
     now,
 )
 from .moments import purge_moments, register_moment_routes
+from .onboarding_progress import complete_progress, register_progress_routes
 from .perspective_shift import fingerprint as perspective_fingerprint
 from .plan import plan_from_card_edit, plan_view, register_plan_routes
 from .plan_continuity import lock_plan_owner, sync_plan_context
@@ -429,6 +430,8 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     def create_issue(
         body: IssueInput, user: User = Depends(authenticated), db: Session = Depends(db_dependency)
     ):
+        if body.onboarding_progress_version is not None:
+            complete_progress(db, user, body.onboarding_progress_version)
         initial = Card(
             title=body.title,
             constraints=body.constraints,
@@ -1019,6 +1022,7 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     register_plan_routes(app, authenticated, db_dependency, owned)
     register_routes(app, authenticated, db_dependency, owned, run_chat)
     register_draft_routes(app, authenticated, db_dependency, owned)
+    register_progress_routes(app, authenticated, db_dependency)
     speech.register(app, authenticated)
     return app
 

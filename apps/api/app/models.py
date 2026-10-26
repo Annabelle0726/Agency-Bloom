@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, CheckConstraint, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -27,6 +27,23 @@ class User(Base):
     support_style: Mapped[str] = mapped_column(String(20), default="clarify")
     use_memory: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[str] = mapped_column(String(40), default=now)
+
+
+class OnboardingProgress(Base):
+    __tablename__ = "onboarding_progress"
+    __table_args__ = (
+        CheckConstraint("step >= 0 AND step <= 4"),
+        CheckConstraint("version >= 1"),
+        CheckConstraint("status IN ('in_progress', 'paused', 'completed')"),
+        CheckConstraint("(status = 'completed' AND step = 4 AND answers IS NULL) OR "
+                        "(status <> 'completed' AND answers IS NOT NULL)"),
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    step: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="in_progress")
+    answers: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[str] = mapped_column(String(40), default=now)
 
 
 class AuthSession(Base):
