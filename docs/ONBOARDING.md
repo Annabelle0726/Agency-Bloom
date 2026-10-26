@@ -56,7 +56,11 @@ quoted context, review text and buttons. Question headings stay 24px/600 on
 editable text 16px. Opening-story fonts and authenticated pages are unchanged.
 
 One mounted dawn landscape and a readable theme wash remain stable through all
-five steps. No whole-list translation, perspective or scroll-driven animation
+five steps. The landscape fills the entire question viewport behind the header,
+options and footer, including the safe area; it is not a 355px header illustration.
+The lower wash remains translucent instead of fading to an opaque page color.
+It stays outside the scroll view, so long answers scroll over one stable image.
+No whole-list translation, perspective or scroll-driven animation
 is used. The native capsule has its own reserved space. The main CTA is a flat,
 theme-derived fill with white text and an unframed arrow, in document flow.
 

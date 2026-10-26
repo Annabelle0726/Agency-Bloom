@@ -6,10 +6,10 @@
   --type-body:15px; --type-subtitle:13px; --type-button:15px;
   isolation:isolate; background:var(--bg); font-family:var(--font-body);
 }
-.question-backdrop { position:absolute; top:0; left:0; right:0; height:355px; z-index:0; pointer-events:none; overflow:hidden; }
+.question-backdrop { position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
 .question-images { position:absolute; inset:0; }
 .question-images image { display:block; width:100%; height:100%; }
-.question-wash { position:absolute; inset:0; background:linear-gradient(180deg,var(--bg) 0%,var(--onboarding-wash-top) 25%,var(--onboarding-wash-top) 50%,var(--bg) 100%); }
+.question-wash { position:absolute; inset:0; background:linear-gradient(180deg,var(--onboarding-wash-mid) 0%,var(--onboarding-wash-top) 28%,var(--onboarding-wash-mid) 74%,var(--onboarding-wash-mid) 100%); }
 .flow-page { position:relative; z-index:1; background:transparent; }
 .onboarding-flow .flow-chrome { flex:none; padding:var(--status-bar-height,0px) 24px 0; }
 .flow-nav { display:grid; grid-template-columns:76px 1fr 76px; align-items:center; height:50px; margin:0 -10px 14px; }
