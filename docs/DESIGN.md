@@ -1,5 +1,11 @@
 # 视觉与交互实现
 
+## 2026-10-26 Shared static landscape in Chat
+
+Chat uses one quiet local SVG composition for every conversation: layered distant hills across the upper field and broad water contours at the lower-left. The widened drawing adds sparse slope engraving, cloud lines, a partial moon and short reflection strokes without increasing contrast. Theme accent/muted strokes stay faint and the central reading area remains clear. Only the active theme selects a cached source; conversation IDs, user content and randomness do not affect it. The existing background image uses aspectFit, complete in-canvas paths, disabled dragging and pointer targeting, and no ambient motion or scroll binding. Message layout and composer clearance are unchanged.
+
+Evidence is in `output/chat-landscape-20261026/`. Local visual self-review covers 390 x 844 and 320 x 740, empty/populated chat and Forest/Quiet Night. Browser checks cover six palettes and 18 conversation changes, reusing the same image node and source within each theme, plus long-transcript scrolling and input access. TypeScript, a focused static-asset regression, native development and WXML/WXSS checks pass. The aggregate media budget remains below 200 KiB. Native simulator and hardware rendering remain unverified.
+
 ## Current optional onboarding contract — 2026-10-24
 
 The five questions are an optional exploration starting point after login, not

@@ -3,17 +3,31 @@ import { resolveTheme } from './themes'
 
 const cache = new Map<string, string>()
 
-/** Quiet water contours; separate from Discover's petal shapes. Local and static. */
+/** One quiet mountain-and-water composition shared by every conversation. */
 export function chatAtmosphere(themeId: string) {
   const theme = resolveTheme(themeId)
   if (cache.has(theme.id)) return cache.get(theme.id)!
-  const source = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1600" viewBox="0 0 900 1600" fill="none">
-<g stroke="${theme.palette.accent}" stroke-opacity="${theme.dark ? '.075' : '.05'}" stroke-width="1.2">
-<path d="M960 150C780 120 700 220 730 320C760 430 950 415 1000 540"/>
-<path d="M970 190C815 155 747 238 774 322C807 419 956 406 1020 520"/>
-<path d="M-160 1060C80 975 315 1090 278 1262C250 1390 45 1338-55 1480"/>
-<path d="M-140 1100C65 1030 266 1120 230 1260C200 1370 30 1342-65 1450"/>
-<path d="M-120 1140C62 1080 213 1150 180 1255C149 1355 20 1340-75 1420"/>
+  const { accent, muted } = theme.palette
+  const source = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1600" viewBox="0 0 900 1600" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<g stroke="${accent}" stroke-opacity="${theme.dark ? '.13' : '.11'}" stroke-width="1.6">
+ <path d="M136 323C189 309 210 255 248 258C286 261 302 303 342 289C384 274 406 208 441 214C477 220 484 274 519 281C561 289 591 184 628 196C669 209 675 275 716 268C759 260 782 227 811 251C834 270 842 286 870 289" opacity=".55"/>
+ <path d="M200 359C247 346 275 303 308 305C345 307 363 338 396 324C432 309 458 256 490 263C523 271 534 322 567 318C612 311 638 239 672 246C705 253 723 312 759 309C800 305 826 319 864 326"/>
+ <path d="M284 391C328 379 356 353 390 360C425 367 447 391 485 372C524 352 542 341 575 349C614 358 639 327 673 331C718 337 746 365 793 354C819 348 840 351 857 355" opacity=".65"/>
+ <path d="M425 422C472 405 505 414 540 416C577 418 604 400 639 404C684 409 716 401 750 409" opacity=".3"/>
+ <path d="M441 220C439 245 425 258 419 278M628 202C620 228 623 247 612 263M672 252C665 274 655 287 651 302M490 269C482 285 484 301 477 312" opacity=".38" stroke-width="1"/>
+ <path d="M431 244C419 250 412 259 406 266M622 225C609 230 600 240 594 249M663 274C651 278 644 286 638 293" opacity=".26" stroke-width="1"/>
+ <path d="M166 207C207 195 244 198 272 204C296 210 321 208 345 203M321 180C350 174 375 175 398 179" opacity=".3" stroke-width="1.1"/>
+ <path d="M717 158C699 157 688 144 689 130C690 113 704 103 720 106C736 109 745 123 740 138" opacity=".45" stroke-width="1.2"/>
+</g>
+<g stroke="${muted}" stroke-opacity="${theme.dark ? '.115' : '.095'}" stroke-width="1.4">
+ <path d="M30 1088C102 1068 172 1072 233 1090C301 1110 367 1105 425 1089C481 1073 537 1078 583 1090" opacity=".55"/>
+ <path d="M52 1120C120 1104 174 1110 225 1125C285 1142 343 1136 389 1124C433 1113 476 1116 510 1124"/>
+ <path d="M88 1146C130 1137 164 1141 195 1149M254 1158C286 1162 315 1158 338 1153M451 1101C474 1098 495 1100 515 1105" opacity=".45" stroke-width="1"/>
+ <path d="M28 1193C100 1168 166 1176 226 1199C288 1223 350 1216 408 1197C477 1174 551 1184 606 1201C648 1214 693 1211 735 1198"/>
+ <path d="M62 1225C116 1208 167 1217 210 1234C264 1255 311 1248 354 1234M439 1221C489 1207 532 1215 568 1227C605 1239 639 1238 670 1230" opacity=".7"/>
+ <path d="M113 1254C142 1253 168 1259 190 1267M274 1272C301 1270 323 1265 341 1259M481 1242C503 1241 521 1245 537 1251" opacity=".4" stroke-width="1"/>
+ <path d="M63 1320C122 1306 173 1315 217 1329C263 1344 312 1342 357 1327C399 1313 440 1314 475 1322" opacity=".5"/>
+ <path d="M113 1353C152 1349 183 1355 211 1363M280 1368C307 1365 328 1360 346 1355" opacity=".35"/>
 </g></svg>`
   const uri = svgDataUri(source)
   cache.set(theme.id, uri)

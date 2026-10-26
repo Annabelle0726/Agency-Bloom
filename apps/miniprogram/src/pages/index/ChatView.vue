@@ -94,7 +94,7 @@ const emit = defineEmits<{
 
 <template>
   <view class="chat-content">
-    <image class="chat-atmosphere" :src="atmosphere" mode="aspectFill" aria-hidden="true" />
+    <image class="chat-atmosphere" :src="atmosphere" mode="aspectFit" :draggable="false" aria-hidden="true" />
     <view class="chat-surface">
     <ChatHeader
       :busy="busy"
