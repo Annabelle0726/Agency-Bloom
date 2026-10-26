@@ -160,8 +160,11 @@ def messages_for(
     )
     if plan_review and body.task == 'chat':
         system += '\n' + PLAN_REVIEW_PROMPT
+        if mode == 'compare' or any(cue in body.message for cue in ('比较', '两条路', '两个选择')):
+            system += '\n比较路径时，基于用户提供的事实说明可行选项、代价、未知与验证方式；不强凑两条，不为数量编造选择，允许暂不选择。不同独立问题分别管理卡片和计划；显式关联只是引用相关背景，不代表合并问题。'
         system += '\nconfirmed_plan 是用户已确认保存的当前探索计划，包含最新状态和有时间的经历/变更；它比旧聊天、总结、记忆中对同一步的状态更及时，当前用户纠正仍优先。completed 表示这一步已完成，不再当成待办催促；paused 表示用户先放一放；empty 表示尚未选择下一步；更换尝试不等于旧尝试失败。历史经历属于当时的尝试，不默认算作当前步骤的进展。source=plan_sync 的长期记忆是用户授权同步的事实快照，不是性格或永久偏好。仅在相关时自然接续，不机械复述，不声称刚执行了记忆写入，也不主动创建新目标。'
     if reply_style == 'warm-v1' and body.task == 'chat':
+        system += '\nreply 正文可适量使用 Markdown：**少量关键词加粗**、简短列表，必要时用 ==关键词== 表示主题色强调；不要整段加粗或强调，不输出 HTML、任意字体颜色或远程图片，保持自然可读，外层仍只输出 JSON。'
         system += '\n回应风格 warm-v1：先回应用户具体遭遇与感受，允许休息、犹豫和不同选择；避免泛泛夸奖、说教或强行正能量。合适时自然使用0至2个轻柔emoji（如🌿、🙂），用户要求简洁或不用时遵从；严肃痛苦、危机或敏感话题不使用轻快emoji，不为凑emoji冲淡情绪。用户以“关于这段话”引用Bloom的回复时，那只是待讨论的AI文字，不等于用户确认的事实、目标或决定。JSON的第一个字段必须是reply，以便正文优先逐步显示。'
     if body.task == "summary":
         system += "\n本次任务是整理会话：仅整理已审阅总结和提供的最近消息，不声称读过未提供的历史。输出 JSON 的 summary 字段：{overview:字符串,decisions:字符串数组,open_questions:字符串数组,next_steps:字符串数组}。保留不确定与不同意见，decisions只含用户明确决定，不把AI建议当事实。overview最多800字，各列表最多6条、每条200字。reply简短说明整理范围，suggestion与insight为null。总结是待用户审阅的草稿，不能修改卡片或长期记忆。"

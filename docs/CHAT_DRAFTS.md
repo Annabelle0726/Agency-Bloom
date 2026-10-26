@@ -7,8 +7,9 @@ the conversation only when the user sends it.
 
 ## Database and API
 
-Apply `supabase/migrations/20261025010000_chat_drafts.sql` before deploying the
-updated API. Development SQLite creates the additive table at startup. No hosted
+Apply `supabase/migrations/20261025010000_chat_drafts.sql` and
+`supabase/migrations/20261026020000_chat_draft_input_limit.sql` before deploying the
+updated API. Development SQLite creates the additive table and provenance column at startup. No hosted
 database or private application database was migrated during verification.
 
 `chat_drafts` has an account/key primary key, optional conversation and exploration
@@ -18,8 +19,8 @@ draft. Account deletion cascades all drafts. RLS is enabled and direct client
 access is revoked, consistent with the existing FastAPI ownership boundary.
 
 `GET /api/chat-drafts` returns owned drafts. `PUT /api/chat-drafts/{key}` accepts
-`{content, issue_id, version}`. Keys are conversation UUIDs or `draft:<UUID>`.
-Writes preserve whitespace, accept at most 2,000 characters, check ownership and
+`{content, issue_id, version, source_refs?}`. Keys are conversation UUIDs or `draft:<UUID>`.
+Writes preserve whitespace, accept at most 4,000 characters, check ownership and
 versions, and share the account lock used by privacy updates. Turning retention
 off purges stored drafts and prevents pending writes from restoring them.
 
@@ -29,6 +30,23 @@ and show a composer-adjacent notice. Returning to the page retries pending draft
 synchronization. Successful chat sends clear the originating composer; failed
 sends keep its text. Drafts are never written to device storage or sent to a model
 by synchronization.
+
+A clean flush is a no-op and does not reserve the per-composer writer. This
+prevents leaving a completed write promise behind when Journey navigation hides
+an already synchronized page; further edits after returning must still save.
+
+Discover-derived excerpts retain up to twelve owned source references separately
+from composer text. Multiple appended angles retain separate references. Reload
+and send revalidate each source without a model call; a withdrawn excerpt is
+removed while manual text and other valid angles remain. Omitting `source_refs`
+preserves existing metadata; clearing the composer also clears its references.
+These references follow the same retention purge as draft text.
+
+Cross-page entries ask before appending to a nonempty composer, with options to
+start a separate draft, append, or cancel. No option sends a message. Both text
+previews are reviewable, and append is disabled if the combined text would exceed
+the same 4,000-character limit used by the native input and chat API. See
+[page and context continuity](PAGE_CONTEXT.md) for current acceptance evidence.
 
 ## Verification on 2026-10-25
 

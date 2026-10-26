@@ -3,11 +3,13 @@ import { computed, ref, watch } from 'vue'
 import SvgIcon from './SvgIcon.vue'
 import { phaseRecords, snapshotRows, useMeRecords, type MeRequest } from '../me-records'
 import type { Issue, User } from '../domain'
+import { sharedContext } from '../personal-context'
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 const props = defineProps<{ user: User | null; current: Issue | null; request: MeRequest; revision: number; busy: boolean; themeId: string }>()
 const emit = defineEmits<{ direction: []; memories: []; changed: []; userChanged: [user: User] }>()
 const { memories, snapshot, loading, memoryError, snapshotError, reload } = useMeRecords(() => props.user?.id || '', () => props.current?.id || '', () => props.revision, (...args) => props.request(...args))
 const phases = computed(() => phaseRecords(memories.value, props.current?.id || ''))
+const common = computed(() => sharedContext(memories.value))
 const open = ref(false), saving = ref(false), actionError = ref(''), preferenceUncertain = ref(false)
 const rows = computed(() => snapshot.value ? snapshotRows(snapshot.value) : [])
 watch(() => [props.user?.id, props.current?.id], () => { open.value = false; actionError.value = ''; preferenceUncertain.value = false })
@@ -70,6 +72,14 @@ function journey() {
       <template v-else><text class="me-record-copy">还没有确认当前方向</text><text class="me-record-meta">可以自己写一条，也可以先聊聊</text></template>
     </view>
     <view class="me-section-heading"><text class="me-section-title">我确认留下的</text></view>
+    <view class="me-shared-context">
+      <text class="me-record-title">跨问题的共同背景</text>
+      <text class="me-record-description">{{ user?.use_memory ? '只在相关时使用你确认的全局记忆；每个问题的计划仍分别管理' : '记忆使用已关闭，这些内容不会因此自动用于回复' }}</text>
+      <text v-if="loading" class="me-record-copy">正在读取…</text>
+      <text v-else-if="memoryError" class="me-record-copy">暂时无法读取，进入记忆管理后可以重试</text>
+      <template v-else><text v-for="item in common" :key="item.id" class="me-shared-line" :selectable="true">{{ item.content }}</text><text v-if="!common.length" class="me-record-copy">还没有启用的共同背景，可以自行添加并选择适用范围</text></template>
+      <button class="me-inline" :disabled="busy" @click="emit('memories')">查看、修改或停用</button>
+    </view>
     <button class="me-record-row" :disabled="busy" @click="emit('memories')" hover-class="pressed"><view><text class="me-record-title">整理我的记忆</text><text class="me-record-description">{{ loading ? '正在读取…' : memoryError ? '读取失败 · 进入后重试' : memories.length ? memories.length + ' 条已保存 · 查看原文、范围与来源' : '还没有记录 · 可以自己添加' }}</text></view><SvgIcon name="chevron" :size="17" /></button>
     <button class="me-record-row" :disabled="busy || saving || preferenceUncertain" :aria-pressed="!!user?.use_memory" @click="toggleMemoryUse" hover-class="pressed"><view><text class="me-record-title">在回复中使用记忆</text><text class="me-record-description">{{ user?.use_memory ? '已开启 · 仅使用启用且范围匹配的记录' : '已关闭 · 已保存的记录仍可查看和修改' }}</text></view><view class="toggle" :class="{ on: user?.use_memory }"><view /></view></button>
     <button v-if="preferenceUncertain" class="me-inline me-confirm-preference" :disabled="saving" @click="confirmPreference">重新确认设置</button>
@@ -90,6 +100,8 @@ function journey() {
   </view>
 </template>
 <style scoped lang="scss">
+.me-shared-context { margin:12px 0; padding:14px; border:1px solid var(--line); border-radius:8px; background:var(--soft); }
+.me-shared-line { display:block; margin:10px 0; font-size:14px; line-height:1.8; white-space:pre-wrap; color:var(--ink); }
 .me-records { margin-top:0; font-family:var(--font-body); font-weight:400; }
 .me-records button,.me-records text { font-family:var(--font-body); font-weight:400; }
 .me-section-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:12px 0 7px; }

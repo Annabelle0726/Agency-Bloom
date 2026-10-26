@@ -39,6 +39,8 @@ const props = defineProps<{
   messages: ChatMessage[]
   userSaveChat: boolean
   welcomeContext: string
+  firstWelcome?: boolean
+  welcomeHasContext?: boolean
   newChatStarters: readonly string[]
   chatStarters: readonly string[]
   starterHint: string
@@ -127,6 +129,9 @@ const emit = defineEmits<{
       :active-conversation="activeConversation"
       :user-save-chat="userSaveChat"
       :welcome-context="welcomeContext"
+      :first-welcome="firstWelcome"
+      :welcome-has-context="welcomeHasContext"
+      :theme-id="themeId"
       :new-chat-starters="newChatStarters"
       :chat-starters="chatStarters"
       :chat-entry="chatEntry"

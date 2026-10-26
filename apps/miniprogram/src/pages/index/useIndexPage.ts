@@ -4,7 +4,7 @@ import {onHide, onReady, onShow} from '@dcloudio/uni-app'
 import {makePreview, mergeSuggestion, experimentProposal} from '../../domain'
 import {newOnboarding, canonicalSupportStyle} from '../../onboarding'
 import type {SupportMode} from '../../onboarding'
-import {chatEntryFor, draftChangeFor} from '../../chat-entry'
+import {chatEntryFor} from '../../chat-entry'
 import { OPENING_KEY, initialScreen, signedInScreen, draftKeyFor, pauseKeyFor } from '../../entry'
 import type { EntryScreen } from '../../entry'
 import {navigationItems, resolveTheme, themeForSession, themeStyle, themeNavSvg} from '../../themes'
@@ -15,7 +15,9 @@ import {createNativeSpeech} from '../../native-speech'
 import {createOperationState} from '../../operations'
 import type {OperationScope} from '../../operations'
 import {createChatWorkspace} from '../../chat-workspace'
-import {createDraftSync} from '../../chat-drafts'
+import {createDraftSync, type DraftSourceRef} from '../../chat-drafts'
+import {createChatHandoff, combineDrafts} from '../../chat-handoff'
+import {CHAT_INPUT_LIMIT} from '../../chat-limits'
 import { createOnboardingProgress } from '../../onboarding-progress'
 import {useBloomMoment, momentDraft} from '../../bloom-moment'
 import {useDiscovery} from '../../use-discovery'
@@ -259,6 +261,16 @@ export function useIndexPage() {
     onCancelled: message => notify(message),
   })
   const conversations = ref<Conversation[]>([])
+  const chatHandoff = createChatHandoff()
+  const newExplorationOpen = ref(false), newExplorationDraft = reactive({ title:'', background:'' })
+  let newExplorationRequest = '', newExplorationPayload = ''
+  let navigationRevision = 0, openingHandoff = false
+  watch([() => user.value?.id, token], () => {
+    navigationRevision++; chatHandoff.cancel(); newExplorationOpen.value = false
+    newExplorationDraft.title = ''; newExplorationDraft.background = ''
+    newExplorationRequest = ''; newExplorationPayload = ''
+  }, { flush: 'sync' })
+  onUnmounted(chatHandoff.cancel)
   const draftSync = createDraftSync({
     list: () => request('GET', '/chat-drafts'),
     save: (key, body) => request('PUT', `/chat-drafts/${encodeURIComponent(key)}`, body),
@@ -271,7 +283,7 @@ export function useIndexPage() {
     if (restoringDrafts) return
     for (const [key, session] of Object.entries(workspace.sessions)) {
       const issueId = workspace.drafts[key]?.issueId ?? conversations.value.find(c => c.id === key)?.issue_id ?? null
-      draftSync.set(key, session.draft.value, issueId)
+      draftSync.set(key, session.draft.value, issueId, discoveryDrafts.get(key) || [])
     }
   }
   watch(() => Object.entries(workspace.sessions).map(([key, session]) => [key, session.draft.value]), syncComposerDrafts, { flush: 'sync' })
@@ -283,6 +295,17 @@ export function useIndexPage() {
       if (user.value?.id !== account || token.value !== credential) return
       for (const row of rows) {
         if (!row.content) continue
+        const sources: DraftSourceRef[] = []
+        let withdrawn = false
+        for (const source of row.source_refs || []) {
+          let valid = false
+          try { valid = !!await discovery.verify({id:source.id,issueId:source.issue_id,strategy:source.strategy}) } catch { /* An unavailable source is not reused. */ }
+          if (user.value?.id !== account || token.value !== credential) return
+          if (valid) sources.push(source)
+          else { row.content = removeSourceText(row.content, source); withdrawn = true }
+        }
+        if (sources.length) discoveryDrafts.set(row.key, sources)
+        if (withdrawn) workspace.get(row.key).error.value = '一条带入线索已不可用，已撤下原文，请检查草稿后发送'
         if (row.key.startsWith('draft:')) {
           workspace.restoreDraft(row.key, row.issue_id, row.content)
           if (!openedIds.value.includes(row.key)) openedIds.value.push(row.key)
@@ -437,6 +460,15 @@ export function useIndexPage() {
     !!experimentBase && experimentProposal(experimentBase, experimentEditor).next_step.length <= 600)
   const selectedMode = computed(() => canonicalSupportStyle(activeConversation.value?.support_style || user.value?.support_style))
   const welcomeContext = computed(() => current.value?.focus_response || current.value?.actual_question || current.value?.background || '')
+  const welcomeCompleted = ref(false)
+  watch(() => user.value?.id, id => {
+    try { welcomeCompleted.value = !!id && uni.getStorageSync('agency.welcome-completed.v1:'+id) === true }
+    catch { welcomeCompleted.value = false }
+  }, {flush:'sync'})
+  const firstWelcome = computed(() => !welcomeCompleted.value && (isDrafting.value ? !conversations.value.length :
+    conversations.value.length === 1 && activeConversation.value?.id === current.value?.id))
+  const welcomeHasContext = computed(() => !!welcomeContext.value.trim() || !!current.value?.concerns?.length ||
+    Object.values(current.value?.follow_ups || {}).some(answer => !!answer.note?.trim() || answer.selections.length > 0))
   // Composer footer: the model's own tailored line, falling back to the
   // user's direction/question. Retention status never takes this slot.
   const chatFooterNote = computed(() => {
@@ -461,6 +493,7 @@ export function useIndexPage() {
   // New ChatGPT-style draft shell: a clean welcome page that stays local until
   // the first real send, so abandoned opens never create empty conversations.
   function startNewChat() {
+    navigationRevision++; chatHandoff.cancel()
     if (!user.value || current.value?.ended_at) return
     // Drop empty draft shells so repeated "new chat" taps don't accumulate.
     for (const key of Object.keys(workspace.sessions)) {
@@ -562,23 +595,29 @@ export function useIndexPage() {
   }
 
   const discovery = useDiscovery(user, request, notify, current)
-  const discoveryDrafts = new Map<string, DiscoveryAngle>()
+  const discoveryDrafts = new Map<string, DraftSourceRef[]>()
+  function removeSourceText(text: string, source: DraftSourceRef) {
+    const next = text.includes(source.text) ? text.split(source.text).join('') : text.split(source.quote).join('〔原线索已不可用〕')
+    return next.trim() ? next : ''
+  }
   const validatingDiscovery = new Set<string>()
   watch(() => user.value?.id, () => discoveryDrafts.clear(), { flush: 'sync' })
-  function withdrawDiscoveryDraft(key: string, source: DiscoveryAngle) {
+  function withdrawDiscoveryDraft(key: string, source: DraftSourceRef) {
     const session = workspace.sessions[key]
     if (session) {
-      session.draft.value = session.draft.value === discoveryDraft(source) ? '' : session.draft.value.split(discoveryQuotedEvidence(source)).join('〔原线索已不可用〕')
+      session.draft.value = removeSourceText(session.draft.value, source)
       session.error.value = '原建议的依据已经变化，已撤下原线索。请检查输入后重新发送'
     }
-    discoveryDrafts.delete(key)
-    if (workspace.drafts[key]) delete workspace.drafts[key].recommendation
+    const remaining = (discoveryDrafts.get(key) || []).filter(item => item.id !== source.id)
+    if (remaining.length) discoveryDrafts.set(key, remaining); else discoveryDrafts.delete(key)
+    if (workspace.drafts[key]?.recommendation?.id === source.id) delete workspace.drafts[key].recommendation
+    syncComposerDrafts()
   }
   async function invalidateDiscoverySources() {
     const account = user.value?.id
-    for (const [key, source] of discoveryDrafts) {
+    for (const [key, sources] of discoveryDrafts) for (const source of [...sources]) {
       try {
-        const valid = await discovery.verify(source)
+        const valid = await discovery.verify({id:source.id,issueId:source.issue_id,strategy:source.strategy})
         if (user.value?.id !== account) return
         if (!valid) withdrawDiscoveryDraft(key, source)
       } catch { if (user.value?.id === account) withdrawDiscoveryDraft(key, source) }
@@ -612,7 +651,7 @@ export function useIndexPage() {
     return api.request<T>(method, path, data).promise
   }
 
-  async function guarded(action: () => Promise<void>, scope: OperationScope = 'data') {
+  async function guarded(action: () => Promise<unknown>, scope: OperationScope = 'data') {
     if (scope !== 'init' && busy.value) return false
     return operations.run(scope, async () => {
       try { await action() }
@@ -772,6 +811,7 @@ export function useIndexPage() {
   }
 
   async function selectTab(nextTab: typeof tab.value) {
+    if (nextTab !== tab.value) { navigationRevision++; chatHandoff.cancel() }
     if (nextTab === 'chat' && screen.value === 'onboard') pauseOnboarding()
     if (nextTab === 'chat' && !current.value && !isDrafting.value) { startNewChat(); return }
     if (tab.value === nextTab) return
@@ -847,27 +887,55 @@ export function useIndexPage() {
     planStepBase = JSON.parse(JSON.stringify(current.value.card))
   }
 
-  let openingPlan = false
-  async function preparePlanChat(text: string) {
-    if (openingPlan || !user.value || !current.value || current.value.ended_at || busy.value) return null
-    openingPlan = true
-    const account = token.value, issueId = current.value.id
+  async function prepareConversationDraft(text: string, issue: Issue | null, origin: string, separate = false, targetOverride?: Conversation | null) {
+    if (openingHandoff || !user.value || issue?.ended_at || busy.value) return null
+    if (text.length > CHAT_INPUT_LIMIT) { notify('带入的文字过长，原内容仍保留，请先缩短再继续'); return null }
+    openingHandoff = true
+    const account = token.value, owner = user.value.id, revision = navigationRevision
+    const valid = () => token.value === account && user.value?.id === owner && navigationRevision === revision
+    const originalIssue = current.value, originalId = workspace.activeId.value
     try {
-      const target = homeConversationFor(current.value, conversations.value, activeConversation.value?.id)
-      if (target && !workspace.get(target.id).draft.value.trim() && !workspace.get(target.id).sending.value) {
-        await activateConversation(target)
-        if (token.value !== account || current.value?.id !== issueId) return null
-        // A remote draft may have arrived while the conversation loaded.
-        if (workspace.active.value.draft.value.trim()) startNewChat()
-      } else startNewChat()
-      workspace.active.value.draft.value = text
-      return workspace.active.value
-    } finally { openingPlan = false }
+      const target = separate ? null : targetOverride === undefined ? homeConversationFor(issue, conversations.value, activeConversation.value?.id) : targetOverride
+      const shell = !separate && isDrafting.value && workspace.drafts[workspace.activeId.value]?.issueId === (issue?.id ?? null) ? workspace.active.value : null
+      const session = shell || (target ? workspace.get(target.id) : null)
+      let choice: 'new' | 'append' | 'cancel' = !session || session.sending.value ? 'new' : 'append'
+      let previewed = session?.draft.value || ''
+      if (session && choice !== 'new' && session.draft.value.trim() && session.draft.value.trim() !== text.trim()) {
+        choice = await chatHandoff.choose({current:session.draft.value,incoming:text,title:issue?.title || '当前问题',origin})
+      }
+      if (!valid() || choice === 'cancel') return null
+      if (target && session && !shell && choice !== 'new') {
+        if (!await activateConversation(target, false, valid) || !valid() || workspace.activeId.value !== target.id) return null
+        if (session.draft.value !== previewed && session.draft.value.trim() && session.draft.value.trim() !== text.trim()) {
+          previewed = session.draft.value
+          choice = await chatHandoff.choose({current:previewed,incoming:text,title:issue?.title || '当前问题',origin})
+          if (!valid() || choice === 'cancel') {
+            if (valid() && choice === 'cancel') {
+              current.value = originalIssue; workspace.select(originalId)
+              try { uni.setStorageSync(selectedConversationKey(owner), originalId) } catch { /* Selection can stay in memory. */ }
+            }
+            return null
+          }
+        }
+      }
+      if (choice === 'new') { current.value = issue; startNewChat() }
+      const destination = workspace.active.value
+      destination.draft.value = combineDrafts(choice === 'new' ? '' : destination.draft.value, text)
+      drawer.value = ''; tab.value = 'chat'
+      return destination
+    } finally { openingHandoff = false }
+  }
+  async function preparePlanChat(text: string) {
+    if (!current.value) return null
+    return prepareConversationDraft(text, current.value, 'Plan')
   }
   async function openPlanChat(concern = '', record = false) {
     if (tab.value !== 'plan') return
-    const text = (concern.trim() || (record ? plan.state.value?.latest?.text || '' : '')).slice(0, 2000)
-    await preparePlanChat(`${text ? '我想从这件事聊起：' + text + '\n\n' : ''}${record ? '我想和你说说后来发生的事，请先听我讲，帮我理清经历和感受。等我说整理时，帮我写成可编辑的记录草稿；不把未决定的想法写成结论，也不自动改变下一步。' : '我想围绕当前探索，一起想一个适合现在的小尝试。请先了解具体难处、希望改变什么以及现实条件。信息足够时整理成可编辑的计划草稿，把行动与经历分开；不要把追问当成下一步。'}`)
+    const account = token.value, issueId = current.value?.id, revision = navigationRevision
+    const text = concern.trim() || (record ? plan.state.value?.latest?.text || '' : '')
+    try {
+      await preparePlanChat(`${text ? '我想从这件事聊起：' + text + '\n\n' : ''}${record ? '我想和你说说后来发生的事，请先听我讲，帮我理清经历和感受。等我说整理时，帮我写成可编辑的记录草稿；不把未决定的想法写成结论，也不自动改变下一步。' : '我想围绕当前探索，一起想一个适合现在的小尝试。请先了解具体难处、希望改变什么以及现实条件。信息足够时整理成可编辑的计划草稿，把行动与经历分开；不要把追问当成下一步。'}`)
+    } catch (err) { if (token.value === account && current.value?.id === issueId && navigationRevision === revision) plan.error.value = err instanceof Error ? err.message : '暂时无法打开对话，输入仍保留' }
   }
   const plan = usePlan({ current, userKey: computed(() => user.value?.id || ''), retained: computed(() => !!user.value?.save_chat), request,
     chat: preparePlanChat, id: requestId, changed: (sourceId, draft) => {
@@ -942,15 +1010,17 @@ export function useIndexPage() {
     if (!activeConversation.value && !isDrafting.value) return
     if (!user.value.ai_consent) { modal.value = 'ai'; return }
     const account = user.value.id, sessionToken = token.value
-    const discoverySource = discoveryDrafts.get(key)
-    if (discoverySource) {
+    const discoverySources = discoveryDrafts.get(key) || []
+    if (discoverySources.length) {
       validatingDiscovery.add(key)
       try {
-        const valid = await discovery.verify(discoverySource)
+        for (const discoverySource of discoverySources) {
+        const valid = await discovery.verify({id:discoverySource.id,issueId:discoverySource.issue_id,strategy:discoverySource.strategy})
         if (user.value?.id !== account || token.value !== sessionToken || workspace.activeId.value !== key) return
         if (!valid) {
           withdrawDiscoveryDraft(key, discoverySource)
           return
+        }
         }
       } catch {
         session.error.value = '暂时无法确认建议的依据，输入已保留，请稍后重试'
@@ -975,7 +1045,8 @@ export function useIndexPage() {
         changedConversation(result.conversation)
         workspace.promote(key, conversationId)
         void draftSync.transfer(key, conversationId, session.draft.value, result.issue.id)
-        if (discoverySource) { discoveryDrafts.delete(key); discoveryDrafts.set(conversationId, discoverySource) }
+        if (discoverySources.length) { discoveryDrafts.delete(key); discoveryDrafts.set(conversationId, discoverySources) }
+        syncComposerDrafts()
         openedIds.value = openedIds.value.map(id => id === key ? conversationId! : id)
         if (workspace.activeId.value === conversationId) {
           current.value = result.issue
@@ -993,6 +1064,10 @@ export function useIndexPage() {
     const before = session.messages.value.length
     await session.send(conversationId)
     if (user.value?.id !== account || token.value !== sessionToken) return
+    if (session.messages.value.length > before && session.messages.value[session.messages.value.length-1]?.role === 'assistant') {
+      welcomeCompleted.value = true
+      try { uni.setStorageSync('agency.welcome-completed.v1:'+account, true) } catch { /* The welcome can remain local to this visit. */ }
+    }
     if (session.messages.value.length > before) discoveryDrafts.delete(conversationId)
     if (context?.recommendation && session.messages.value.length > before) {
       discovery.explored(context.recommendation); delete workspace.drafts[conversationId]
@@ -1146,23 +1221,16 @@ export function useIndexPage() {
 
   async function useChatStarter(prompt: string) {
     if (sending.value || busy.value) return
-    const change = draftChangeFor(draft.value, prompt)
-    if (change === 'confirm-replace') {
-      const approved = await new Promise<boolean>(resolve => uni.showModal({
-        title: '替换当前输入？',
-        content: '你已经输入的文字会被新建议替换。也可以先保留原来的草稿。',
-        confirmText: '替换',
-        cancelText: '保留草稿',
-        success: result => resolve(result.confirm),
-        fail: () => resolve(false),
-      }))
-      if (!approved) return
-    }
-    if (change !== 'unchanged') draft.value = prompt
-    starterHint.value = '已放入输入框，可以修改后再发送'
+    const account = token.value
+    try {
+      const session = await prepareConversationDraft(prompt, current.value, '聊天建议', false, activeConversation.value)
+      if (session) starterHint.value = '已放入输入框，可以修改后再发送'
+    } catch (err) { if (account === token.value) error.value = err instanceof Error ? err.message : '暂时无法带入，原输入仍保留' }
   }
 
   function updateDraft(value: string) {
+    const sources = (discoveryDrafts.get(workspace.activeId.value) || []).filter(source => value.includes(source.quote))
+    if (sources.length) discoveryDrafts.set(workspace.activeId.value, sources); else discoveryDrafts.delete(workspace.activeId.value)
     draft.value = value
     starterHint.value = ''
   }
@@ -1239,15 +1307,15 @@ export function useIndexPage() {
     }
   }
   let activationRun = 0
-  async function activateConversation(item: Conversation, navigate = true) {
+  async function activateConversation(item: Conversation, navigate = true, stillWanted: () => boolean = () => true) {
     const run = ++activationRun, account = token.value, owner = user.value?.id
-    const isCurrent = () => run === activationRun && token.value === account && user.value?.id === owner
+    const isCurrent = () => run === activationRun && token.value === account && user.value?.id === owner && stillWanted()
     const session = workspace.get(item.id)
     const issue = await request<Issue>('GET', `/issues/${item.issue_id}`)
-    if (!isCurrent()) return
+    if (!isCurrent()) return false
     if (!session.loaded.value) {
       const page = await request<{ items: ChatMessage[]; next_cursor: string | null }>('GET', `/conversations/${item.id}/messages`)
-      if (!isCurrent()) return
+      if (!isCurrent()) return false
       session.messages.value = page.items; session.olderCursor.value = page.next_cursor; session.summary.value = item.summary
       const last = page.items[page.items.length - 1]
       session.suggestion.value = last?.payload?.suggestion || null; session.insight.value = last?.payload?.insight || null
@@ -1258,9 +1326,11 @@ export function useIndexPage() {
     if (!openedIds.value.includes(item.id)) openedIds.value.push(item.id)
     modePickerOpen.value = false; starterHint.value = ''; chatMenuOpen.value = false; operations.clear('ai')
     if (navigate) { drawer.value = ''; tab.value = 'chat'; await nextTick(); uni.pageScrollTo({ scrollTop: 0, duration: 0 }) }
+    return true
   }
-  async function selectConversation(item: Conversation) { await guarded(() => activateConversation(item)) }
+  async function selectConversation(item: Conversation) { navigationRevision++; chatHandoff.cancel(); await guarded(async () => { await activateConversation(item) }) }
   async function selectExploration(issue: Issue) {
+    navigationRevision++; chatHandoff.cancel()
     await guarded(async () => {
       current.value = await request('GET', `/issues/${issue.id}`)
       const first = conversations.value.find(c => c.issue_id === issue.id && !c.archived_at) || conversations.value.find(c => c.issue_id === issue.id)
@@ -1270,7 +1340,38 @@ export function useIndexPage() {
     })
   }
   async function resumeExploration() { if (!current.value) return; await guarded(async () => { current.value = await request('POST', `/issues/${current.value!.id}/resume`); await refreshWorkspace(); notify('探索已恢复') }) }
-  function beginAnotherExploration() { drawer.value = ''; Object.assign(form, newOnboarding()); beginOnboarding() }
+  function beginAnotherExploration() {
+    if (!newExplorationRequest) newExplorationRequest = requestId()
+    navigationRevision++; chatHandoff.cancel(); drawer.value = ''; error.value = ''; newExplorationOpen.value = true
+  }
+  function newExplorationQuestions() {
+    newExplorationOpen.value = false; Object.assign(form, newOnboarding()); beginOnboarding()
+  }
+  async function saveNewExploration() {
+    if (!user.value || !newExplorationDraft.title.trim()) return
+    if (newExplorationDraft.title.trim().length > 120 || newExplorationDraft.background.trim().length > 400) {
+      error.value = '标题最多 120 字，背景最多 400 字，原文仍保留，请修改后保存'; return
+    }
+    const account = token.value, owner = user.value.id, revision = navigationRevision
+    const body = {title:newExplorationDraft.title.trim(), background:newExplorationDraft.background.trim(), support_style:canonicalSupportStyle(user.value.support_style)}
+    const payload = JSON.stringify(body)
+    if (newExplorationPayload !== payload || !newExplorationRequest) { newExplorationRequest = requestId(); newExplorationPayload = payload }
+    await guarded(async () => {
+      const created = await request<Issue>('POST', '/issues', {
+        creation_request_id:newExplorationRequest,
+        ...body,
+      })
+      if (account !== token.value || user.value?.id !== owner || revision !== navigationRevision) return
+      await refreshWorkspace()
+      if (account !== token.value || user.value?.id !== owner || revision !== navigationRevision) return
+      const conversation = conversations.value.find(item => item.issue_id === created.id && !item.archived_at)
+      if (conversation) await activateConversation(conversation, true, () => account === token.value && revision === navigationRevision)
+      else { current.value = created; startNewChat() }
+      newExplorationOpen.value = false; newExplorationDraft.title = ''; newExplorationDraft.background = ''
+      newExplorationRequest = ''; newExplorationPayload = ''
+      notify('已单独建立，这件事有自己的卡片和计划')
+    })
+  }
   async function loadOlderMessages() {
     const id = workspace.activeId.value, session = workspace.get(id)
     if (!session.olderCursor.value) return
@@ -1351,48 +1452,32 @@ export function useIndexPage() {
     openingDiscovery = true
     const account = user.value.id
     try {
-      // Re-read the source before transferring any quoted material into a draft.
       await discovery.load()
       if (user.value?.id !== account || tab.value !== 'discover') return
       const fresh = discovery.recommendations.value.find(r => r.id === item.id)
       if (!fresh || discovery.error.value) { notify('这条建议的依据已变化或暂时无法确认，请重新查看'); return }
       const issue = discovery.issues.value.find(i => i.id === fresh.issueId) || null
-      const destination = separate ? null : discoveryDestination(conversations.value, fresh.issueId, activeConversation.value?.id)
-      const text = discoveryDraft(fresh)
+      let destination = separate ? null : discoveryDestination(conversations.value, fresh.issueId, activeConversation.value?.id)
       if (destination) {
-        const target = await request<Conversation>('GET', '/conversations/' + destination.id)
-        if (target.archived_at || target.issue_id !== fresh.issueId) { notify('原对话已不可用，请选择另开一段聊聊'); return }
-        const session = workspace.get(target.id)
-        if (session.draft.value.trim() && session.draft.value !== text) {
-          if (!await confirm('保留原草稿？', '这段对话已有未发送内容。确认后保留原草稿，另开一段聊这个角度')) return
-        } else {
-          if (user.value?.id !== account || tab.value !== 'discover') return
-          await activateConversation(target)
-          if (user.value?.id !== account || activeConversation.value?.id !== target.id) return
-          // A retained draft may arrive while opening the conversation. Preserve it.
-          if (session.draft.value.trim() && session.draft.value !== text) {
-            startNewChat()
-            const key = workspace.activeId.value, context = workspace.drafts[key]
-            if (context) context.recommendation = fresh
-            workspace.active.value.draft.value = text
-            discoveryDrafts.set(key, fresh)
-            return
-          }
-          session.draft.value = text
-          discoveryDrafts.set(target.id, fresh)
-          return
-        }
+        const latest = await request<Conversation>('GET', '/conversations/' + destination.id)
+        if (latest.archived_at || latest.issue_id !== fresh.issueId) { notify('原对话已不可用，请选择另开一段聊聊'); return }
+        destination = latest
       }
       if (user.value?.id !== account || tab.value !== 'discover') return
-      current.value = issue
-      startNewChat()
+      const session = await prepareConversationDraft(discoveryDraft(fresh), issue, '发现', separate, destination)
+      if (!session || user.value?.id !== account) return
       const key = workspace.activeId.value, context = workspace.drafts[key]
-      if (context) { context.recommendation = fresh; workspace.get(key).draft.value = text; discoveryDrafts.set(key, fresh) }
-    } catch (err) { notify(err instanceof Error ? err.message : '暂时无法打开这段探索') }
+      if (context) context.recommendation = fresh
+      if (fresh.issueId) discoveryDrafts.set(key, [...(discoveryDrafts.get(key) || []).filter(source => source.id !== fresh.id),
+        {id:fresh.id,issue_id:fresh.issueId,strategy:fresh.strategy,quote:discoveryQuotedEvidence(fresh),text:discoveryDraft(fresh)}])
+      syncComposerDrafts()
+    } catch (err) { if (user.value?.id === account) notify(err instanceof Error ? err.message : '暂时无法打开这段探索') }
     finally { openingDiscovery = false }
   }
 
   return {
+    chatHandoff,
+    newExplorationOpen, newExplorationDraft, saveNewExploration, newExplorationQuestions,
     speech,
     user,
     demoCredential,
@@ -1462,6 +1547,7 @@ export function useIndexPage() {
     canSaveExperiment,
     selectedMode,
     welcomeContext,
+    firstWelcome, welcomeHasContext,
     chatFooterNote,
     chatEntry,
     modePickerOpen,

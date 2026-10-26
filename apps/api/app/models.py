@@ -107,6 +107,7 @@ class ChatDraft(Base):
     issue_id: Mapped[str | None] = mapped_column(
         ForeignKey("issues.id", ondelete="CASCADE"), nullable=True)
     content: Mapped[str] = mapped_column(Text, default="")
+    source_refs: Mapped[list] = mapped_column(JSON, default=list)
     version: Mapped[int] = mapped_column(Integer, default=1)
     updated_at: Mapped[str] = mapped_column(String(40), default=now)
 
@@ -179,6 +180,16 @@ class SpeechAudio(Base):
     conversation_id: Mapped[str] = mapped_column(ForeignKey('conversations.id', ondelete='CASCADE'), index=True)
     message_id: Mapped[str | None] = mapped_column(ForeignKey('messages.id', ondelete='CASCADE'), nullable=True)
     source: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(16), default='pending')
+    audio: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    expires_at: Mapped[str] = mapped_column(String(40), index=True)
+
+
+class WelcomeSpeechAudio(Base):
+    __tablename__ = 'welcome_speech_audio'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'), index=True)
+    variant: Mapped[str] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(String(16), default='pending')
     audio: Mapped[list | None] = mapped_column(JSON, nullable=True)
     expires_at: Mapped[str] = mapped_column(String(40), index=True)

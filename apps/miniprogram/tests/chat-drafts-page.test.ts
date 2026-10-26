@@ -2,12 +2,14 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 vi.mock('vue', async original => ({ ...await original<typeof import('vue')>(), onMounted: vi.fn(), onUnmounted: vi.fn(), provide: vi.fn() }))
 vi.mock('@dcloudio/uni-app', () => ({ onShow: vi.fn(), onHide: vi.fn(), onReady: vi.fn() }))
 import { useIndexPage } from '../src/pages/index/useIndexPage'
+import { discoveryDraft, relevantAngles } from '../src/discover-angles'
 
 const issue = { id: 'issue', version: 1, title: '方向', card: { title: '方向', options: [], constraints: [], confirmed: [], hypotheses: [], unknowns: [], next_step: '' } }
 const conversation = { id: 'conversation', issue_id: 'issue', version: 1, title: '现有会话', summary: null }
 let drafts: Record<string, any>
 beforeEach(() => {
   vi.useFakeTimers()
+  issue.title='方向'
   drafts = {}
   const storage = new Map<string, unknown>([['agency.session', 'test-session']])
   vi.stubGlobal('uni', {
@@ -57,4 +59,30 @@ it('saves and restores a never-sent conversation shell after a page restart', as
   expect(restored.workspace.activeId.value).toBe(key)
   expect(restored.draft.value).toBe('第一次发送前先留着')
   expect(restored.messages.value).toEqual([])
+})
+
+it('withdraws invalid saved Discover excerpts on restart while preserving the user draft', async () => {
+  drafts.conversation = {key:'conversation',issue_id:'issue',version:1,content:'  我的原稿\n\n过期的完整建议',source_refs:[
+    {id:'withdrawn',issue_id:'issue',strategy:'boundary',quote:'过期线索',text:'过期的完整建议'},
+  ]}
+  const page=useIndexPage();await page.initialize()
+  expect(page.draft.value).toBe('  我的原稿\n\n')
+  expect(page.workspace.active.value.error.value).toContain('已不可用')
+  await vi.advanceTimersByTimeAsync(600)
+  expect(drafts.conversation.source_refs).toEqual([])
+  expect(drafts.conversation.content).toBe('  我的原稿\n\n')
+})
+
+it('removes withdrawn source metadata when send-time verification keeps the manual draft instead of sending', async () => {
+  const angle=relevantAngles(issue as any,[])[0],text=discoveryDraft(angle)
+  drafts.conversation={key:'conversation',issue_id:'issue',version:1,content:'我的原稿\n\n'+text,source_refs:[
+    {id:angle.id,issue_id:'issue',strategy:angle.strategy,quote:angle.evidence,text},
+  ]}
+  const page=useIndexPage();await page.initialize()
+  page.user.value={...page.user.value!,ai_consent:true}
+  issue.title='我修改后的方向'
+  await page.sendChat();await vi.advanceTimersByTimeAsync(600)
+  expect(page.draft.value).toBe('我的原稿\n\n')
+  expect(page.messages.value).toEqual([])
+  expect(drafts.conversation.source_refs).toEqual([])
 })

@@ -18,7 +18,18 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from .models import AIRequest, Consent, Conversation, Message, SpeechAudio, SpeechUsage, User, now
+from .models import (
+    AIRequest,
+    Consent,
+    Conversation,
+    Message,
+    SpeechAudio,
+    SpeechUsage,
+    User,
+    WelcomeSpeechAudio,
+    now,
+)
+from .reply_format import speech_text
 from .tts_provider import (
     MockTTSProvider,
     SpeechFailure,
@@ -121,6 +132,7 @@ class SpeechService:
     def cleanup(self):
         with self.sessions.begin() as db:
             db.execute(delete(SpeechAudio).where(SpeechAudio.expires_at <= now()))
+            db.execute(delete(WelcomeSpeechAudio).where(WelcomeSpeechAudio.expires_at <= now()))
             # Quotas retain only rolling counters, never response text.
             cutoff = (datetime.now(ZoneInfo('Asia/Shanghai')) - timedelta(days=32)).strftime('%Y-%m-%d')
             db.execute(delete(SpeechUsage).where(SpeechUsage.day < cutoff))
@@ -151,6 +163,8 @@ class SpeechService:
                 raise HTTPException(429, '今天的朗读额度已用完，文字对话仍可继续')
 
     def register(self, app, authenticated):
+        from .welcome_speech import register_welcome_speech
+        register_welcome_speech(app, self, authenticated)
         @app.exception_handler(SQLAlchemyError)
         async def speech_storage_failure(request, error):
             path = request.url.path
@@ -175,6 +189,7 @@ class SpeechService:
                 db.add(Consent(user_id=user.id, kind='tts', accepted=body.accepted, policy_version=self.policy))
                 if not body.accepted:
                     db.execute(delete(SpeechAudio).where(SpeechAudio.user_id == user.id))
+                    db.execute(delete(WelcomeSpeechAudio).where(WelcomeSpeechAudio.user_id == user.id))
             return {'consented': body.accepted}
 
         @app.post('/api/conversations/{conversation_id}/speech')
@@ -184,16 +199,17 @@ class SpeechService:
             try:
                 with self.sessions.begin() as db:
                     db.scalar(select(User).where(User.id == user.id).with_for_update())
-                    text = self.source(db, user.id, conversation_id, body)
+                    raw_text = self.source(db, user.id, conversation_id, body)
+                    text = speech_text(raw_text)
                     if not text.strip() or len(text) > s.tts_max_chars:
                         raise HTTPException(409, f'这条回复超过朗读上限（{s.tts_max_chars} 字），请先阅读文字')
                     if '<think' in text.lower() or '</think' in text.lower():
                         raise HTTPException(409, '这条回复含有无法朗读的内容')
                     if s.tts_mode == 'tencent' and (not s.tts_paid_enabled or not s.tts_secret_id.get_secret_value() or not s.tts_secret_key.get_secret_value()):
                         raise HTTPException(409, '真实语音服务尚未开启，文字对话仍可继续')
-                    source = {'message_id': body.message_id, 'proof': body.proof, 'hash': digest(text)}
+                    source = {'message_id': body.message_id, 'proof': body.proof, 'hash': digest(raw_text)}
                     key = digest('|'.join([user.id, conversation_id, body.message_id or body.proof,
-                                           digest(text), s.tts_mode, str(s.tts_voice_type), 'mp3-v1']))
+                                           digest(raw_text), s.tts_mode, str(s.tts_voice_type), 'mp3-text-v2']))
                     cached = db.get(SpeechAudio, key)
                     if cached:
                         if cached.status == 'ready':

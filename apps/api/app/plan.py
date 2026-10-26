@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .journey import JourneyRecord, revision
@@ -116,6 +117,8 @@ def register_plan_routes(app, authenticated, db_dependency, owned):
             return plan_view(db, issue)
         if issue.ended_at or issue.version != body.version:
             raise HTTPException(409, '探索已结束或内容已变化，你的编辑仍保留，请读取最新内容后核对')
+        if body.record and not body.record.id and db.get(JourneyRecord, str(body.request_id)) is not None:
+            raise HTTPException(409, '这次保存的编号已使用，请重新打开编辑后再保存')
         if body.record is None and body.next_step is None and body.status is None:
             raise HTTPException(422, '请选择要保存的记录或下一步')
         source = None
@@ -175,8 +178,16 @@ def register_plan_routes(app, authenticated, db_dependency, owned):
                     raise HTTPException(409, '记录已变化，你的文字仍保留')
             else:
                 record_id = str(body.request_id)
+                if source and db.scalar(select(JourneyRecord.id).where(JourneyRecord.source_message_id == source.id)):
+                    raise HTTPException(409, '这份对话草稿已经保存，请读取最新记录')
                 db.add(JourneyRecord(id=record_id, user_id=user.id, issue_id=issue.id, kind='thought',
-                                     title=record.title, text=record.text))
+                                     title=record.title, text=record.text,
+                                     source_message_id=source.id if source else None))
+                try:
+                    db.flush()
+                except IntegrityError:
+                    db.rollback()
+                    raise HTTPException(409, '这份内容已经处理，请读取最新记录后核对') from None
                 target = previous_attempt or meta.get('attempt_id')
                 if 'record_attempt_id' in body.model_fields_set:
                     target = body.record_attempt_id or (meta.get('attempt_id') if not old_step else None)

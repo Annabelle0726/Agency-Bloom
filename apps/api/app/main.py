@@ -430,6 +430,17 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
     def create_issue(
         body: IssueInput, user: User = Depends(authenticated), db: Session = Depends(db_dependency)
     ):
+        creation_id = str(body.creation_request_id) if body.creation_request_id else None
+        creation_digest = None
+        if creation_id:
+            db.execute(update(User).where(User.id == user.id).values(use_memory=User.use_memory))
+            db.refresh(user)
+            creation_digest = hashlib.sha256(json.dumps(body.model_dump(mode='json'), sort_keys=True).encode()).hexdigest()
+            previous = db.get(Issue, creation_id)
+            if previous:
+                if previous.user_id != user.id or (previous.exploration or {}).get('creation_digest') != creation_digest:
+                    raise HTTPException(409, '这次建立请求已经处理，请重新打开后核对')
+                return issue_view(db, previous)
         if body.onboarding_progress_version is not None:
             complete_progress(db, user, body.onboarding_progress_version)
         initial = Card(
@@ -439,11 +450,13 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
             unknowns=["我需要哪些信息，才能更清楚地选择？"],
         )
         item = Issue(
+            **({'id': creation_id} if creation_id else {}),
             user_id=user.id,
             title=body.title,
             concerns=body.concerns,
             life_contexts=body.life_contexts,
             exploration={
+                **({'creation_digest': creation_digest} if creation_digest else {}),
                 "card_reviewed_at": None,
                 "initial_title": body.title,
                 "initial_constraints": body.constraints,
@@ -458,7 +471,13 @@ def create_app(ai_transport=None, wechat_transport=None, web_search_transport=No
         )
         db.add(item)
         user.support_style = body.support_style
-        db.flush()
+        try:
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            if creation_id:
+                raise HTTPException(409, '这次建立请求已经处理，请重新打开后核对') from None
+            raise
         db.add(
             Conversation(
                 id=item.id,

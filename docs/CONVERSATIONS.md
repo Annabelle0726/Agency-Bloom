@@ -4,6 +4,20 @@
 
 An exploration owns a versioned decision card and feedback. Each conversation has a primary exploration, a title, a response mode, independent chat state, and an optional reviewed summary. Multiple explorations can remain active. Up to three other owned exploration cards can be explicitly linked to a conversation; their transcripts are never included automatically.
 
+The exploration navigator offers a lightweight independent-problem editor, with
+the five initial prompts available optionally. Creating another problem preserves
+existing cards, Plans, conversations and drafts; retries of the same creation
+request are idempotent. Selecting several initial concerns still does not silently
+split a user's exploration. Users choose which problems to manage independently.
+
+Me displays enabled, active, user-confirmed global long-term memories as common
+background across problems. This is a view of existing memory records, not a new
+generated profile or merged transcript summary. Account memory-use consent and
+per-record scope, status and enablement still govern model context. Conversation
+summaries remain separately reviewed and scoped. Comparison can present grounded
+alternatives without forcing exactly two or automatically selecting a Plan. See
+[page and context continuity](PAGE_CONTEXT.md) for implementation and verification.
+
 The left drawer exposes active conversations, explorations, archived conversations (in that order), and a memory manager. Its empty state also opens the new-conversation form. A local greeting quotes one enabled global/current-exploration memory only with memory-use consent, falling back to the user's actual question or neutral copy. This makes no model request and creates no chat message. Native scrollbars are hidden; a theme-colored indicator appears briefly only when scrolling overflowing content. Browser scrollbars use the same theme tokens.
 
 Mobile windows are independently retained conversations shown one at a time, with a strip for switching opened conversations. Only the selected conversation ID is remembered locally per account; drafts and message text are not written to device storage. Closing the drawer does not cancel a reply. Hiding the Mini Program cancels outstanding requests; background execution and desktop side-by-side panes are not promised.

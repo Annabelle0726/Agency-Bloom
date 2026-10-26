@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, nextTick, ref, watch } from 'vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
+import ReplyMarkdown from './ReplyMarkdown.vue'
+import {replyText} from '../../../reply-format'
 import { messageUnits, nearestCharacter, selectedExcerpt, type CharacterRect } from '../../../message-selection'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
@@ -8,7 +10,7 @@ const props = defineProps<{ content: string; disabled?: boolean; selectionOwner?
 const emit = defineEmits<{ ask: [text: string]; active: [value: boolean] }>()
 const instance = getCurrentInstance()
 const active = ref(false), start = ref(0), end = ref(0)
-const units = computed(() => messageUnits(props.content))
+const units = computed(() => messageUnits(replyText(props.content)))
 const excerpt = computed(() => selectedExcerpt(units.value, start.value, end.value))
 const geometry = ref<CharacterRect[]>([]), origin = ref({left:0, top:0})
 type SelectionEvent = { touches?: ArrayLike<{clientX: number; clientY: number}>; changedTouches?: ArrayLike<{clientX: number; clientY: number}>; detail?: unknown }
@@ -56,7 +58,7 @@ watch(() => props.disabled, value => { if (value && active.value) close() })
 
 <template>
   <view class="selectable-reply">
-    <text v-if="!active" class="message-bubble" @longpress.stop="begin">{{ content }}</text>
+    <view v-if="!active" class="message-bubble" @longpress.stop="begin"><ReplyMarkdown :content="content" /></view>
     <view v-else class="selection-surface">
       <text class="message-bubble selection-body"><text v-for="(char,index) in units" :key="index" class="selection-char" :class="{chosen:index>=start && index<end}">{{ char }}</text></text>
       <view class="selection-toolbar" :style="toolbar" @touchstart.stop @touchmove.stop>

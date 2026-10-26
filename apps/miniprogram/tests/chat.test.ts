@@ -256,9 +256,9 @@ it('sends a rejected angle as bounded session feedback, then forgets it on reset
 })
 
 it('does not truncate a full user draft or falsely mark a follow-up as prepared', () => {
-  const h = harness(); h.chat.insight.value = insight; h.chat.draft.value = '原'.repeat(2000)
+  const h = harness(); h.chat.insight.value = insight; h.chat.draft.value = '原'.repeat(4000)
   h.chat.reactToInsight('interested')
-  expect(h.chat.draft.value).toBe('原'.repeat(2000))
+  expect(h.chat.draft.value).toBe('原'.repeat(4000))
   expect(h.chat.insightReaction.value).toBe('')
 })
 

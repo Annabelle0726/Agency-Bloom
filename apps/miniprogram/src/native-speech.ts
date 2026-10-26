@@ -6,7 +6,7 @@ export function createNativeSpeech(api:ReturnType<typeof createApi>,token:()=>st
     conversation,
     config:()=>api.request<SpeechConfig>('GET','/speech/config').promise,
     consent:accepted=>api.request('PUT','/speech/consent',{accepted}).promise,
-    prepare:(id,message)=>api.request<SpeechAsset>('POST',`/conversations/${id}/speech`,message.id
+    prepare:(id,message)=>message.welcomeVariant ? api.request<SpeechAsset>('POST','/speech/welcome',{variant:message.welcomeVariant}) : api.request<SpeechAsset>('POST',`/conversations/${id}/speech`,message.id
       ?{message_id:message.id}:{text:message.content,proof:message.payload?.speech_proof}),
     download(path) {
       let task:UniApp.DownloadTask|undefined

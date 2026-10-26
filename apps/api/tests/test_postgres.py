@@ -38,6 +38,7 @@ def test_postgres_migration_blocks_data_api_and_supports_private_journey():
             "conversations",
             "conversation_links",
             "memories",
+            "chat_drafts",
         ]
         for table in tables:
             assert db.execute(
@@ -60,6 +61,19 @@ def test_postgres_migration_blocks_data_api_and_supports_private_journey():
             client.post("/api/issues", headers=alice, json={"title": "another"}).status_code == 201
         )
         client.put("/api/me", headers=alice, json={"ai_consent": True, "save_chat": True})
+        draft_key = 'draft:33597cd8-5f46-4825-848f-5351a3a14f87'
+        source = {'id': 'confirmed-angle', 'issue_id': original['id'], 'strategy': 'boundary',
+                  'quote': '现实条件', 'text': '完整的带入内容'}
+        draft = client.put(f'/api/chat-drafts/{draft_key}', headers=alice,
+                           json={'version': 0, 'issue_id': original['id'], 'content': '草' * 4000, 'source_refs': [source]})
+        assert draft.status_code == 200, draft.text
+        assert client.get('/api/chat-drafts', headers=alice).json()[0]['source_refs'] == [source]
+        assert client.put(f'/api/chat-drafts/{draft_key}', headers=alice,
+                          json={'version': 1, 'issue_id': original['id'], 'content': '草' * 4001}).status_code == 422
+        with psycopg.connect(url) as db:
+            with pytest.raises(psycopg.errors.CheckViolation):
+                db.execute('UPDATE chat_drafts SET content = %s', ('草' * 4001,))
+            db.rollback()
         body = {"request_id": "b3d789cb-0bc6-4cc4-b248-f74cbbf8fcef", "message": "从哪里开始"}
         assert (
             client.post(f"/api/issues/{original['id']}/chat", headers=alice, json=body).status_code
@@ -79,6 +93,7 @@ def test_postgres_migration_blocks_data_api_and_supports_private_journey():
             "conversations",
             "conversation_links",
             "memories",
+            "chat_drafts",
         ]:
             assert db.execute(f"SELECT count(*) FROM public.{table}").fetchone()[0] == 0
         assert db.execute("SELECT user_id FROM public.ai_requests").fetchone()[0] is None

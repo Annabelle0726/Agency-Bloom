@@ -1,5 +1,6 @@
 import type { ChatEvent, ReplyPhase } from './chat-stream'
 import { ref } from 'vue'
+import { CHAT_INPUT_LIMIT } from './chat-limits'
 import type { ChatMessage, ChatResponse, Suggestion, Insight, ConversationSummary, SuppliedContext, PhaseChange, WebSource } from './domain'
 import { ApiError } from './http'
 import { PERSPECTIVE_PROTOTYPE, publicPerspective, type PerspectiveAction } from './perspective-shift'
@@ -27,7 +28,7 @@ export function createChatSession(options: ChatOptions) {
     if (action === 'dismiss') { perspectiveDismissed.value = [...perspectiveDismissed.value, token].slice(-40); return }
     const text = `我想沿这个角度聊聊：${candidate.alternative_perspective}`
     const combined = [draft.value, text].filter(Boolean).join('\n\n')
-    if (combined.length <= 2000 && !draft.value.includes(text)) draft.value = combined
+    if (combined.length <= CHAT_INPUT_LIMIT && !draft.value.includes(text)) draft.value = combined
   }
   const selectedQuote = ref('')
   const draft = ref(''), pendingText = ref(''), sending = ref(false)
@@ -87,7 +88,7 @@ export function createChatSession(options: ChatOptions) {
     if (editing && index < 0) return
     const history = editing ? messages.value.slice(0, index) : messages.value
     const text = task === 'summary' ? '请整理当前会话，保留未解决的问题' : quote ? `关于这段话：\n「${quote}」\n\n${original.trim()}` : original.trim(), id = options.requestId()
-    if (text.length > 2000) { error.value = '选中文字和问题合计过长，请缩短后再发送'; return }
+    if (text.length > CHAT_INPUT_LIMIT) { error.value = '选中文字和问题合计过长，请缩短后再发送'; return }
     activeId = id; cancelSent = false; sending.value = true; pendingText.value = text
     sendingStartedAt.value = Date.now(); streamText.value = ''; replyPhase.value = 'waiting'
     sendingTask.value = task; lastRequestId.value = id
@@ -147,7 +148,7 @@ export function createChatSession(options: ChatOptions) {
     const text = action === 'interested' ? `这个角度有意思：${insight.value.possibility}。请沿着我提供的真实线索继续探索，哪些地方还需要了解？` :
       `关于这个可能性：${insight.value.possibility}，请帮我提出一个可验证、代价可控的低成本小实验，先了解我的时间与资源限制`
     const combined = [draft.value, text].filter(Boolean).join('\n\n')
-    if (combined.length > 2000) return null
+    if (combined.length > CHAT_INPUT_LIMIT) return null
     draft.value = combined; insightReaction.value = action
     return null
   }

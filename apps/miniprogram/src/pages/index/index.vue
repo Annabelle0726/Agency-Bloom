@@ -27,6 +27,8 @@ import {SPEECH_KEY} from '../../speech'
 import EditCardModal from './modals/EditCardModal.vue'
 import ExperimentModal from './modals/ExperimentModal.vue'
 import PlanReviewModal from './modals/PlanReviewModal.vue'
+import ChatHandoffModal from './modals/ChatHandoffModal.vue'
+import NewExplorationModal from './modals/NewExplorationModal.vue'
 import PlanDirectionModal from './modals/PlanDirectionModal.vue'
 import FeedbackModal from './modals/FeedbackModal.vue'
 import AiConsentModal from './modals/AiConsentModal.vue'
@@ -109,6 +111,7 @@ const {
   canSaveExperiment,
   selectedMode,
   welcomeContext,
+  firstWelcome, welcomeHasContext,
   chatFooterNote,
   chatEntry,
   modePickerOpen,
@@ -138,6 +141,8 @@ const {
   openPlanStep,
   openPlanChat,
   plan,
+  chatHandoff,
+  newExplorationOpen, newExplorationDraft, saveNewExploration, newExplorationQuestions,
   planDraft,
   canSummarizePlan,
   reviewPlanDraft,
@@ -275,7 +280,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                   :selected-mode="selectedMode" :ai-mode="config.ai_mode"
                   :bloom-status="bloomStatus"
                   :mode-picker-open="modePickerOpen" :messages="messages" :user-save-chat="!!user?.save_chat"
-                  :welcome-context="welcomeContext" :new-chat-starters="newChatStarters"
+                  :welcome-context="welcomeContext" :first-welcome="firstWelcome" :welcome-has-context="welcomeHasContext" :new-chat-starters="newChatStarters"
                   :chat-starters="chatStarters" :starter-hint="starterHint" :user-avatar="userAvatar"
                   :speaking-index="speakingIndex" :older-cursor="workspace.active.value.olderCursor.value"
                   :stream-text="streamText" :reply-phase="replyPhase" :follow-latest="followLatest" :selection-open="messageSelectionOpen"
@@ -283,7 +288,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                   :pending-text="pendingText" :suggestion="suggestion" :insight="insight" :plan-draft="planDraft" :can-summarize-plan="canSummarizePlan" @review-plan="reviewPlanDraft" @summarize-plan="summarizeForPlan"
                   :insight-reaction="insightReaction"
                   :current-ended="!!current?.ended_at" :phase-change="workspace.active.value.phaseChange.value"
-                  @back="tab = 'now'" @history="showHistory"
+                  @back="selectTab('now')" @history="showHistory"
                   @toggle-menu="chatMenuOpen ? closeChatMenu() : openChatMenu()" @menu-action="chatMenuAction"
                   @resume="resumeExploration" @select-mode="setChatMode"
                   @starter="useChatStarter" @load-older="loadOlderMessages"
@@ -295,7 +300,7 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
                   @open-phase="phaseError = ''; workspace.active.value.phaseOpen.value = true"
                   @review-suggestion="openEditor(true)" @react-insight="reactToInsight" />
         <view v-if="tab === 'chat'" id="chat-bottom" :style="{ height: `${composerHeight + keyboardHeight}px` }" />
-        <ChatComposer v-if="(current || isDrafting) && tab === 'chat' && !modal && !plan.visible.value" :draft="draft" :sending="sending"
+        <ChatComposer v-if="(current || isDrafting) && tab === 'chat' && !modal && !plan.visible.value && !chatHandoff.pending.value && !newExplorationOpen" :draft="draft" :sending="sending"
                       :creating="creatingConversation" :sending-started-at="workspace.active.value.sendingStartedAt.value" :generating-summary="generatingSummary"
                       :read-only-conversation="readOnlyConversation" :active-conversation="activeConversation"
                       :is-drafting="isDrafting" :web-search-on="workspace.active.value.webSearchOn.value"
@@ -339,7 +344,9 @@ const bloomStatus = computed(() => resolveBloomStatus(sending.value, offline.val
       </template>
 
       <PlanDirectionModal v-if="planDirectionOpen && current && !current.ended_at" :busy="busy" @close="planDirectionOpen = false" @replace="planDirectionOpen = false; plan.open('next')" @explore="planDirectionOpen = false; beginAnotherExploration()" />
-      <PlanReviewModal v-if="plan.visible.value && plan.editor.value" :editor="plan.editor.value" :busy="plan.busy.value || plan.loading.value" :error="plan.error.value" :latest="plan.state.value" :incoming="plan.incoming.value" :memory-use-enabled="!!user?.use_memory" @memories="plan.visible.value = false; drawer = 'memories'"
+      <ChatHandoffModal v-if="chatHandoff.pending.value" :preview="chatHandoff.pending.value" :can-append="chatHandoff.canAppend.value" @choose="chatHandoff.resolve($event)" />
+      <NewExplorationModal v-if="newExplorationOpen" :draft="newExplorationDraft" :busy="busy" :error="error" @close="newExplorationOpen = false" @save="saveNewExploration" @questions="newExplorationQuestions" />
+      <PlanReviewModal v-if="plan.visible.value && plan.editor.value && !chatHandoff.pending.value" :editor="plan.editor.value" :busy="plan.busy.value || plan.loading.value" :error="plan.error.value" :latest="plan.state.value" :incoming="plan.incoming.value" :memory-use-enabled="!!user?.use_memory" @memories="plan.visible.value = false; drawer = 'memories'"
                        @close="plan.visible.value = false" @save="plan.save()" @refine="plan.refine()" @reload="plan.reload()" @adopt="plan.adopt()" @keep="plan.keep()" />
       <EditCardModal v-if="modal === 'edit'" :busy="busy" :error="error" :editor="editor" :step-only="planStepOnly" :latest-step="card.next_step"
                      @close="modal = ''" @save="saveEditor" @reload="reloadVersion" />

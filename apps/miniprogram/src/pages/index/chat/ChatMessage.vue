@@ -12,6 +12,7 @@ import type { BloomStatus } from '../../../bloom-status'
 import SelectableReply from './SelectableReply.vue'
 import ModalShell from '../modals/ModalShell.vue'
 import ReadAloud from './ReadAloud.vue'
+import {replyText} from '../../../reply-format'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
 
@@ -33,7 +34,7 @@ const props = defineProps<{
 const emit = defineEmits<{ edit: []; ask: [text: string]; selection: [value: boolean]; perspective: [action: PerspectiveAction] }>()
 const selecting = ref(false), actionsOpen = ref(false)
 function copy() {
-  uni.setClipboardData({ data: props.message.content, fail: () => uni.showToast({ title: '复制未完成，请重试', icon: 'none' }) })
+  uni.setClipboardData({ data: props.message.role === 'assistant' ? replyText(props.message.content) : props.message.content, fail: () => uni.showToast({ title: '复制未完成，请重试', icon: 'none' }) })
   actionsOpen.value = false; selecting.value = false
 }
 function edit() { actionsOpen.value = false; emit('edit') }

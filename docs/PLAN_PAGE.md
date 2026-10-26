@@ -27,8 +27,9 @@ completion, add an experience, or explicitly choose a new attempt. Completion
 never ends the whole exploration or automatically chooses another step.
 
 Changing direction offers two separate choices: replace the current attempt
-within this exploration, or begin a new exploration through the existing
-onboarding flow. Both preserve previous records. Cancelling either editor
+within this exploration, or begin an independent exploration through a short
+title/background editor, with the existing five prompts available as an option.
+Both preserve previous records. Cancelling either editor
 does not change the plan. Rewording an attempt preserves its identity, records
 and pause/completion state; explicit replacement creates a fresh active
 attempt even when its words match the previous one. Clearing a step retires
@@ -36,7 +37,8 @@ its identity. Full-card and Journey direction editors follow the same rule.
 
 Users can write a record directly or talk to Bloom. The conversation entry
 reuses a suitable conversation for the current exploration when it has no
-pending input; otherwise it opens a separate draft shell. The latest linked
+pending input. With pending input, the user reviews both drafts and chooses a
+separate conversation shell, append, or cancel. The latest linked
 observation can be carried into the editable composer. Nothing sends until
 the user presses Send, through the existing consent and budget checks.
 
@@ -63,6 +65,22 @@ restoring a retained conversation. A new user turn can make summarization
 available again. Each conversation keeps its own state. Record and step
 selection use theme-colored square checkboxes with a CSS tick, an explicit
 checked state, and a full-row touch target at least 48px high.
+
+On reload, Plan editors use the latest step, attempt and version together. A
+partial Plan response does not promote an older full-card snapshot to a newer
+card version, so concurrent edits to other card fields remain protected. Late
+handoffs cannot fill a conversation the user selected afterward. A failed
+handoff keeps the original input and reports its failure on Plan. Full refinement
+drafts fit the shared 4,000-character composer/API boundary without silent slices.
+
+Confirmed chat-derived records preserve their source message reference. Journey
+can show the original reply after the pending draft has been consumed. Deleting
+the original conversation clears the source link while preserving the independently
+confirmed record. Reused request IDs and already-consumed sources return a
+handled conflict instead of a database exception.
+
+See [page and context continuity](PAGE_CONTEXT.md) for cross-page, multi-problem
+and memory acceptance on 2026-10-26.
 
 ## Data and conflict handling
 

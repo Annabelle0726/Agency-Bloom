@@ -12,14 +12,23 @@ from .models import ChatDraft, User, now
 from .schemas import StrictModel
 
 
+class DraftSource(StrictModel):
+    id: str = Field(min_length=1, max_length=200)
+    issue_id: UUID
+    strategy: str = Field(max_length=80)
+    quote: str = Field(max_length=1000)
+    text: str = Field(max_length=4000)
+
+
 class DraftUpdate(StrictModel):
     version: int = Field(ge=0)
-    content: str = Field(max_length=2000)
+    content: str = Field(max_length=4000)
     issue_id: UUID | None = None
+    source_refs: list[DraftSource] | None = Field(default=None, max_length=12)
 
 
 def draft_view(item):
-    return {key: getattr(item, key) for key in ('key', 'content', 'issue_id', 'version', 'updated_at')}
+    return {key: getattr(item, key) for key in ('key', 'content', 'issue_id', 'version', 'updated_at', 'source_refs')}
 
 
 def register_draft_routes(app, authenticated, db_dependency, owned_issue):
@@ -45,6 +54,8 @@ def register_draft_routes(app, authenticated, db_dependency, owned_issue):
         if not user.save_chat:
             raise HTTPException(409, '聊天保存已关闭，草稿仅保留在本次会话')
         issue_id = str(body.issue_id) if body.issue_id else None
+        for source in body.source_refs or []:
+            owned_issue(db, user, str(source.issue_id))
         if shell:
             if issue_id:
                 owned_issue(db, user, issue_id)
@@ -61,6 +72,10 @@ def register_draft_routes(app, authenticated, db_dependency, owned_issue):
             db.add(item)
         item.issue_id = issue_id
         item.content = body.content
+        if not body.content:
+            item.source_refs = []
+        elif body.source_refs is not None:
+            item.source_refs = [source.model_dump(mode='json') for source in body.source_refs] if body.content else []
         item.version = body.version + 1
         item.updated_at = now()
         db.commit()

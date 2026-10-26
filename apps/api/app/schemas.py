@@ -95,6 +95,7 @@ class FollowUpAnswer(StrictModel):
 
 
 class IssueInput(StrictModel):
+    creation_request_id: UUID | None = None
     onboarding_progress_version: int | None = Field(default=None, ge=0)
     title: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] = ""
     exploration_intent: ExplorationIntent = ""
@@ -174,7 +175,7 @@ class ConversationSummary(StrictModel):
 class ChatInput(StrictModel):
     perspective_control: PerspectiveControl | None = None
     request_id: UUID
-    message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+    message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
     history: list[ChatMessage] = Field(default=[], max_length=8)
     insight_feedback: list[InsightFeedback] = Field(default=[], max_length=3)
     task: Literal["chat", "summary"] = "chat"

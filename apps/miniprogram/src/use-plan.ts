@@ -25,13 +25,23 @@ export function usePlan(options: Options) {
   watch(() => options.current.value?.plan, saved => {
     if (saved && saved.issue_id === options.current.value?.id && (!state.value || saved.version >= state.value.version)) state.value = saved
   }, { immediate: true })
+  function applyState(saved: PlanState, writtenVersion?: number) {
+    const issue = options.current.value
+    if (!issue || saved.issue_id !== issue.id || saved.version < issue.version || saved.version < (state.value?.version || 0)) return
+    state.value = saved
+    // Plan is a partial card view. Only our own write can advance a known full-card version.
+    options.current.value = { ...issue, version: writtenVersion === issue.version ? saved.version : issue.version,
+      card: { ...issue.card, next_step: saved.next_step }, plan: saved }
+  }
   async function load() {
     const issue = options.current.value, account = options.userKey.value, ticket = ++epoch
     if (!issue || !account) return
     loading.value = true; error.value = ''
     try {
       const saved = await options.request<PlanState>('GET', `/issues/${issue.id}/plan`)
-      if (ticket === epoch && options.userKey.value === account && options.current.value?.id === issue.id) state.value = saved
+      if (ticket === epoch && options.userKey.value === account && options.current.value?.id === issue.id) {
+        applyState(saved)
+      }
       return saved
     } catch (err) { if (ticket === epoch) error.value = err instanceof Error ? err.message : '暂时无法读取计划' }
     finally { if (ticket === epoch) loading.value = false }
@@ -39,9 +49,10 @@ export function usePlan(options: Options) {
   function fresh(): PlanEditor | null {
     const issue = options.current.value
     if (!issue || issue.ended_at) return null
+    const step = state.value?.issue_id === issue.id ? state.value.next_step : issue.card.next_step
     return { issueId: issue.id, version: state.value?.issue_id === issue.id ? state.value.version : issue.version,
-      requestId: options.id(), title: '这次的经历', text: '', nextStep: issue.card.next_step,
-      includeRecord: false, includeStep: false, status: '', instruction: '', baseStep: issue.card.next_step,
+      requestId: options.id(), title: '这次的经历', text: '', nextStep: step,
+      includeRecord: false, includeStep: false, status: '', instruction: '', baseStep: step,
       attemptId: state.value?.issue_id === issue.id ? state.value.attempt_id : issue.plan?.attempt_id,
       rememberPlan: (state.value?.issue_id === issue.id ? state.value.memory_sync : issue.plan?.memory_sync) !== false,
       memoryVersion: (state.value?.issue_id === issue.id ? state.value.memory_version : issue.plan?.memory_version) ?? null,
@@ -91,7 +102,7 @@ export function usePlan(options: Options) {
   async function refine() {
     const value = editor.value, account = options.userKey.value, ownerScope = scope
     if (!value || busy.value || value.issueId !== options.current.value?.id) return
-    const purpose = value.stepAction === 'replace' && value.includeStep ? `我想重新选择一个尝试，原来的一步仅作背景：${value.baseStep}。请先了解我想改变什么，不默认延续旧目标` : '请帮我微调这份待确认的计划草稿，只调整表达，不替我改变行动'
+    const purpose = value.stepAction === 'replace' && value.includeStep ? '我想重新选择一个尝试，原来的一步仅作背景。请先了解我想改变什么，不默认延续旧目标' : '请帮我微调这份待确认的计划草稿，只调整表达，不替我改变行动'
     const text = `${purpose}。以我当前修改后的内容为准，保留未决定的部分，不添加没有发生的事。请整理成可编辑的草稿。\n\n标题：${value.title}\n记录：${value.text}\n下一步：${value.nextStep}\n\n修改要求：${value.instruction.trim() || '整理得清楚、简洁，保留我的意思'}`
     busy.value = true
     try {
@@ -138,8 +149,7 @@ export function usePlan(options: Options) {
       const saved = await options.request<PlanState>('POST', `/issues/${value.issueId}/plan`, body)
       if (account !== options.userKey.value || ownerScope !== scope) return
       if (options.current.value?.id === value.issueId) {
-        state.value = saved
-        options.current.value = { ...options.current.value, version: saved.version, card: { ...options.current.value.card, next_step: saved.next_step }, plan: saved }
+        applyState(saved, value.version)
       }
       for (const [key, item] of drafts) if (item === toRaw(value)) drafts.delete(key)
       for (const [key, item] of revisions) if (item === toRaw(value)) revisions.delete(key)

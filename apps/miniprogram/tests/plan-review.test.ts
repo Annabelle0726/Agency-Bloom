@@ -13,6 +13,27 @@ function setup() {
   const plan = usePlan({ current, userKey, request: request as any, chat, id: () => 'request', changed: vi.fn() })
   return { plan, current, userKey, calls, request, session, chat }
 }
+it('opens a new editor from the latest loaded step and version together', async () => {
+  const { plan, request, calls } = setup()
+  request.mockResolvedValueOnce({ issue_id:'a',version:4,next_step:'最新确认的一步',status:'active',attempt_id:'latest',records:[],latest:null } as any)
+  await plan.load(); plan.open('step')
+  expect(plan.editor.value!.nextStep).toBe('最新确认的一步')
+  expect(plan.editor.value!.baseStep).toBe('最新确认的一步')
+  await plan.save()
+  expect(calls[0].body).toMatchObject({version:4,next_step:'最新确认的一步',attempt_id:'latest'})
+})
+it('keeps a stale full-card version stale when only Plan has been refreshed or saved', async () => {
+  const {plan,current,request}=setup()
+  request.mockResolvedValueOnce({issue_id:'a',version:4,next_step:'最新的一步',status:'active',attempt_id:'latest',records:[],latest:null} as any)
+  await plan.load()
+  expect(current.value!.card.next_step).toBe('最新的一步')
+  expect(current.value!.version).toBe(2)
+  plan.open('step')
+  request.mockResolvedValueOnce({issue_id:'a',version:5,next_step:'我修改的一步',status:'active',attempt_id:'latest',records:[],latest:null} as any)
+  await plan.save()
+  expect(current.value!.version).toBe(2)
+  expect(plan.state.value!.version).toBe(5)
+})
 it('keeps user edits while a Bloom revision is pending and previews the new version', async () => {
   const { plan, session, chat } = setup()
   plan.open('record')

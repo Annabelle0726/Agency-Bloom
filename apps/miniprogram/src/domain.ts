@@ -38,6 +38,7 @@ export interface PerspectiveShift {
 }
 export interface ChatMessage { id?: string; created_at?: string; role: 'user' | 'assistant'; content: string; payload?: { plan_saved?: boolean; plan_draft?: PlanDraft | null; speech_proof?: string | null; perspective_shift?: PerspectiveShift | null; perspective_token?: string | null; suggestion?: Suggestion | null; insight?: Insight | null; request_id?: string; supplied_context?: SuppliedContext | null; tail_line?: string; reasoning_summary?: ReasoningPoint[]; web_sources?: WebSource[] | null; visual_id?: string | null } | null }
 export interface ConversationSummary { overview: string; decisions: string[]; open_questions: string[]; next_steps: string[] }
+export interface ChatMessage { welcomeVariant?: 'first-context-v1' | 'first-open-v1' }
 export interface Conversation {
   pinned_at?: string | null
   dismissed_change_ids?: string[]

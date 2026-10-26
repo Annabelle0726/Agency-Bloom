@@ -68,7 +68,7 @@ function onInput(event: Event) { concern.value = (event as CustomEvent<{ value: 
           <textarea class="plan-input" :value="concern" @input="onInput" maxlength="1200" placeholder="比如：想换个方向，但不能中断收入" :auto-height="true" />
           <text class="plan-caption">可以说说具体难处、想改变什么，以及现在能投入多少；也可以直接去聊</text>
           <button class="plan-primary" @click="chat()" hover-class="pressed" :hover-start-time="0">带到对话里，一起想 <SvgIcon name="arrow" :size="16" /></button>
-          <text class="plan-caption plan-transfer-note">接着相关对话聊 · 有未发送内容时另开一段<br />整理成草稿后，可自己修改，再确认加入 Plan</text>
+          <text class="plan-caption plan-transfer-note">接着相关对话聊 · 有草稿时由你选择怎样带入<br />整理成草稿后，可自己修改，再确认加入 Plan</text>
         </view>
       </view>
       <view v-if="recent.length || !planState?.latest" class="plan-section-heading"><text>{{ planState?.latest ? '之前留下的记录' : '留下的记录' }}</text><button v-if="!current.ended_at" class="plan-link" @click="emit('feedback')" hover-class="pressed" :hover-start-time="0">记下一点 <SvgIcon name="plus" :size="14" /></button></view>

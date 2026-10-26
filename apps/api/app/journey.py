@@ -120,7 +120,7 @@ def register_journey_routes(app, authenticated, db_dependency, owned):
             if row:
                 value = record_view(row, owned(db, user, row.issue_id))
                 message = db.get(Message, row.source_message_id) if row.source_message_id else None
-                value["source_text"] = (candidate(message) or {}).get("text", "") if message else ""
+                value["source_text"] = ((candidate(message) or {}).get("text") or message.content) if message else ""
                 return value
         if prefix == "feedback":
             row = db.scalar(select(Feedback).join(Issue).where(

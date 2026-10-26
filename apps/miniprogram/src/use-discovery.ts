@@ -87,7 +87,7 @@ export function useDiscovery(user: Ref<User | null>, request: <T>(method: 'GET' 
     recommendations.value = available.value.filter(c => !recommendations.value.some(r => r.id === c.id)).slice(0, 3)
     batches.set(focusId.value || '', recommendations.value.map(c => c.id))
   }
-  async function verify(item: DiscoveryAngle) {
+  async function verify(item: Pick<DiscoveryAngle, 'id' | 'issueId' | 'strategy'>) {
     if (!user.value || !item.issueId) return null
     const account = user.value.id
     const issue = await request<Issue>('GET', '/issues/' + item.issueId)

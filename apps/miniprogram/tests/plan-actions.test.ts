@@ -11,7 +11,7 @@ beforeEach(() => {
     getStorageSync: vi.fn(), setStorageSync: vi.fn(), removeStorageSync: vi.fn(),
     getWindowInfo: () => ({ statusBarHeight: 20 }), getMenuButtonBoundingClientRect: () => ({ bottom: 64 }),
     getSystemInfoSync: () => ({ windowHeight: 844, windowWidth: 390 }),
-    onKeyboardHeightChange: vi.fn(), offKeyboardHeightChange: vi.fn(), $on: vi.fn(), $off: vi.fn(),
+    onKeyboardHeightChange: vi.fn(), offKeyboardHeightChange: vi.fn(), onNetworkStatusChange: vi.fn(), offNetworkStatusChange: vi.fn(), $on: vi.fn(), $off: vi.fn(),
     setNavigationBarColor: vi.fn(), pageScrollTo: vi.fn(), showToast: vi.fn(),
     request: (options: any) => { requests.push(options); return { abort: vi.fn() } },
   })
@@ -26,16 +26,19 @@ function setup() {
   page.tab.value = 'plan'
   return page
 }
-it('opens a reviewable planning draft without sending or overwriting another draft', () => {
+it('opens a reviewable planning draft after choosing a separate conversation', async () => {
   const page = setup()
   page.startNewChat(); page.draft.value = '还没写完的问题'; page.tab.value = 'plan'
   const oldKey = page.workspace.activeId.value
-  page.openPlanChat('不知道怎样开始')
+  const opening = page.openPlanChat('不知道怎样开始')
+  expect(page.chatHandoff.pending.value?.current).toBe('还没写完的问题')
+  page.chatHandoff.resolve('new')
+  await opening
   expect(page.tab.value).toBe('chat')
   expect(page.draft.value).toContain('不知道怎样开始')
   expect(page.draft.value).toContain('现实条件')
   expect(page.messages.value).toHaveLength(0)
-  expect(requests).toHaveLength(0)
+  expect(requests.some(request => request.url.endsWith('/chat'))).toBe(false)
   expect(page.workspace.get(oldKey).draft.value).toBe('还没写完的问题')
   const draft = page.draft.value
   page.openPlanChat('第二次点击')

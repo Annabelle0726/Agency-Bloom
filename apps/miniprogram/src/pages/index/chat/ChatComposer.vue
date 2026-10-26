@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, nextTick, onMounted, onUnmounted, onUpdated, ref, watch } from 'vue'
 import SvgIcon from '../../../components/SvgIcon.vue'
+import { CHAT_INPUT_LIMIT } from '../../../chat-limits'
 import type { Conversation } from '../../../domain'
 
 defineOptions({ options: { styleIsolation: 'apply-shared' } })
@@ -112,7 +113,7 @@ const multiline = computed(() => localDraft.value.length > WEB_LINE_BUDGET)
     </view>
     <view class="composer" :class="{ stacked: !sending && multiline }">
       <textarea :value="visibleDraft" class="chat-input" :focus="!!selectedQuote && !sending" :disabled="sending || creating || readOnlyConversation || (!activeConversation && !isDrafting)" :adjust-position="false" @input="onInput" @focus="emit('focus')" @linechange="measureLayout"
-                                     :cursor-spacing="24" maxlength="2000" :auto-height="true"
+                                     :cursor-spacing="24" :maxlength="CHAT_INPUT_LIMIT" :auto-height="true"
                                      :placeholder="placeholder"/>
       <view class="composer-side">
         <button class="web-toggle" :aria-pressed="webSearchOn"

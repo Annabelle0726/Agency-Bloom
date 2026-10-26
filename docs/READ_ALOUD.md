@@ -21,6 +21,13 @@ Sources: [Tencent voice catalog](https://cloud.tencent.com/document/product/1073
 
 ## Backend and contract
 
+The first Chat welcome now uses the same explicit playback controls with a fixed
+server-side welcome variant, independent of transcript retention or conversation
+creation. Ordinary Markdown replies are synthesized as visible plain text after
+source verification. PostgreSQL deployment adds
+`20261026030000_welcome_speech.sql`; see [Chat rendering](CHAT_RENDERING.md) for
+the whitelist, cache, consent, quota and native acceptance details.
+
 `app/tts_provider.py` defines `TTSProvider`, offline `MockTTSProvider`, and `TencentTTSProvider` using HTTPS TextToVoice 2019-08-23 and TC3-HMAC-SHA256. Only backend `.env` holds credentials. `SecretStr` prevents settings representations exposing them. The adapter has an additional paid-enable guard before HTTP dispatch; keys alone never enable requests. It returns bounded, validated MP3 data and never logs upstream error bodies, signed headers or text.
 
 - `GET /api/speech/config`: mode, availability, consent, maximum text and cache duration. No credentials.

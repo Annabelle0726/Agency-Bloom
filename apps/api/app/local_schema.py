@@ -7,6 +7,7 @@ from .models import now
 
 def upgrade_local(engine):
     additions = {
+        "chat_drafts": {"source_refs": "JSON NOT NULL DEFAULT '[]'"},
         "conversations": {
             "dismissed_change_ids": "JSON NOT NULL DEFAULT '[]'",
             "pinned_at": "VARCHAR(40)",

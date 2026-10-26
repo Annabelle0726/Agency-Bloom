@@ -17,7 +17,7 @@ interface Ports {
   prepare:(conversation:string,message:ChatMessage)=>Task<SpeechAsset>;
   download:(path:string)=>Task<string>; remove:(path:string)=>void; createAudio:()=>Audio;
 }
-export function speechKey(message:ChatMessage) { return message.id || message.payload?.speech_proof || '' }
+export function speechKey(message:ChatMessage) { return message.welcomeVariant ? 'welcome:'+message.welcomeVariant : message.id || message.payload?.speech_proof || '' }
 export function createSpeech(ports:Ports) {
   const activeKey=ref(''), stage=ref<'idle'|'loading'|'playing'|'paused'>('idle'), rate=ref(1)
   const mode=ref(''), consentOpen=ref(false), consentBusy=ref(false), consentError=ref('')

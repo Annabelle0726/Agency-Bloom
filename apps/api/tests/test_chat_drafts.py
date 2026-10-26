@@ -55,7 +55,7 @@ def test_conversation_delete_and_retention_opt_out_purge_owned_drafts(tmp_path):
 def test_invalid_and_overlong_drafts_are_rejected_without_server_errors(tmp_path):
     with TestClient(create_app(database_url=f"sqlite:///{tmp_path / 'drafts.db'}")) as c:
         auth = login(c)
-        body = {'version': 0, 'content': '字' * 2001}
+        body = {'version': 0, 'content': '字' * 4001}
         assert c.put(f'/api/chat-drafts/draft:{uuid4()}', headers=auth, json=body).status_code == 422
         assert c.put('/api/chat-drafts/bad-key', headers=auth,
                      json={'version': 0, 'content': '输入'}).status_code == 422
