@@ -27,29 +27,39 @@ function mount(resume?: ReturnType<typeof saveDraft>) {
   vi.useFakeTimers()
   const stored = new Map<string, unknown>(), progress = vi.fn(), save = vi.fn(), chat = vi.fn(), skip = vi.fn()
   vi.stubGlobal('document', { activeElement: null })
-  vi.stubGlobal('uni', { getStorageSync: (key: string) => stored.get(key), setStorageSync: (key: string, value: unknown) => stored.set(key, value), removeStorageSync: (key: string) => stored.delete(key) })
+  vi.stubGlobal('uni', { showToast: vi.fn(), getStorageSync: (key: string) => stored.get(key), setStorageSync: (key: string, value: unknown) => stored.set(key, value), removeStorageSync: (key: string) => stored.delete(key) })
   const root = node('root'), app = renderer.createApp(() => h(OnboardingFlow, { busy: false, error: '', userId: 'isolated-ui-test', resume, onProgress: progress, onSave: save, onChat: chat, onSkip: skip }))
   app.component('scroll-view', { render() { return h('scroll-view', this.$attrs, this.$slots.default?.()) } })
   app.mount(root); dispose = () => app.unmount()
   return { root, progress, save, chat, skip }
 }
 
-it('requires a Q1 topic but lets an explicit unsure choice finish without optional answers', async () => {
+it('explains missing Q1 and Q2 on Continue, then accepts a selected answer with Q3 and Q4 blank', async () => {
   const { root, save, chat } = mount()
-  expect(find(root, 'action-button')[0].props.disabled).toBe(true)
+  expect(find(root, 'action-button')[0].props.disabled).toBe(false)
   find(root, 'action-button')[0].props.onClick(); await nextTick()
   expect(find(root, 'flow-step-0')).toHaveLength(1)
+  expect(text(root)).toContain('请先选择至少一项想聊的事情')
+  expect(uni.showToast).toHaveBeenCalled()
   find(root, 'selection-card').find(el => text(el).includes('暂时说不清'))!.props.onClick()
   await nextTick()
   expect(find(root, 'action-button')[0].props.disabled).toBe(false)
-  for (const step of [1, 2, 3, 4]) {
+  find(root, 'action-button')[0].props.onClick(); await nextTick()
+  await vi.advanceTimersByTimeAsync(181)
+  find(root, 'action-button')[0].props.onClick(); await nextTick()
+  expect(find(root, 'flow-step-1')).toHaveLength(1)
+  expect(text(root)).toContain('请至少选择一项，或写下你想聊的具体事情')
+  find(root, 'selection-card')[0].props.onClick(); await nextTick()
+  expect(find(root, 'validation-message')).toHaveLength(0)
+  for (const step of [2, 3, 4]) {
     find(root, 'action-button')[0].props.onClick(); await nextTick()
     expect(find(root, 'flow-step-' + step)).toHaveLength(1)
     await vi.advanceTimersByTimeAsync(181)
   }
   find(root, 'action-button')[0].props.onClick(); await nextTick()
   expect(save).toHaveBeenCalledOnce()
-  expect(save.mock.lastCall![0]).toMatchObject({ concerns: ['unsure'], support_style: '', background: '', constraints: [], follow_ups: {} })
+  expect(save.mock.lastCall![0]).toMatchObject({ concerns: ['unsure'], support_style: '', background: '', constraints: [] })
+  expect(save.mock.lastCall![0].follow_ups.unsure.selections).toHaveLength(1)
   expect(chat).not.toHaveBeenCalled()
 })
 
@@ -73,15 +83,49 @@ it('allows pausing an unanswered questionnaire without submitting or completing 
 
 it('blocks advancement again after the last topic is removed from review', async () => {
   const form = newOnboarding(); updateConcerns(form, 'relationships')
+  toggleFollowUp(form, '自己的想法和家人的期待不同')
   const { root } = mount(saveDraft(form, 4))
   find(root, 'record-edit')[0].props.onClick(); await nextTick()
   expect(find(root, 'flow-step-0')).toHaveLength(1)
   find(root, 'selection-card').find(el => text(el).includes('关系和期待'))!.props.onClick()
   await nextTick()
-  expect(find(root, 'action-button')[0].props.disabled).toBe(true)
   await vi.advanceTimersByTimeAsync(181)
+  expect(find(root, 'action-button')[0].props.disabled).toBe(false)
   find(root, 'action-button')[0].props.onClick(); await nextTick()
   expect(find(root, 'flow-step-0')).toHaveLength(1)
+})
+
+it('requires only one selected topic to have a Q2 answer and accepts free writing but not whitespace', async () => {
+  const form = newOnboarding(); updateConcerns(form, 'relationships'); updateConcerns(form, 'overload')
+  const { root } = mount(saveDraft(form, 1))
+  const input = find(root, 'free-textarea')[0]
+  input.props['onUpdate:modelValue']('   '); await nextTick()
+  find(root, 'action-button')[0].props.onClick(); await nextTick()
+  expect(find(root, 'flow-step-1')).toHaveLength(1)
+  input.props['onUpdate:modelValue']('想先聊聊家人的期待'); await nextTick()
+  find(root, 'action-button')[0].props.onClick(); await nextTick()
+  expect(find(root, 'flow-step-2')).toHaveLength(1)
+})
+
+it('returns a later draft missing Q2 to Q2 without discarding other answers', async () => {
+  const form = newOnboarding(); updateConcerns(form, 'relationships'); form.background = '之前填写的情况'
+  const { root, progress } = mount(saveDraft(form, 4))
+  expect(find(root, 'flow-step-1')).toHaveLength(1)
+  find(root, 'selection-card')[0].props.onClick(); await nextTick()
+  expect(progress.mock.lastCall![0].form.background).toBe('之前填写的情况')
+})
+
+it('blocks again when the final Q2 answer is removed', async () => {
+  const form = newOnboarding(); updateConcerns(form, 'relationships')
+  toggleFollowUp(form, '自己的想法和家人的期待不同')
+  const { root } = mount(saveDraft(form, 1))
+  find(root, 'selection-card').find(el => el.props['aria-pressed'])!.props.onClick(); await nextTick()
+  find(root, 'action-button')[0].props.onClick(); await nextTick()
+  expect(find(root, 'flow-step-1')).toHaveLength(1)
+  expect(find(root, 'validation-message')).toHaveLength(1)
+  find(root, 'flow-back')[0].props.onClick(); await nextTick()
+  expect(find(root, 'flow-step-0')).toHaveLength(1)
+  expect(find(root, 'validation-message')).toHaveLength(0)
 })
 
 it('accepts the first answer while the Continue double-tap lock is still active', async () => {

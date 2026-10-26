@@ -4,7 +4,7 @@ Decision: 2026-10-24. This implements the owner's request for concrete follow-up
 questions while preserving the agency-centered direction in
 [PRODUCT_DIRECTION.md](PRODUCT_DIRECTION.md). The five questions establish an
 optional starting point after authentication. Completing the questionnaire now
-requires a starting-topic choice; pausing it is still allowed. It is not a
+requires a starting-topic choice and one concrete follow-up; pausing it is still allowed. It is not a
 registration requirement, a personality assessment or a prerequisite for conversation.
 
 ## Completion rules — 2026-10-26
@@ -12,33 +12,38 @@ registration requirement, a personality assessment or a prerequisite for convers
 | Page | Required to complete? | Rule |
 | --- | --- | --- |
 | Q1 | Yes | Choose at least one topic; multi-select remains available. An exclusive 暂时说不清，先聊聊 option is a valid answer, not a guessed topic |
-| Q2 | No | Concrete blockers or the user's own words add precision; they are not required before conversation |
+| Q2 | Yes | At least one option or nonblank note under any selected topic; existing free-written questions also count. No requirement to answer every topic |
 | Q3 | No | Further details, life context and constraints are optional; missing answers never become facts |
 | Q4 | No | An explicit selection overrides the account preference; leaving it blank preserves the current preference |
 | Q5 | Explicit confirmation | Review and save supplied answers; no additional checkbox or AI call |
 
-Q1's Continue is disabled until selected, and navigation/final submission also
-check it. Resuming an older unfinished draft without Q1 returns to that page
-while preserving every existing answer. Removing the last selection blocks
-advancement again. 稍后再填 pauses the questionnaire; it neither creates an empty
+Continue remains tappable so a missing answer receives immediate feedback:
+a short native toast and a persistent explanation above the button. Q1 asks
+for a topic; Q2 asks for one option or the user's own words. The explanation
+clears when the corresponding answer becomes valid. Navigation/final submission
+check both requirements. Older drafts return to the earliest missing required
+page while preserving every existing answer. Removing the last valid answer
+blocks advancement again. Names, basic context and whitespace do not satisfy Q2.
+稍后再填 pauses the questionnaire; it neither creates an empty
 exploration nor marks the questionnaire completed. A paused user can still enter
 the space and have a direct conversation.
 
-The backend requires a nonempty topic only for final requests carrying
+The backend requires a nonempty topic and a concrete follow-up only for final requests carrying
 `onboarding_progress_version`. Incomplete/empty drafts remain valid, and direct
 exploration creation outside this questionnaire keeps its existing contract.
 Invalid completion is rejected before its progress row is changed. No new SQL
-column or constraint is needed for Q1. Account progress persistence itself uses
+column or constraint is needed for Q1/Q2. Account progress persistence itself uses
 the separate existing `20261026010000_onboarding_progress.sql` migration; the
 completion rule must not prohibit empty JSON drafts at the database layer.
 
-Acceptance evidence is in `output/onboarding-required-20261026/`: browser flows
-at 320x740 and 390x740 cover the disabled/selected Q1 states, exclusive
-uncertainty selection, unanswered optional pages, preserved account response
-preference, final readback and empty pause/reload without exploration creation.
-An isolated tourist WeChat simulator (390x844, SDK 3.17.4) covers Q1's native
-disabled state and uncertainty -> unanswered Q2–Q4 -> actual-answer review.
-The bundled compilers accept 39 WXSS and 61 WXML files; packaged media totals
+Current acceptance evidence is `q2-report.json`, `q2-native-report.json` and
+the corresponding prompt screenshots in `output/onboarding-required-20261026/`.
+Browser flows at 320x740 and 390x740 cover missing Q1/Q2 feedback, Q2 text or
+selection, whitespace rejection, unanswered Q3/Q4 and confirmed save. An isolated
+tourist WeChat simulator (390x844, SDK 3.17.4) covers both prompts, Q2 selection,
+unanswered Q3/Q4 and actual-answer review. Earlier reports in that directory
+describe the superseded Q1-disabled/Q2-optional behavior.
+The bundled WXML/WXSS compiler checks pass; packaged media totals
 183,372 bytes against the strict 204,800-byte limit. These checks do not establish
 real-device keyboard, touch or flash acceptance.
 
@@ -74,12 +79,25 @@ at 390x844. Simulator screenshots are emitted at 75% by this Developer Tools
 session; the logical title size was also checked through the native element API.
 Neither browser nor simulator results establish real-device acceptance.
 
+Spacing correction (2026-10-26): card contents are vertically centered within
+their minimum height. Previously, the shared block layout left approximately
+12–14px above single-line Q2/Q3 content and 25px below it. Q3 now uses an explicit
+`refinement` layout with a 56px minimum height and an opaque `quiet-surface`
+theme fill; selected/pressed fills remain independent. Q1's two-row options,
+Q2's light rows and Q4's response previews retain their respective layouts.
+The shared question footer starts 16px after content; Q3's optional context
+starts after 16px rather than 28px. Body bottom padding remains zero, and the
+bottom safe-area allowance is applied only at the end of the footer. Browser
+measurements at 320/390px are in `after-spacing-report.json`, with native
+alignment and color checks in `native-spacing-report.json` in the same evidence
+directory. The correction does not disable native component style isolation.
+
 ## Five-step contract
 
 | Step | Purpose | Interaction |
 | --- | --- | --- |
 | 1 | What is on your mind? | At least one of seven concrete topics or the exclusive uncertainty option; multiple concrete topics are allowed |
-| 2 | What would help within that topic? | Concrete local branches; multiple answers and an optional note per topic |
+| 2 | What would help within that topic? | Concrete local branches; at least one selection or nonblank note across selected topics |
 | 3 | What happens within that blocker, and what is your situation? | A different optional third-level question for each selected Q2 answer; multi-select details, then life contexts and constraints |
 | 4 | How would you like help now? | One changeable response preference; it can be left unanswered |
 | 5 | Is this what you want to leave here? | Review supplied answers, confirm saving and open conversation |
@@ -124,8 +142,9 @@ constraints. No choice is preselected and no missing value becomes a fact.
 
 ## Entry and consent
 
-Q1 requires at least one topic to advance; Q2 through Q4 can be passed without
-an answer. The pause action remains available on every page and opens
+Q1 requires at least one topic to advance; Q2 requires one concrete selection
+or nonblank answer. Q3 and Q4 can be passed without an answer. The pause action
+remains available on every page and opens
 the space, and its empty home state offers direct chat and optional questions.
 The main conversation tab and the drawer's new-conversation action can both open
 a blank draft. A draft creates an exploration/conversation on first send through

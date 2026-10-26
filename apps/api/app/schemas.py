@@ -132,6 +132,12 @@ class IssueInput(StrictModel):
         for key in self.follow_ups:
             if key not in self.concerns and not (key == "general" and not self.concerns):
                 raise ValueError("follow-up answers must belong to a selected concern")
+        if self.onboarding_progress_version is not None and not (
+            self.actual_question.strip() or self.focus_response.strip()
+            or any(answer.note.strip() or any(value.strip() for value in answer.selections)
+                   for answer in self.follow_ups.values())
+        ):
+            raise ValueError("请至少选择一项，或写下你想聊的具体事情")
         if self.title in ["我也不知道，帮我一起理清", "我也不知道，帮我一起理清。"]:
             self.title = ""
         return self

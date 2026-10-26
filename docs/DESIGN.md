@@ -16,7 +16,10 @@ and daily-life concerns have first-class paths alongside career concerns. Each t
 and constraints remain optional, and the last page reviews only supplied content.
 Pausing an unanswered questionnaire still permits a direct conversation. Completing
 it requires at least one Q1 topic (including an exclusive uncertainty choice);
-Q2-Q4 remain optional, and Q5 confirms saving. See ONBOARDING.md for the rules.
+Q2 requires one concrete option or nonblank answer across the selected topics;
+Q3-Q4 remain optional, and Q5 confirms saving. Missing required answers receive
+a short toast and a persistent explanation above the tappable Continue button.
+See ONBOARDING.md for the rules.
 Keep the existing Morning Mist visual system and the non-flashing transitions.
 Q1 places its distinct icon beside the label, then a separate description row.
 Continue follows the answers inside the scroll view; it is not pinned to the viewport.

@@ -55,7 +55,7 @@ def test_finish_is_atomic_and_prevents_late_writes_and_duplicate_submissions(tmp
         auth = login(c)
         c.put('/api/onboarding-progress', headers=auth, json=draft())
         body = {'title': '先理清自己的想法', 'concerns': ['relationships'],
-                'exploration_intent': 'relationships', 'onboarding_progress_version': 1}
+                'exploration_intent': 'relationships', 'actual_question': '想先聊聊家人的期待', 'onboarding_progress_version': 1}
         finished = c.post('/api/issues', headers=auth, json=body)
         assert finished.status_code == 201, finished.text
         row = c.get('/api/onboarding-progress', headers=auth).json()
@@ -75,7 +75,7 @@ def test_invalid_progress_is_rejected_and_failed_completion_preserves_it(tmp_pat
                      dict(draft(), answers={'follow_ups': {'': {}}})]:
             assert c.put('/api/onboarding-progress', headers=auth, json=body).status_code == 422
         assert c.put('/api/onboarding-progress', headers=auth, json=draft()).status_code == 200
-        assert c.post('/api/issues', headers=auth, json={'onboarding_progress_version': 2, 'concerns': ['relationships']}).status_code == 409
+        assert c.post('/api/issues', headers=auth, json={'onboarding_progress_version': 2, 'concerns': ['relationships'], 'actual_question': '之前的问题'}).status_code == 409
         assert c.get('/api/onboarding-progress', headers=auth).json()['status'] == 'in_progress'
         assert c.get('/api/issues', headers=auth).json() == []
 
@@ -92,6 +92,7 @@ def test_empty_q1_can_be_saved_as_a_draft_but_cannot_complete_the_questionnaire(
         assert c.get('/api/issues', headers=auth).json() == []
         completed = c.post('/api/issues', headers=auth, json={
             'onboarding_progress_version': 1, 'concerns': ['unsure'], 'exploration_intent': 'unsure',
+            'follow_ups': {'unsure': {'selections': ['先从最近的感受聊起']}},
         })
         assert completed.status_code == 201, completed.text
         assert completed.json()['concerns'] == ['unsure']
@@ -103,3 +104,18 @@ def test_direct_exploration_creation_still_accepts_a_question_without_topic_opti
         auth = login(c)
         result = c.post('/api/issues', headers=auth, json={'title': '直接写下的问题'})
         assert result.status_code == 201
+
+
+def test_q2_is_required_for_completion_but_not_drafts_and_rejects_blank_answers(tmp_path):
+    with TestClient(create_app(database_url=f"sqlite:///{tmp_path / 'q2.db'}")) as c:
+        auth = login(c)
+        assert c.put('/api/onboarding-progress', headers=auth, json=draft()).status_code == 200
+        base = {'onboarding_progress_version': 1, 'concerns': ['relationships', 'overload']}
+        for extra in [{}, {'title': '名字', 'background': '生活情况'}, {'focus_response': '  '},
+                      {'follow_ups': {'relationships': {'selections': [], 'note': '  '}}}]:
+            assert c.post('/api/issues', headers=auth, json={**base, **extra}).status_code == 422
+        assert c.get('/api/onboarding-progress', headers=auth).json()['version'] == 1
+        assert c.get('/api/issues', headers=auth).json() == []
+        completed = c.post('/api/issues', headers=auth, json={**base,
+            'follow_ups': {'relationships': {'selections': [], 'note': '想先聊聊家人的期待'}}})
+        assert completed.status_code == 201, completed.text

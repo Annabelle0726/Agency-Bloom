@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SvgIcon from './SvgIcon.vue'
-withDefaults(defineProps<{ title: string; detail?: string; icon?: string; selected?: boolean; radio?: boolean; inlineIcon?: boolean; layout?: 'card' | 'row' | 'support'; preview?: string }>(), { selected: false, layout: 'card' })
+withDefaults(defineProps<{ title: string; detail?: string; icon?: string; selected?: boolean; radio?: boolean; inlineIcon?: boolean; layout?: 'card' | 'row' | 'support' | 'refinement'; preview?: string }>(), { selected: false, layout: 'card' })
 defineEmits<{ select: [] }>()
 </script>
 
@@ -33,7 +33,7 @@ defineEmits<{ select: [] }>()
 
 <style scoped>
 .selection-card {
-  display:block; width:100%; min-height:73px; margin:0; padding:13px 15px;
+  display:flex; flex-direction:column; justify-content:center; width:100%; min-height:73px; margin:0; padding:13px 15px;
   box-sizing:border-box; border:1px solid var(--quiet-border); border-radius:10px;
   background:var(--paper); box-shadow:none; color:var(--quiet-title); font-family:var(--font-body);
   text-align:left; touch-action:manipulation;
@@ -88,6 +88,10 @@ defineEmits<{ select: [] }>()
   .selection-main { gap:9px; }
 }
 .selection-card.layout-row { border:0; border-bottom:1px solid var(--quiet-border); border-radius:0; background:transparent; min-height:64px; padding:14px 0; }
+.selection-card.layout-refinement { min-height:56px; padding:12px 14px; background:var(--quiet-surface); }
+.selection-card.layout-refinement.chosen { background:var(--quiet-surface-selected); border-color:var(--quiet-border-selected); }
+.selection-card.layout-refinement.selection-pressed, .selection-card.layout-refinement:active { background:var(--quiet-surface-pressed); }
+.selection-card.layout-refinement.chosen.selection-pressed, .selection-card.layout-refinement.chosen:active { background:var(--quiet-surface-selected); }
 .layout-row.chosen .selection-title { color:var(--accent); }
 .layout-row.selection-pressed, .layout-row:active { background:var(--quiet-surface-pressed); }
 .selection-card.layout-support { min-height:82px; padding:18px 12px; border:0; border-bottom:1px solid var(--quiet-border); border-radius:0; background:transparent; }

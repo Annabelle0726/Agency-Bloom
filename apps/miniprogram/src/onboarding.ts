@@ -187,6 +187,10 @@ export function toggleRefinement(form: Onboarding, topic: string, parent: string
 export function hasOnboardingClues(form: Onboarding) {
   return !!(form.title.trim() || form.concerns.length || form.actual_question?.trim() || form.focus_response?.trim() || form.background.trim() || form.constraints.length || form.life_contexts?.length || form.support_style || followUpRecords(form).length)
 }
+export function hasRequiredFollowUp(form: Onboarding) {
+  return !!(form.actual_question?.trim() || form.focus_response?.trim() || followUpRecords(form).some(answer =>
+    answer.note.trim() || answer.selections.some(value => value.trim())))
+}
 export function submissionFor(form: Onboarding, defaultStyle?: string): Onboarding {
   const support = form.support_style || defaultStyle
   return { ...form, support_style: support ? canonicalSupportStyle(support) : '',

@@ -8,7 +8,7 @@ import SelectionCard from './SelectionCard.vue'
 import ProgressIndicator from './ProgressIndicator.vue'
 import SvgIcon from './SvgIcon.vue'
 import { draftKeyFor, questionStep } from '../entry'
-import { refinementPromptsFor, toggleRefinement } from '../onboarding'
+import { hasRequiredFollowUp, refinementPromptsFor, toggleRefinement } from '../onboarding'
 import type { OnboardingSnapshot } from '../onboarding-progress'
 
 const props = defineProps<{ busy: boolean; error: string; userId: string; resume?: OnboardingSnapshot | null; syncMessage?: string; syncMode?: string }>()
@@ -23,7 +23,10 @@ try {
 } catch { /* Storage can be unavailable. */ }
 const form = reactive({ ...newOnboarding(), ...cached?.form })
 if (!form.exploration_intent && form.concerns.length) form.exploration_intent = form.concerns[0]
-const step = ref(form.concerns.length ? questionStep(cached?.step) : 0)
+function resumeStep(value?: number) {
+  return !form.concerns.length ? 0 : !hasRequiredFollowUp(form) ? Math.min(questionStep(value), 1) : questionStep(value)
+}
+const step = ref(resumeStep(cached?.step))
 const legacyDraft = ref<ReturnType<typeof restoreDraft>>(null)
 if (!cached) {
   try { legacyDraft.value = restoreDraft(uni.getStorageSync(DRAFT_KEY)) } catch { /* Optional legacy recovery. */ }
@@ -32,7 +35,7 @@ function recoverLegacyDraft() {
   if (!legacyDraft.value) return
   Object.assign(form, legacyDraft.value.form)
   if (!form.exploration_intent && form.concerns.length) form.exploration_intent = form.concerns[0]
-  step.value = form.concerns.length ? questionStep(legacyDraft.value.step) : 0
+  step.value = resumeStep(legacyDraft.value.step)
   nameOpen.value = !!form.title
   freeOpen.value = !!followUpFor(form).note
   persist()
@@ -58,7 +61,6 @@ function refine(value: string) {
   const item = activeRefinement.value
   if (item && !props.busy) toggleRefinement(form, item.topic, item.parent, value)
 }
-const hasStartingTopic = computed(() => form.concerns.length > 0)
 const freeResponse = computed({
   get: () => focusAnswer.value.note,
   set: value => setFollowUpNote(form, value),
@@ -68,6 +70,11 @@ const freePlaceholder = computed(() => form.exploration_intent === 'unsure'
   : branch.value.placeholder)
 const draftInfo = ref(false)
 const localError = ref('')
+const validationError = ref('')
+const validationStep = ref(-1)
+watch(() => validationStep.value === 0 ? form.concerns.length > 0 : hasRequiredFollowUp(form), valid => {
+  if (valid) { validationError.value = ''; validationStep.value = -1 }
+})
 const draftSaved = ref(!!cached)
 const moving = ref(false)
 const direction = ref('forward')
@@ -102,14 +109,14 @@ const constraintsText = computed({
 })
 const headings = [
   { label: '', title: '最近，你想先\n聊些什么？', detail: '至少选择一项，可以多选' },
-  { label: 'A FIRST THREAD', title: '我们先从\n一件小事聊起', detail: '点选就好，暂时没有答案也可以继续' },
+  { label: 'A FIRST THREAD', title: '我们先从\n一件小事聊起', detail: '至少选择一项，或写下自己的话' },
   { label: '', title: '先了解一点\n你现在的生活', detail: '选填，可以多选，也可以留空继续' },
   { label: '', title: '这一次，你希望\n我怎样陪你聊？', detail: '选填，不选则沿用当前的回应偏好' },
   { label: '', title: '从这里，\n开始这次对话', detail: '核对后确认，随时可以返回修改' },
 ]
 const heading = computed(() => step.value === 1
   ? { ...explorationIntroFor(form), title: form.exploration_intent && form.exploration_intent !== 'unsure' ? branch.value.question.replace('，', '，\n') : explorationIntroFor(form).title,
-    detail: '选填，可以点选，也可以补充自己的话' }
+    detail: '至少选择一项，或写下自己的话' }
   : step.value === 2 && activeRefinement.value
   ? { label: '', title: activeRefinement.value.question.replace('，', '，\n'), detail: '选填，可以多选，也可以留空继续' }
   : headings[step.value] || headings[0])
@@ -117,7 +124,6 @@ const heading = computed(() => step.value === 1
 const selectedNote = computed(() => step.value === 0
   ? (form.concerns.length ? '已选 ' + form.concerns.length + ' 项 · 下一步，从其中一件事开始' : '还没想好，也可以选「暂时说不清」') : '')
 const continueLabel = computed(() => {
-  if (step.value === 1 && !focusAnswer.value.selections.length && !freeResponse.value.trim()) return '暂不补充，继续'
   if (step.value === 2 && !refinements.value.some(item => item.answers.length) && !form.life_contexts?.length && !form.constraints.length && !form.background.trim()) return '暂不补充，继续'
   if (step.value === 3 && !form.support_style) return '沿用当前偏好，继续'
   return '继续'
@@ -140,7 +146,8 @@ watch(() => props.resume, value => {
   if (!restored) return
   applyingRemote = true
   Object.assign(form, newOnboarding(), restored.form)
-  step.value = form.concerns.length ? questionStep(restored.step) : 0
+  step.value = resumeStep(restored.step)
+  validationError.value = ''; validationStep.value = -1
   nameOpen.value = !!form.title
   freeOpen.value = !!followUpFor(form).note
   backgroundOpen.value = !!form.background
@@ -151,15 +158,26 @@ watch(() => props.resume, value => {
   void nextTick(() => { scrollTop.value = 0 })
   applyingRemote = false
 })
+function requireAnswers(target: number) {
+  const missing = !form.concerns.length && target > 0 ? 0 : !hasRequiredFollowUp(form) && target > 1 ? 1 : -1
+  if (missing < 0) return true
+  const changedPage = step.value !== missing
+  step.value = missing
+  validationStep.value = missing
+  validationError.value = missing === 0 ? '请先选择至少一项想聊的事情' : '请至少选择一项，或写下你想聊的具体事情'
+  uni.showToast({ title: missing === 0 ? '请先选择想聊的话题' : '请先补充一项具体内容', icon: 'none', duration: 2400 })
+  if (changedPage) {
+    scrollTop.value = 1
+    void nextTick(() => { scrollTop.value = 0 })
+  }
+  return false
+}
 function go(value: number) {
   if (moving.value || props.busy || value === step.value) return
   if (value < 0) { emit('skip'); return }
   value = questionStep(value)
-  if (value > 0 && !hasStartingTopic.value) {
-    localError.value = '请先选择至少一项想聊的事情'
-    step.value = 0
-    return
-  }
+  if (!requireAnswers(value)) return
+  validationError.value = ''; validationStep.value = -1
   emit('navigate')
   direction.value = value < step.value ? 'backward' : 'forward'
   moving.value = true
@@ -216,11 +234,7 @@ function editContext() {
 }
 function submit() {
   if (props.busy) return
-  if (!hasStartingTopic.value) {
-    localError.value = '请先选择至少一项想聊的事情'
-    step.value = 0
-    return
-  }
+  if (!requireAnswers(4)) return
   emit('save', JSON.parse(JSON.stringify(submissionFor(form))))
 }
 function clearDraft() {
@@ -234,6 +248,7 @@ function clearDraft() {
   backgroundOpen.value = false
   constraintsOpen.value = false
   actualQuestionOpen.value = false
+  validationError.value = ''; validationStep.value = -1
   refinementId.value = ''
   focusedField.value = ''
   draftInfo.value = false
@@ -318,7 +333,7 @@ defineExpose({ clearDraft })
               </view>
               <view class="selection-stack" role="group" aria-label="进一步说明当前卡点，可多选">
                 <SelectionCard v-for="value in activeRefinement.choices" :key="activeRefinement.id + value" :title="value" :data-refine="value"
-                  :selected="activeRefinement.answers.includes(value)" @select="refine(value)" />
+                  layout="refinement" :selected="activeRefinement.answers.includes(value)" @select="refine(value)" />
               </view>
             </view>
             <view class="optional-context" :class="{ 'is-expanded': contextExpanded }">
@@ -383,7 +398,8 @@ defineExpose({ clearDraft })
       <view class="flow-footer">
         <text v-if="selectedNote" class="selection-reassurance">{{ selectedNote }}</text>
         <view v-if="localError || error" class="notice">{{ localError || error }}</view>
-        <ActionButton v-if="step < 4" kind="onboarding" stable-press :disabled="busy || (step === 0 && !hasStartingTopic)" :locked="moving" @click="go(step + 1)">{{ continueLabel }}</ActionButton>
+        <text v-if="validationError" class="notice validation-message" role="alert" aria-live="polite">{{ validationError }}</text>
+        <ActionButton v-if="step < 4" kind="onboarding" stable-press :disabled="busy" :locked="moving" @click="go(step + 1)">{{ continueLabel }}</ActionButton>
         <ActionButton v-else kind="onboarding" stable-press :loading="busy" :locked="moving" @click="submit">带着这些，开始聊聊</ActionButton>
         <view class="flow-footer-detail">
           <button class="flow-skip" :disabled="busy || moving" @click="emit('skip')" hover-class="pressed">稍后再填</button>
