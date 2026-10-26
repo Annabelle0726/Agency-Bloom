@@ -2,7 +2,8 @@
 import { resolveAppMedia } from '../app-media'
 import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue'
 import type { Onboarding } from '../domain'
-import { startingConcernOptions, focusChoiceViewsFor, explorationIntroFor, lifeContexts, constraintChoices, supportStyles, newOnboarding, updateConcerns, followUpFor, toggleFollowUp, setFollowUpNote, followUpRecords, submissionFor, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle } from '../onboarding'
+import { startingConcernOptions, focusChoiceViewsFor, explorationIntroFor, lifeContexts, constraintChoices, supportStyles, newOnboarding, updateConcerns, followUpFor, toggleFollowUp, setFollowUpNote, followUpRecords, submissionFor, saveDraft, restoreDraft, DRAFT_KEY, branchFor, selectMainline, canonicalSupportStyle, onboardingHeadings } from '../onboarding'
+import { compactRefinementFor } from '../onboarding-refinements'
 import ActionButton from './ActionButton.vue'
 import SelectionCard from './SelectionCard.vue'
 import ProgressIndicator from './ProgressIndicator.vue'
@@ -107,18 +108,12 @@ const constraintsText = computed({
   get: () => form.constraints.filter(value => !constraintChoices.includes(value)).join('\n'),
   set: value => { form.constraints = [...new Set([...form.constraints.filter(item => constraintChoices.includes(item)), ...value.split('\n').map(v => v.trim()).filter(Boolean)])].slice(0, 12) },
 })
-const headings = [
-  { label: '', title: '最近，你想先\n聊些什么？', detail: '至少选择一项，可以多选' },
-  { label: 'A FIRST THREAD', title: '我们先从\n一件小事聊起', detail: '至少选择一项，或写下自己的话' },
-  { label: '', title: '先了解一点\n你现在的生活', detail: '选填，可以多选，也可以留空继续' },
-  { label: '', title: '这一次，你希望\n我怎样陪你聊？', detail: '选填，不选则沿用当前的回应偏好' },
-  { label: '', title: '从这里，\n开始这次对话', detail: '核对后确认，随时可以返回修改' },
-]
+const headings = onboardingHeadings
 const heading = computed(() => step.value === 1
-  ? { ...explorationIntroFor(form), title: form.exploration_intent && form.exploration_intent !== 'unsure' ? branch.value.question.replace('，', '，\n') : explorationIntroFor(form).title,
+  ? { ...explorationIntroFor(form), title: form.exploration_intent && form.exploration_intent !== 'unsure' ? branch.value.heading : explorationIntroFor(form).title,
     detail: '至少选择一项，或写下自己的话' }
   : step.value === 2 && activeRefinement.value
-  ? { label: '', title: activeRefinement.value.question.replace('，', '，\n'), detail: '选填，可以多选，也可以留空继续' }
+  ? { label: '', title: compactRefinementFor(activeRefinement.value.question), detail: '选填，可以多选，也可以留空继续' }
   : headings[step.value] || headings[0])
 // One mounted landscape gives all five questions the same stable visual ground.
 const selectedNote = computed(() => step.value === 0
@@ -269,9 +264,9 @@ defineExpose({ clearDraft })
     </view>
     <view key="flow-shell" class="flow-page">
       <view class="flow-chrome">
-        <view class="flow-nav"><button class="icon-button flow-back" aria-label="返回上一步" :disabled="busy || moving" hover-class="pressed" :hover-start-time="0" @click="go(step - 1)"><SvgIcon name="back" :size="22" /></button><text class="flow-wordmark">你的空间</text>
+        <view class="flow-nav"><button class="icon-button flow-back" aria-label="返回上一步" :disabled="busy || moving" hover-class="pressed" :hover-start-time="0" @click="go(step - 1)"><SvgIcon name="back" :size="22" tone="accent" /></button><text class="flow-wordmark">你的空间</text>
           <!-- #ifndef MP-WEIXIN -->
-          <button class="icon-button draft-menu" aria-label="草稿与隐私" hover-class="pressed" :hover-start-time="0" @click="draftInfo = true"><SvgIcon name="more" :size="22" /></button>
+          <button class="icon-button draft-menu" aria-label="草稿与隐私" hover-class="pressed" :hover-start-time="0" @click="draftInfo = true"><SvgIcon name="more" :size="22" tone="accent" /></button>
           <!-- #endif -->
           <!-- #ifdef MP-WEIXIN -->
           <view class="capsule-space" aria-hidden="true" />
@@ -391,7 +386,7 @@ defineExpose({ clearDraft })
               <view v-if="form.focus_response && !followUps.some(answer => answer.note === form.focus_response) && form.focus_response !== form.actual_question" class="reflection-context"><view class="record-label"><text>关于当前主线，你补充的</text><button class="record-edit" :disabled="busy" @click="freeOpen = true; go(1)" hover-class="pressed">修改</button></view><text class="reflection-copy">{{ form.focus_response }}</text></view>
               <view v-if="form.background && form.background !== form.focus_response && form.background !== form.actual_question" class="reflection-context"><view class="record-label"><text>补充的生活情况</text><button class="record-edit" :disabled="busy" @click="editContext()" hover-class="pressed">修改</button></view><text class="reflection-copy">{{ form.background }}</text></view>
               <view v-if="form.constraints.length || contextLabels.length" class="reflection-context"><view class="record-label"><text>也希望照顾到</text><button class="record-edit" :disabled="busy" @click="editContext()" hover-class="pressed">修改</button></view><text v-if="contextLabels.length" class="reflection-copy">{{ contextLabels.map(item => item.title).join(' · ') }}</text><text v-for="line in form.constraints" :key="line" class="reflection-copy">{{ line }}</text></view>
-              <view v-if="support" class="reflection-context"><view class="record-label"><text>希望怎样聊</text><button class="record-edit" :disabled="busy" @click="go(3)" hover-class="pressed">修改</button></view><view class="reflection-support"><SvgIcon :name="support.icon" :size="18" /><text>{{ support.title }}</text></view></view>
+              <view v-if="support" class="reflection-context"><view class="record-label"><text>希望怎样聊</text><button class="record-edit" :disabled="busy" @click="go(3)" hover-class="pressed">修改</button></view><view class="reflection-support"><SvgIcon :name="support.icon" :size="18" tone="accent" /><text>{{ support.title }}</text></view></view>
             </view>
           </view>
         </view>
@@ -414,7 +409,7 @@ defineExpose({ clearDraft })
     </view>
 
     <view v-if="draftInfo" class="modal-backdrop" @click.self="draftInfo = false">
-      <view class="intro-panel"><view class="modal-handle" /><view class="intro-panel-header"><text class="eyebrow">AGENCY BLOOM</text><button class="icon-button" aria-label="关闭面板" @click="draftInfo = false" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><SvgIcon name="close" :size="21" /></button></view>
+      <view class="intro-panel"><view class="modal-handle" /><view class="intro-panel-header"><text class="eyebrow">AGENCY BLOOM</text><button class="icon-button" aria-label="关闭面板" @click="draftInfo = false" hover-class="pressed" :hover-start-time="0" :hover-stay-time="70"><SvgIcon name="close" :size="21" tone="accent" /></button></view>
         <text class="flow-title">随时可以接着填写</text>
         <text class="body-copy">{{ syncMessage || (draftSaved ? '本机进度已保留' : '本机暂时无法保存，请先不要关闭页面') }}</text>
         <text class="body-copy">回答和题目位置会自动保存在本机，联网后同步到你的账号。先跳过也会保留进度；完成确认前，这些草稿不会成为探索卡片，也不会发送给 AI。</text>

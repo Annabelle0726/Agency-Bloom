@@ -54,3 +54,27 @@ export function refinementFor(parent: string) {
   const entry = details[parent]
   return entry ? { question: entry[0], choices: entry[1] } : undefined
 }
+
+// The full question stays available to tests and future surfaces, while the
+// five-page heading uses a compact one-line form that fits at 320px.
+const compactQuestions: Record<string, string> = {
+  '怎样的陪伴比较适合现在的你？': '怎样的陪伴更适合你？',
+  '现在最想让我们理解哪一部分？': '最想让我理解哪部分？',
+  '你想从哪一部分认识自己的方向？': '想从哪部分认识方向？',
+  '目前有哪些可以作为起点的线索？': '有哪些可以起步的线索？',
+  '这些选项目前具体到什么程度？': '选项目前有多具体？',
+  '你希望先保留现状的哪一部分？': '先保留现状的哪部分？',
+  '准备简历或作品集时，哪里最难？': '简历或作品集，哪里最难？',
+  '从想法走到开始，缺少哪一块？': '开始前，缺少哪一块？',
+  '关于收入与稳定，你在权衡什么？': '收入与稳定，怎么权衡？',
+  '兴趣与投入感，哪里还需要了解？': '兴趣与投入，还缺什么？',
+  '关于这个领域，你最想了解什么？': '这个领域，最想了解什么？',
+  '现在离做出作品，还差什么？': '离做出作品，还差什么？',
+  '家庭与照护中，什么最影响你？': '家庭与照护，最影响什么？',
+}
+export function compactRefinementFor(question: string) {
+  const compact = compactQuestions[question]
+  if (compact) return compact
+  const parts = question.split('，')
+  return parts.length > 1 ? parts.slice(1).join('，') : question
+}

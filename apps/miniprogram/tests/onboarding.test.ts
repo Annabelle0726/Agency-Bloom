@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest'
-import { focusChoicesFor, focusChoiceViewsFor, explorationIntroFor, uncertaintyStarts, startingConcernOptions, concernOptions, newOnboarding, toggleConcern, reflectionFor, restoreDraft, saveDraft, branchFor, selectMainline, canonicalSupportStyle, reflectionHeading, loginSummaryFor } from '../src/onboarding'
+import { focusChoicesFor, focusChoiceViewsFor, explorationIntroFor, uncertaintyStarts, startingConcernOptions, concernOptions, newOnboarding, toggleConcern, reflectionFor, restoreDraft, saveDraft, branchFor, selectMainline, canonicalSupportStyle, reflectionHeading, loginSummaryFor, onboardingHeadings } from '../src/onboarding'
+import { compactRefinementFor, refinementFor } from '../src/onboarding-refinements'
 
 it('keeps unsure exclusive while allowing the first five concerns together', () => {
   expect(toggleConcern(['direction', 'relationships'], 'unsure')).toEqual(['unsure'])
@@ -138,5 +139,23 @@ it('keeps curiosity and uncertainty available without requiring an anxiety label
   for (const intent of ['possibility', 'unsure']) {
     const form = { ...newOnboarding(), concerns: [intent], exploration_intent: intent, support_style: 'listen' }
     expect(restoreDraft(saveDraft(form, 5, 1000), 2000)?.form).toEqual(form)
+  }
+})
+
+it('keeps every five-page heading on one short line without truncation', () => {
+  const intents = concernOptions.map(item => item.id)
+  const titles = [
+    ...onboardingHeadings.map(item => item.title),
+    ...intents.map(intent => branchFor({ ...newOnboarding(), concerns: [intent], exploration_intent: intent }).heading),
+    ...intents.map(intent => explorationIntroFor({ ...newOnboarding(), concerns: [intent], exploration_intent: intent }).title),
+    ...intents.flatMap(intent => focusChoicesFor({ ...newOnboarding(), exploration_intent: intent })
+      .flatMap(parent => {
+        const prompt = refinementFor(parent)
+        return prompt ? [compactRefinementFor(prompt.question)] : []
+      })),
+  ]
+  for (const title of titles) {
+    expect(title).not.toContain('\n')
+    expect([...title].length).toBeLessThanOrEqual(12)
   }
 })

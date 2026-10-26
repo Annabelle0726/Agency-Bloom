@@ -16,10 +16,10 @@ defineEmits<{ select: [] }>()
   >
     <view class="selection-main">
     <view v-if="icon && !inlineIcon" class="selection-icon-tile" aria-hidden="true">
-      <SvgIcon :name="icon" :size="22" tone="ink" />
+      <SvgIcon :name="icon" :size="22" tone="accent" />
     </view>
     <view class="selection-copy">
-      <view class="selection-title-row"><SvgIcon v-if="icon && inlineIcon" :name="icon" :size="20" tone="ink" /><text class="selection-title">{{ title }}</text></view>
+      <view class="selection-title-row"><SvgIcon v-if="icon && inlineIcon" :name="icon" :size="20" tone="accent" /><text class="selection-title">{{ title }}</text></view>
       <text v-if="detail" class="selection-detail">{{ detail }}</text>
     </view>
     <view v-if="radio" class="selection-radio" :class="{ checked: selected }" aria-hidden="true"><view /></view>

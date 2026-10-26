@@ -69,10 +69,19 @@ export function explorationIntroFor(form: Onboarding) {
   }
   return {
     label: 'LET’S EXPLORE',
-    title: form.exploration_intent ? '沿着你选的这件事，再具体一点' : '此刻，你想从哪里聊起？',
+    title: form.exploration_intent ? '沿着这件事，再具体一点' : '此刻，你想从哪里聊起？',
     detail: '选接近你的情况，可多选，也可以留空继续',
   }
 }
+// One-line page headings. Keep each title short enough for the narrowest
+// supported viewport (320px) so the approved five-page flow never truncates.
+export const onboardingHeadings = [
+  { label: '', title: '最近，你想先聊些什么？', detail: '至少选择一项，可以多选' },
+  { label: 'A FIRST THREAD', title: '我们先从一件小事聊起', detail: '至少选择一项，或写下自己的话' },
+  { label: '', title: '先了解一点你现在的生活', detail: '选填，可以多选，也可以留空继续' },
+  { label: '', title: '希望我怎样陪你聊？', detail: '选填，不选则沿用当前的回应偏好' },
+  { label: '', title: '从这里，开始这次对话', detail: '核对后确认，随时可以返回修改' },
+]
 export const lifeContexts = [
   { id: 'studying', title: '学习或备考' }, { id: 'searching', title: '求职' },
   { id: 'working', title: '在职工作' }, { id: 'transition', title: '职业转换' },
@@ -114,16 +123,16 @@ export function toggleConcern(selected: string[], id: string) {
   return [...selected.filter(value => value !== 'unsure'), id]
 }
 const branches = {
-  relationships: { question: '这段关系里，哪部分最让你为难？', placeholder: '可以只讲一件具体的事，不必写姓名，也不急着判断谁对谁错' },
-  overload: { question: '最近的生活，哪里让你觉得吃力？', placeholder: '比如一天里最费力的一段，或你希望留给自己的时间' },
-  job_search: { question: '目前的求职，主要卡在哪些地方？', placeholder: '比如目前考虑的岗位、行业，或还没想好方向；有想法再写' },
-  direction: { question: '关于目前的方向，哪些地方还不清楚？', placeholder: '比如正在考虑的工作或生活方向，以及你希望保留的部分' },
-  change: { question: '面对 AI 或行业变化，你想先了解哪些事？', placeholder: '比如现在做的工作、担心的变化，或已有的经历与能力' },
-  choices: { question: '面对正在考虑的方向，你最难取舍的是什么？', placeholder: '写下你正在比较的选择，也可以先说一个' },
-  start: { question: '这次改变里，你最不想失去的是什么？', placeholder: '比如收入、时间、地点，或已经拥有的生活' },
-  possibility: { question: '你更愿意从过去做过的事情、感兴趣的领域，还是一次新的体验开始探索？', placeholder: '选一个起点，或者留下一点线索' },
-  other: { question: '关于这个念头，你最想再说一点什么？', placeholder: '不必整理好，可以用自己的话说' },
-  unsure: { question: '还没有方向，也可以开始探索', placeholder: '最近让你有一点好奇、投入或想改变的事，可选' },
+  relationships: { heading: '这段关系，卡在哪里？', question: '这段关系里，哪部分最让你为难？', placeholder: '可以只讲一件具体的事，不必写姓名，也不急着判断谁对谁错' },
+  overload: { heading: '最近的生活，哪里吃力？', question: '最近的生活，哪里让你觉得吃力？', placeholder: '比如一天里最费力的一段，或你希望留给自己的时间' },
+  job_search: { heading: '求职主要卡在哪一步？', question: '目前的求职，主要卡在哪些地方？', placeholder: '比如目前考虑的岗位、行业，或还没想好方向；有想法再写' },
+  direction: { heading: '目前的方向，哪里不清楚？', question: '关于目前的方向，哪些地方还不清楚？', placeholder: '比如正在考虑的工作或生活方向，以及你希望保留的部分' },
+  change: { heading: '面对变化，先了解什么？', question: '面对 AI 或行业变化，你想先了解哪些事？', placeholder: '比如现在做的工作、担心的变化，或已有的经历与能力' },
+  choices: { heading: '取舍时，最难的是什么？', question: '面对正在考虑的方向，你最难取舍的是什么？', placeholder: '写下你正在比较的选择，也可以先说一个' },
+  start: { heading: '改变时，最不想失去什么？', question: '这次改变里，你最不想失去的是什么？', placeholder: '比如收入、时间、地点，或已经拥有的生活' },
+  possibility: { heading: '想从哪种可能开始？', question: '你更愿意从过去做过的事情、感兴趣的领域，还是一次新的体验开始探索？', placeholder: '选一个起点，或者留下一点线索' },
+  other: { heading: '这个念头，想再说点什么？', question: '关于这个念头，你最想再说一点什么？', placeholder: '不必整理好，可以用自己的话说' },
+  unsure: { heading: '还没有方向，也没关系', question: '还没有方向，也可以开始探索', placeholder: '最近让你有一点好奇、投入或想改变的事，可选' },
 }
 export function branchFor(form: Onboarding) {
   return branches[form.exploration_intent as keyof typeof branches] || (form.exploration_intent ? branches.other : branches.unsure)

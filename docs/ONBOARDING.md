@@ -51,8 +51,14 @@ real-device keyboard, touch or flash acceptance.
 
 The owner approved the separate design preview, then authorized integrating it.
 All five questions now use the local system sans stack, including headings,
-quoted context, review text and buttons. Question headings stay 24px/600 on
-320px and 390px screens; selection/body text is 15px, secondary text 13px and
+quoted context, review text and buttons. Question headings stay 24px/600 at
+normal widths and drop to 22px at 360px and below, including the 320px
+viewport. Every heading is a
+single short line without authored line breaks: display copy is capped at 12
+characters so it fits at 320px, and longer branch or refinement questions keep
+their full wording in the data while the page shows a compact title. Selection,
+review, navigation and close icons use the active theme accent rather than
+near-black ink. Selection/body text is 15px, secondary text 13px and
 editable text 16px. Opening-story fonts and authenticated pages are unchanged.
 
 One mounted dawn landscape and a readable theme wash remain stable through all
@@ -61,8 +67,25 @@ options and footer, including the safe area; it is not a 355px header illustrati
 The lower wash remains translucent instead of fading to an opaque page color.
 It stays outside the scroll view, so long answers scroll over one stable image.
 No whole-list translation, perspective or scroll-driven animation
-is used. The native capsule has its own reserved space. The main CTA is a flat,
-theme-derived fill with white text and an unframed arrow, in document flow.
+is used. The native capsule has its own reserved space. All five main CTAs share
+a theme-derived gradient, fine highlight edge, soft shadow, white text and an
+unframed arrow, in document flow. The footer starts 26px after content (10px
+lower than the previous spacing). Press feedback compresses only the painted
+shadow/highlight, never transforms the scroll surface or shifts the button.
+Mouse hover is capability-gated; touch uses native hover-class/active feedback.
+The temporary navigation lock retains the rendered button surface and arrow.
+The accent progress bar uses a 3px track and a 480ms ease-out transform transition
+that retargets naturally during quick forward/back navigation. Reduced-motion
+preferences disable these transitions.
+
+CTA/progress rendering evidence is in `output/onboarding-required-20261026/polish/`.
+The five-page gallery combines actual 320/390px page captures with normal and
+pressed button details, plus a mouse-hover sample. Browser checks assert stable
+button geometry, changing press shadows, intermediate progress values and zero
+transition duration under reduced motion. The isolated WeChat simulator confirms
+the 26px footer spacing, rendered button gradient/shadows, 3px progress track and
+0.48s transition. Native rendering and compiler checks remain separate from
+real-device touch/keyboard acceptance.
 
 Q2 shows the selected topic before its concrete question and uses light rows.
 Q3 quotes the selected parent, then offers its refinements; optional life context
@@ -89,7 +112,7 @@ their minimum height. Previously, the shared block layout left approximately
 `refinement` layout with a 56px minimum height and an opaque `quiet-surface`
 theme fill; selected/pressed fills remain independent. Q1's two-row options,
 Q2's light rows and Q4's response previews retain their respective layouts.
-The shared question footer starts 16px after content; Q3's optional context
+Before the subsequent CTA polish, the shared question footer started 16px after content; Q3's optional context
 starts after 16px rather than 28px. Body bottom padding remains zero, and the
 bottom safe-area allowance is applied only at the end of the footer. Browser
 measurements at 320/390px are in `after-spacing-report.json`, with native

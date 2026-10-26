@@ -33,6 +33,14 @@ response illustrations and editable Q5 records establish the five-page rhythm.
 Further review answers have neutral labels; existing resources are not described
 as difficulties. Native capsule space and document-flow actions remain explicit.
 
+Onboarding heading and icon refinement (2026-10-26): every five-page heading is
+one short line with no authored line breaks, so it never truncates or wraps.
+Titles stay 24px/600 at normal widths and 22px at 360px and below; display copy
+is capped at 12 characters for the 320px viewport, while longer branch and
+refinement questions remain in the data and use a compact display title. Option,
+review, navigation and close icons use the active theme accent instead of
+near-black ink. The heading no longer uses `white-space: pre-line`.
+
 ## 圆角规范（硬性约束）
 
 所有卡片与容器类组件的 `border-radius` 必须控制在 **6px–10px**，不得使用更大的圆角。此后任何新增或修改的卡片、面板、输入框、按钮、弹层都不得把圆角做到 11px 以上；发现即视为回归，需改回此区间。
